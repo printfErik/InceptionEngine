@@ -8,6 +8,7 @@
 # log file
 *.log
 
+# binary
 bin/
 bin-int/
 *.bat
