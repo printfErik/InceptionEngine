@@ -1,4 +1,11 @@
 .vs/
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
+
+*.log
+
 bin/
 bin-int/
-*.user
+*.bat
