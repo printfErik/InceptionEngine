@@ -1,8 +1,10 @@
 #include "icppch.h"
 #include "Application.h"
 
-#include "Events/ApplicationEvent.h"
-#include "Log.h"
+#include "Inception/Events/ApplicationEvent.h"
+#include "Inception/Log.h"
+
+#include <GLFW/glfw3.h>
 
 namespace Inception {
 	Application::Application() {
@@ -15,6 +17,8 @@ namespace Inception {
 
 	void Application::Run() {
 		while (m_Running) {
+			glClearColor(1, 0, 1, 1);
+			glClear(GL_COLOR_BUFFER_BIT);
 			m_Window->OnUpdate();
 		}
 	}

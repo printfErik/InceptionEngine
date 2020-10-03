@@ -14,6 +14,8 @@
 #include <unordered_set>
 #include <queue>
 
+#include "Inception/Log.h"
+
 #ifdef INCEPTION_PLATFORM_WINDOWS
 	#include <Windows.h>
 #endif
