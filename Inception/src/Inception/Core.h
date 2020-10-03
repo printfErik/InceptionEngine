@@ -6,5 +6,7 @@
 		#define INCEPTION_API __declspec(dllimport)
 	#endif 
 #else
-	#error	ONLY WINDOWS!
+	#error	ONLY WINDOWS RIGHT NOW
 #endif // INCEPTION_PLATFORM_WINDOWS
+
+#define BIT(x) (1 << x)

@@ -147,6 +147,10 @@
     <ClInclude Include="src\Inception\Application.h" />
     <ClInclude Include="src\Inception\Core.h" />
     <ClInclude Include="src\Inception\EntryPoint.h" />
+    <ClInclude Include="src\Inception\Events\ApplicationEvent.h" />
+    <ClInclude Include="src\Inception\Events\Event.h" />
+    <ClInclude Include="src\Inception\Events\KeyEvent.h" />
+    <ClInclude Include="src\Inception\Events\MouseEvent.h" />
     <ClInclude Include="src\Inception\Log.h" />
   </ItemGroup>
   <ItemGroup>

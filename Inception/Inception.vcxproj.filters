@@ -19,6 +19,10 @@
     <ClInclude Include="src\Inception\Log.h">
       <Filter>Inception</Filter>
     </ClInclude>
+    <ClInclude Include="src\Inception\Events\Event.h" />
+    <ClInclude Include="src\Inception\Events\KeyEvent.h" />
+    <ClInclude Include="src\Inception\Events\MouseEvent.h" />
+    <ClInclude Include="src\Inception\Events\ApplicationEvent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Inception\Application.cpp">
