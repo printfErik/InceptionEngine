@@ -158,11 +158,14 @@
     <ClInclude Include="src\Inception\Events\KeyEvent.h" />
     <ClInclude Include="src\Inception\Events\MouseEvent.h" />
     <ClInclude Include="src\Inception\Log.h" />
+    <ClInclude Include="src\Inception\Window.h" />
+    <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
     <ClInclude Include="src\icppch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Inception\Application.cpp" />
     <ClCompile Include="src\Inception\Log.cpp" />
+    <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="src\icppch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
