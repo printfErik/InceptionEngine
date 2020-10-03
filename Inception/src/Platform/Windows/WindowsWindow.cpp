@@ -1,4 +1,4 @@
-#include "Inception.h"
+#include "Inception/Log.h"
 #include "icppch.h"
 #include "WindowsWindow.h"
 
@@ -26,7 +26,7 @@ namespace Inception {
 		m_Data.Width = props.Width;
 		m_Data.Height = props.Height;
 
-		ICP_CORE_INFO("Creating window {0}, ({1}, {2})", props.WindowTitle, props.Width, props.Height);
+		//ICP_CORE_TRACE("Creating window {0} ({1}, {2})", props.WindowTitle, props.Width, props.Height);
 
 		if (!s_GLFWInitialized)
 		{
@@ -54,8 +54,8 @@ namespace Inception {
 	}
 
 	void WindowsWindow::SetVSync(bool enabled) {
-		if (enabled) glfwSwapBuffers(1);
-		else glfwSwapBuffers(0);
+		if (enabled) glfwSwapInterval(1);
+		else glfwSwapInterval(0);
 
 		m_Data.VSync = enabled;
 	}
