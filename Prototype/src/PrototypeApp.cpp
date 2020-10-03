@@ -1,3 +1,4 @@
+#include <icppch.h>
 #include <Inception.h>
 
 class Prototype : public Inception::Application

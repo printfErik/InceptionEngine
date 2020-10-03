@@ -10,6 +10,11 @@ workspace "InceptionGameEngine"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
+IncludeDir = {}
+IncludeDir["GLFW"] = "Inception/vendor/GLFW/include"
+
+include "Inception/vendor/GLFW"
+
 project "Inception"
 
 	location "Inception"
@@ -19,6 +24,9 @@ project "Inception"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
+	pchheader "icppch.h"
+	pchsource "Inception/src/icppch.cpp"
+
 	files
 	{
 		"%{prj.name}/src/**.h",
@@ -27,7 +35,15 @@ project "Inception"
 
 	includedirs 
 	{
-		"%{prj.name}/vendor/spdlog/include"
+		"%{prj.name}/src",
+		"%{prj.name}/vendor/spdlog/include",
+		"%{IncludeDir.GLFW}"
+	}
+
+	links
+	{
+		"GLFW",
+		"opengl32.lib"
 	}
 
 	filter "system:windows"

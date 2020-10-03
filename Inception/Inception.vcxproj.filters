@@ -4,6 +4,9 @@
     <Filter Include="Inception">
       <UniqueIdentifier>{8EE46C66-FA4E-21DD-438D-D282AF36FF31}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Inception\Events">
+      <UniqueIdentifier>{B2247EEE-9E1D-9D40-C74F-82C5B3A77C4C}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Inception.h" />
@@ -16,13 +19,22 @@
     <ClInclude Include="src\Inception\EntryPoint.h">
       <Filter>Inception</Filter>
     </ClInclude>
+    <ClInclude Include="src\Inception\Events\ApplicationEvent.h">
+      <Filter>Inception\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Inception\Events\Event.h">
+      <Filter>Inception\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Inception\Events\KeyEvent.h">
+      <Filter>Inception\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Inception\Events\MouseEvent.h">
+      <Filter>Inception\Events</Filter>
+    </ClInclude>
     <ClInclude Include="src\Inception\Log.h">
       <Filter>Inception</Filter>
     </ClInclude>
-    <ClInclude Include="src\Inception\Events\Event.h" />
-    <ClInclude Include="src\Inception\Events\KeyEvent.h" />
-    <ClInclude Include="src\Inception\Events\MouseEvent.h" />
-    <ClInclude Include="src\Inception\Events\ApplicationEvent.h" />
+    <ClInclude Include="src\icppch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Inception\Application.cpp">
@@ -31,5 +43,6 @@
     <ClCompile Include="src\Inception\Log.cpp">
       <Filter>Inception</Filter>
     </ClCompile>
+    <ClCompile Include="src\icppch.cpp" />
   </ItemGroup>
 </Project>

@@ -1,9 +1,7 @@
 #pragma once
 
-#include "../Core.h"
+#include "Inception/Core.h"
 
-#include <string>
-#include <functional>
 
 namespace Inception {
 	enum class EventType
