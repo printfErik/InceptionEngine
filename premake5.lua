@@ -64,14 +64,17 @@ project "Inception"
 
 	filter "configurations:Debug" 
 		defines "ICP_DEBUG"
+		buildoptions "/MDd"
 		symbols "On"
 
 	filter "configurations:Release"
 		defines "ICP_RELEASE"
+		buildoptions "/MD"
 		optimize "On"
 
 	filter "configurations:Dist"
 		defines "ICP_DIST"
+		buildoptions "/MD"
 		optimize "On"
 
 
@@ -113,12 +116,15 @@ project "Prototype"
 
 	filter "configurations:Debug" 
 		defines "ICP_DEBUG"
+		buildoptions "/MDd"
 		symbols "On"
 
 	filter "configurations:Release"
 		defines "ICP_RELEASE"
+		buildoptions "/MD"
 		optimize "On"
 
 	filter "configurations:Dist"
 		defines "ICP_DIST"
+		buildoptions "/MD"
 		optimize "On"
