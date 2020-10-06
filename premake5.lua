@@ -13,9 +13,11 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 IncludeDir = {}
 IncludeDir["GLFW"] = "Inception/vendor/GLFW/include"
 IncludeDir["Glad"] = "Inception/vendor/Glad/include"
+IncludeDir["imgui"] = "Inception/vendor/imgui/include"
 
 include "Inception/vendor/GLFW"
 include "Inception/vendor/Glad"
+include "Inception/vendor/imgui"
 
 project "Inception"
 
@@ -40,13 +42,15 @@ project "Inception"
 		"%{prj.name}/src",
 		"%{prj.name}/vendor/spdlog/include",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.Glad}"
+		"%{IncludeDir.Glad}",
+		"%{IncludeDir.imgui}"
 	}
 
 	links
 	{
 		"GLFW",
 		"Glad",
+		"imgui",
 		"opengl32.lib"
 	}
 
