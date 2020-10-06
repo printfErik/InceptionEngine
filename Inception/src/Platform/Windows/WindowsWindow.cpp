@@ -5,6 +5,8 @@
 #include "Inception/Events/KeyEvent.h"
 #include "Inception/Events/MouseEvent.h"
 
+#include <glad/glad.h>
+
 namespace Inception {
 	static bool s_GLFWInitialized = false;
 
@@ -47,6 +49,9 @@ namespace Inception {
 
 		m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.WindowTitle.c_str(), nullptr, nullptr);
 		glfwMakeContextCurrent(m_Window);
+		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+		ICP_CORE_ASSERT(status, "Failed to initailize Glad!");
+
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		SetVSync(true);
 

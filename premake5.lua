@@ -12,8 +12,10 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 IncludeDir = {}
 IncludeDir["GLFW"] = "Inception/vendor/GLFW/include"
+IncludeDir["Glad"] = "Inception/vendor/Glad/include"
 
 include "Inception/vendor/GLFW"
+include "Inception/vendor/Glad"
 
 project "Inception"
 
@@ -37,12 +39,14 @@ project "Inception"
 	{
 		"%{prj.name}/src",
 		"%{prj.name}/vendor/spdlog/include",
-		"%{IncludeDir.GLFW}"
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.Glad}"
 	}
 
 	links
 	{
 		"GLFW",
+		"Glad",
 		"opengl32.lib"
 	}
 
@@ -54,7 +58,8 @@ project "Inception"
 		defines
 		{
 			"INCEPTION_PLATFORM_WINDOWS",
-			"INCEPTION_BUILD_DLL"
+			"INCEPTION_BUILD_DLL",
+			"GLFW_INCLUDE_NONE"
 		}
 
 		postbuildcommands

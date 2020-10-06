@@ -1,7 +1,7 @@
 #include "icppch.h"
 #include "Application.h"
 #include "Inception/Log.h"
-#include <GLFW/glfw3.h>
+#include <glad/glad.h>
 
 namespace Inception {
 
