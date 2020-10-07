@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>icppch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>INCEPTION_PLATFORM_WINDOWS;INCEPTION_BUILD_DLL;GLFW_INCLUDE_NONE;ICP_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\Glad\include;vendor\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\Glad\include;vendor\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -103,7 +103,7 @@
       <PrecompiledHeaderFile>icppch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>INCEPTION_PLATFORM_WINDOWS;INCEPTION_BUILD_DLL;GLFW_INCLUDE_NONE;ICP_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\Glad\include;vendor\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\Glad\include;vendor\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -130,7 +130,7 @@
       <PrecompiledHeaderFile>icppch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>INCEPTION_PLATFORM_WINDOWS;INCEPTION_BUILD_DLL;GLFW_INCLUDE_NONE;ICP_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\Glad\include;vendor\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\Glad\include;vendor\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -160,18 +160,22 @@
     <ClInclude Include="src\Inception\Events\Event.h" />
     <ClInclude Include="src\Inception\Events\KeyEvent.h" />
     <ClInclude Include="src\Inception\Events\MouseEvent.h" />
+    <ClInclude Include="src\Inception\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\Inception\Layer.h" />
     <ClInclude Include="src\Inception\LayerStack.h" />
     <ClInclude Include="src\Inception\Log.h" />
     <ClInclude Include="src\Inception\Window.h" />
+    <ClInclude Include="src\Platform\OpenGL\ImGuiOpenGLRenderer.h" />
     <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
     <ClInclude Include="src\icppch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Inception\Application.cpp" />
+    <ClCompile Include="src\Inception\ImGui\ImGuiLayer.cpp" />
     <ClCompile Include="src\Inception\Layer.cpp" />
     <ClCompile Include="src\Inception\LayerStack.cpp" />
     <ClCompile Include="src\Inception\Log.cpp" />
+    <ClCompile Include="src\Platform\OpenGL\ImGuiOpenGLRenderer.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="src\icppch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

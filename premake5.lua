@@ -13,7 +13,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 IncludeDir = {}
 IncludeDir["GLFW"] = "Inception/vendor/GLFW/include"
 IncludeDir["Glad"] = "Inception/vendor/Glad/include"
-IncludeDir["imgui"] = "Inception/vendor/imgui/include"
+IncludeDir["imgui"] = "Inception/vendor/imgui"
 
 include "Inception/vendor/GLFW"
 include "Inception/vendor/Glad"
