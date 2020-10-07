@@ -27,6 +27,7 @@ public:
 	Prototype()
 	{
 		PushLayer(new ExampleLayer());
+		PushOverLayer(new Inception::ImGuiLayer());
 	}
 	~Prototype()
 	{
