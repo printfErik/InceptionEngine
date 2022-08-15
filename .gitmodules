@@ -1,9 +1,0 @@
-[submodule "Inception/vendor/spdlog"]
-	path = Inception/vendor/spdlog
-	url = https://github.com/gabime/spdlog.git
-[submodule "Inception/vendor/GLFW"]
-	path = Inception/vendor/GLFW
-	url = https://github.com/printfErik/glfw
-[submodule "Inception/vendor/imgui"]
-	path = Inception/vendor/imgui
-	url = https://github.com/printfErik/imgui

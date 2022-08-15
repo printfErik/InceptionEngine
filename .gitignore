@@ -1,14 +1,2 @@
-# vs stuff
 .vs/
-**.sln
-**.vcxproj
-**.vcxproj.filters
-**.vcxproj.user
-
-# log file
-*.log
-
-# binary
-bin/
-bin-int/
-*.bat
+out/
