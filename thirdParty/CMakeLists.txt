@@ -18,3 +18,7 @@ if(NOT TARGET glfw)
     set_target_properties(glfw PROPERTIES FOLDER ${third_party_folder}/glfw)
     set_target_properties(update_mappings PROPERTIES FOLDER ${third_party_folder}/glfw)
 endif()
+
+if (NOT TARGET Vulkan-Headers)
+	add_subdirectory(vulkanHeaders)
+endif()
