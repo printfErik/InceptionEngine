@@ -1,11 +1,19 @@
-﻿# CMakeList.txt: InceptionEngine 的 CMake 项目，在此处包括源代码并定义
-# 项目特定的逻辑。
-#
-cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required (VERSION 3.19)
 
-project ("InceptionEngine")
+set(PROJECT_NAME "InceptionEngine")
 
-# 将源代码添加到此项目的可执行文件。
-add_executable (InceptionEngine "src/InceptionEngine.cpp" "src/InceptionEngine.h")
+project (${PROJECT_NAME})
 
-# TODO: 如有需要，请添加测试并安装目标。
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(INCEPTION_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(ENGINE_CORE_DIR "${INCEPTION_ROOT_DIR}/src/core")
+set(THIRD_PARTY_DIR "${INCEPTION_ROOT_DIR}/thirdParty")
+
+add_subdirectory(thirdParty)
+add_subdirectory(src/core)
+
+
+
