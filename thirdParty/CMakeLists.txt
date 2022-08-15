@@ -21,4 +21,5 @@ endif()
 
 if (NOT TARGET Vulkan-Headers)
 	add_subdirectory(vulkanHeaders)
+	set_target_properties(Vulkan-Headers PROPERTIES FOLDER ${third_party_folder}/vulkanHeaders)
 endif()
