@@ -1,6 +1,5 @@
 set(third_party_folder "thirdParty")
 
-
 if(NOT TARGET glm)
     option(BUILD_STATIC_LIBS "" ON)
     option(BUILD_TESTING "" OFF)
@@ -19,7 +18,3 @@ if(NOT TARGET glfw)
     set_target_properties(update_mappings PROPERTIES FOLDER ${third_party_folder}/glfw)
 endif()
 
-if (NOT TARGET Vulkan-Headers)
-	add_subdirectory(vulkanHeaders)
-	set_target_properties(Vulkan-Headers PROPERTIES FOLDER ${third_party_folder}/vulkanHeaders)
-endif()
