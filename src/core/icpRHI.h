@@ -1,16 +1,16 @@
 #pragma once
 #include "icpMacros.h"
+#include "icpWindowSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-class icpRHIBase
+	class icpRHIBase
 {
 public:
 	icpRHIBase() = default;
 
 	virtual	~icpRHIBase() = 0;
 
-	virtual bool initialize() = 0;
+	virtual bool initialize(std::shared_ptr<icpWindowSystem> window_system) = 0;
 
 };
 

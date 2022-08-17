@@ -5,7 +5,7 @@
 INCEPTION_BEGIN_NAMESPACE
 
 class icpRenderSystem;
-
+class icpWindowSystem;
 class InceptionEngine
 {
 public:
@@ -22,6 +22,7 @@ public:
 
 private:
 	std::shared_ptr<icpRenderSystem> m_renderSystem;
+	std::shared_ptr<icpWindowSystem> m_windowSystem;
 };
 
 INCEPTION_END_NAMESPACE

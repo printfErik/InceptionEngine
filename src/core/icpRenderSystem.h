@@ -9,7 +9,7 @@ public:
 	icpRenderSystem();
 	~icpRenderSystem();
 
-	bool initializeRenderSystem();
+	bool initializeRenderSystem(std::shared_ptr<icpWindowSystem> window_system);
 
 private:
 	std::shared_ptr<icpRHIBase> m_rhi;

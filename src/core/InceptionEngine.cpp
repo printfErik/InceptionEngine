@@ -1,4 +1,5 @@
 ﻿#include "InceptionEngine.h"
+#include "icpWindowSystem.h"
 #include "icpRenderSystem.h"
 
 
@@ -10,8 +11,11 @@ InceptionEngine::~InceptionEngine()
 
 bool InceptionEngine::initializeEngine()
 {
+	m_windowSystem = std::make_shared<icpWindowSystem>();
+	m_windowSystem->initializeWindowSystem();
+
 	m_renderSystem = std::make_shared<icpRenderSystem>();
-	m_renderSystem->initializeRenderSystem();
+	m_renderSystem->initializeRenderSystem(m_windowSystem);
 	return true;
 }
 
