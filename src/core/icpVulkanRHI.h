@@ -1,10 +1,28 @@
 #pragma once
+#include <optional>
+#include <coroutine>
+
 #include "icpMacros.h"
 #include "icpRHI.h"
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
 
 INCEPTION_BEGIN_NAMESPACE
+
+struct QueueFamilyIndices
+{
+	std::optional<uint32_t> m_graphicsFamily;
+	std::optional<uint32_t> m_presentFamily;
+
+	bool isComplete() const { return m_graphicsFamily.has_value() && m_presentFamily.has_value(); }
+};
+
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR        m_capabilities{};
+	std::vector<VkSurfaceFormatKHR> m_formats;
+	std::vector<VkPresentModeKHR>   m_presentModes;
+};
 
 class icpVulkanRHI : public icpRHIBase
 {
@@ -14,14 +32,25 @@ public:
 
 	bool initialize(std::shared_ptr<icpWindowSystem> window_system) override;
 	void cleanup();
+
 	
 
 private:
 	void createInstance();
 	void initializeDebugMessenger();
 	void createWindowSurface();
+	void initializePhysicalDevice();
+	void createLogicalDevice();
 
 	bool checkValidationLayerSupport();
+
+	bool isDeviceSuitable(VkPhysicalDevice device);
+
+	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+
+	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+
+	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 	VkResult createDebugUtilsMessengerEXT(VkInstance instance,
@@ -36,6 +65,12 @@ private:
 	VkInstance m_instance{ VK_NULL_HANDLE };
 	VkSurfaceKHR m_surface{ VK_NULL_HANDLE };
 	GLFWwindow* m_window{ VK_NULL_HANDLE };
+	VkPhysicalDevice m_physicalDevice{ VK_NULL_HANDLE };
+	QueueFamilyIndices m_queueIndices;
+	VkDevice m_device{ VK_NULL_HANDLE };
+	VkQueue  m_graphicsQueue{ VK_NULL_HANDLE };
+	VkQueue m_presentQueue{ VK_NULL_HANDLE };
+
 
 	const std::vector<const char*> m_validationLayers{ "VK_LAYER_KHRONOS_validation" };
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };
@@ -45,6 +80,13 @@ private:
 	// debug utilities label
 	PFN_vkCmdBeginDebugUtilsLabelEXT m_vk_cmd_begin_debug_utils_label_ext = nullptr;
 	PFN_vkCmdEndDebugUtilsLabelEXT   m_vk_cmd_end_debug_utils_label_ext = nullptr;
+
+	std::vector<char const*> m_requiredDeviceExtensions = {
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+#if defined(__MACH__)
+			"VK_KHR_portability_subset"
+#endif
+	};
 };
 
 INCEPTION_END_NAMESPACE
