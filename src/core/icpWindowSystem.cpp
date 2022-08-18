@@ -9,7 +9,7 @@ icpWindowSystem::icpWindowSystem()
 
 icpWindowSystem::~icpWindowSystem()
 {
-	glfwDestroyWindow(m_window.get());
+	glfwDestroyWindow(m_window);
 	glfwTerminate();
 }
 
@@ -25,21 +25,30 @@ bool icpWindowSystem::initializeWindowSystem()
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-	auto window = glfwCreateWindow(m_width, m_height, "Inception Engine", nullptr, nullptr);
-	//m_window = std::shared_ptr<GLFWwindow>(window);
-
-	/*
+	m_window = glfwCreateWindow(m_width, m_height, "Inception Engine", nullptr, nullptr);
 	if (!m_window)
 	{
 		throw std::runtime_error("glfwCreateWindow failed");
 	}
-	*/
+
+	return true;
 }
 
-std::shared_ptr<GLFWwindow> icpWindowSystem::getWindow() const
+GLFWwindow* icpWindowSystem::getWindow() const
 {
 	return m_window;
 }
+
+bool icpWindowSystem::shouldClose() const
+{
+	return glfwWindowShouldClose(m_window);
+}
+
+void icpWindowSystem::pollEvent() const
+{
+	glfwPollEvents();
+}
+
 
 
 INCEPTION_END_NAMESPACE

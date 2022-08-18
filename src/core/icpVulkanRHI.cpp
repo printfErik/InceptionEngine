@@ -6,11 +6,12 @@ INCEPTION_BEGIN_NAMESPACE
 
 icpVulkanRHI::~icpVulkanRHI()
 {
+	cleanup();
 }
 
 bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 {
-	auto window = window_system->getWindow();
+	m_window = window_system->getWindow();
 
 	createInstance();
 	initializeDebugMessenger();
@@ -50,7 +51,7 @@ void icpVulkanRHI::createInstance()
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
 	
-	createInfo.enabledExtensionCount = static_cast<uint32_t>(glfwExtensionCount);
+	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 	createInfo.ppEnabledExtensionNames = extensions.data();
 
 	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
@@ -136,7 +137,8 @@ void icpVulkanRHI::initializeDebugMessenger()
 	{
 		VkDebugUtilsMessengerCreateInfoEXT createInfo;
 		populateDebugMessengerCreateInfo(createInfo);
-		if (VK_SUCCESS != createDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &m_debugMessenger))
+		auto result = createDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &m_debugMessenger);
+		if (VK_SUCCESS != result)
 		{
 			throw std::runtime_error("failed to set up debug messenger!");
 		}

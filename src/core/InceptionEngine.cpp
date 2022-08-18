@@ -21,11 +21,16 @@ bool InceptionEngine::initializeEngine()
 
 void InceptionEngine::startEngine()
 {
-
+	while(!m_windowSystem->shouldClose())
+	{
+		m_windowSystem->pollEvent();
+	}
 }
 
 bool InceptionEngine::stopEngine()
 {
+	m_renderSystem.reset();
+	m_windowSystem.reset();
 	return true;
 }
 

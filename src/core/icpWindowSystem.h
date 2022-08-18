@@ -2,7 +2,7 @@
 #include "icpMacros.h"
 #include <iostream>
 
-#include <vulkan/vulkan.hpp>
+#define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 INCEPTION_BEGIN_NAMESPACE
 
@@ -13,11 +13,13 @@ public:
 	~icpWindowSystem();
 
 	bool initializeWindowSystem();
-	std::shared_ptr<GLFWwindow> getWindow() const;
+	GLFWwindow* getWindow() const;
+	bool shouldClose() const;
+	void pollEvent() const;
 
 private:
 
-	std::shared_ptr<GLFWwindow> m_window = nullptr;
+	GLFWwindow* m_window = nullptr;
 	int m_width = 0;
 	int m_height = 0;
 
