@@ -41,6 +41,8 @@ private:
 	void createWindowSurface();
 	void initializePhysicalDevice();
 	void createLogicalDevice();
+	void createSwapChain();
+
 
 	bool checkValidationLayerSupport();
 
@@ -62,6 +64,10 @@ private:
 		VkDebugUtilsMessengerEXT     debugMessenger,
 		const VkAllocationCallbacks* pAllocator);
 
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+
 	VkInstance m_instance{ VK_NULL_HANDLE };
 	VkSurfaceKHR m_surface{ VK_NULL_HANDLE };
 	GLFWwindow* m_window{ VK_NULL_HANDLE };
@@ -72,7 +78,7 @@ private:
 	VkQueue m_presentQueue{ VK_NULL_HANDLE };
 
 
-	const std::vector<const char*> m_validationLayers{ "VK_LAYER_KHRONOS_validation" };
+	
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };
 	bool m_enableValidationLayers = true;
 	bool m_enableDebugUtilsLabel = true;
@@ -81,6 +87,8 @@ private:
 	PFN_vkCmdBeginDebugUtilsLabelEXT m_vk_cmd_begin_debug_utils_label_ext = nullptr;
 	PFN_vkCmdEndDebugUtilsLabelEXT   m_vk_cmd_end_debug_utils_label_ext = nullptr;
 
+
+	const std::vector<const char*> m_validationLayers{ "VK_LAYER_KHRONOS_validation" };
 	std::vector<char const*> m_requiredDeviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 #if defined(__MACH__)

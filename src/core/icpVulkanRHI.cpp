@@ -3,6 +3,9 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <limits>
+#include <algorithm>
+#include <cstdint>
 
 INCEPTION_BEGIN_NAMESPACE
 	icpVulkanRHI::~icpVulkanRHI()
@@ -19,6 +22,8 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createWindowSurface();
 	initializePhysicalDevice();
 	createLogicalDevice();
+	createSwapChain();
+
 	return true;
 }
 
@@ -267,12 +272,7 @@ bool icpVulkanRHI::isDeviceSuitable(VkPhysicalDevice device)
 	VkPhysicalDeviceFeatures physical_device_features;
 	vkGetPhysicalDeviceFeatures(device, &physical_device_features);
 
-	if (!queueIndices.isComplete() || !isSwapchainAdequate || !physical_device_features.samplerAnisotropy)
-	{
-		return false;
-	}
-
-	return true;
+	return queueIndices.isComplete() && isSwapchainAdequate && physical_device_features.samplerAnisotropy;
 }
 
 bool icpVulkanRHI::checkDeviceExtensionSupport(VkPhysicalDevice device)
@@ -394,6 +394,53 @@ void icpVulkanRHI::createLogicalDevice()
 	// initialize queues of this device
 	vkGetDeviceQueue(m_device, m_queueIndices.m_graphicsFamily.value(), 0, &m_graphicsQueue);
 	vkGetDeviceQueue(m_device, m_queueIndices.m_presentFamily.value(), 0, &m_presentQueue);
+}
+
+VkSurfaceFormatKHR icpVulkanRHI::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+{
+	for (const auto& format : availableFormats)
+	{
+		if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		{
+			return format;
+		}
+	}
+	return availableFormats[0];
+}
+
+VkPresentModeKHR icpVulkanRHI::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+{
+	for (const auto& mode : availablePresentModes)
+	{
+		if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
+		{
+			return mode;
+		}
+	}
+	return availablePresentModes[0];
+}
+
+VkExtent2D icpVulkanRHI::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+{
+	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+	{
+		return capabilities.currentExtent;
+	}
+	else
+	{
+		int width, height;
+		glfwGetFramebufferSize(m_window, &width, &height);
+
+		VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+
+		actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+		actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+		return actualExtent;
+	}
+}
+
+void createSwapChain()
+{
 
 }
 
