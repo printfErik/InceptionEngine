@@ -1,6 +1,8 @@
 #pragma once
 #include "icpMacros.h"
 #include "icpRHI.h"
+#include "icpRenderPipeline.h"
+
 INCEPTION_BEGIN_NAMESPACE
 
 class icpRenderSystem
@@ -13,8 +15,7 @@ public:
 
 private:
 	std::shared_ptr<icpRHIBase> m_rhi;
+	std::shared_ptr<icpRenderPipeline> m_renderPipeline;
 };
-
-
 
 INCEPTION_END_NAMESPACE

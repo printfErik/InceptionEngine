@@ -16,6 +16,10 @@ bool icpRenderSystem::initializeRenderSystem(std::shared_ptr<icpWindowSystem> wi
 {
 	m_rhi = std::make_shared<icpVulkanRHI>();
 	m_rhi->initialize(window_system);
+
+	m_renderPipeline = std::make_shared<icpRenderPipeline>();
+	m_renderPipeline->initialize();
+
 	return true;
 }
 

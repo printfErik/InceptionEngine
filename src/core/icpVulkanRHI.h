@@ -1,6 +1,6 @@
 #pragma once
 #include <optional>
-#include <coroutine>
+#include <vector>
 
 #include "icpMacros.h"
 #include "icpRHI.h"
@@ -42,7 +42,7 @@ private:
 	void initializePhysicalDevice();
 	void createLogicalDevice();
 	void createSwapChain();
-
+	void createSwapChainImageViews();
 
 	bool checkValidationLayerSupport();
 
@@ -78,6 +78,11 @@ private:
 	VkQueue m_presentQueue{ VK_NULL_HANDLE };
 
 
+	VkSwapchainKHR m_swapChain{ VK_NULL_HANDLE };
+	std::vector<VkImage> m_swapChainImages;
+	std::vector<VkImageView> m_swapChainImageViews;
+	VkFormat m_swapChainImageFormat{ VK_FORMAT_UNDEFINED };
+	VkExtent2D m_swapChainExtent;
 	
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };
 	bool m_enableValidationLayers = true;
