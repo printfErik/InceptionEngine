@@ -68,6 +68,7 @@ private:
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
+public:
 	VkInstance m_instance{ VK_NULL_HANDLE };
 	VkSurfaceKHR m_surface{ VK_NULL_HANDLE };
 	GLFWwindow* m_window{ VK_NULL_HANDLE };
@@ -83,7 +84,8 @@ private:
 	std::vector<VkImageView> m_swapChainImageViews;
 	VkFormat m_swapChainImageFormat{ VK_FORMAT_UNDEFINED };
 	VkExtent2D m_swapChainExtent;
-	
+
+private:
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };
 	bool m_enableValidationLayers = true;
 	bool m_enableDebugUtilsLabel = true;
