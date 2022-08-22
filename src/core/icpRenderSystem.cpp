@@ -1,5 +1,6 @@
 #include "icpRenderSystem.h"
 #include "icpVulkanRHI.h"
+#include <memory>
 
 INCEPTION_BEGIN_NAMESPACE
 	icpRenderSystem::icpRenderSystem()
@@ -18,7 +19,7 @@ bool icpRenderSystem::initializeRenderSystem(std::shared_ptr<icpWindowSystem> wi
 	m_rhi->initialize(window_system);
 
 	m_renderPipeline = std::make_shared<icpRenderPipeline>();
-	m_renderPipeline->initialize();
+	m_renderPipeline->initialize(std::dynamic_pointer_cast<icpVulkanRHI>(m_rhi));
 
 	return true;
 }

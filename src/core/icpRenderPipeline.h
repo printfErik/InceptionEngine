@@ -1,11 +1,10 @@
 #pragma once
 #include "icpMacros.h"
-#include "vulkan/vulkan.hpp"
+#include <vulkan/vulkan.hpp>
 #include "icpPipelineBase.h"
+#include "icpVulkanRHI.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-class icpVulkanRHI;
 
 class icpRenderPipeline : public icpPipelineBase
 {
