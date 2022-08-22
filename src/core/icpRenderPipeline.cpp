@@ -40,12 +40,12 @@ bool icpRenderPipeline::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 	shaderCreateInfos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 
 	std::filesystem::path cwd(std::filesystem::current_path());
-	shaderCreateInfos[0].module = createShaderModule("E:\\InceptionEngine\\src\\shaders\\vert.spv");
+	shaderCreateInfos[0].module = createShaderModule("../shaders/vert.spv");
 	shaderCreateInfos[0].stage = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 	shaderCreateInfos[0].pName = "main";
 
 	shaderCreateInfos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shaderCreateInfos[1].module = createShaderModule("E:\\InceptionEngine\\src\\shaders\\fragment.spv");
+	shaderCreateInfos[1].module = createShaderModule("../shaders/fragment.spv");
 	shaderCreateInfos[1].stage = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 	shaderCreateInfos[1].pName = "main";
 
@@ -137,13 +137,18 @@ bool icpRenderPipeline::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 
 VkShaderModule icpRenderPipeline::createShaderModule(const char* shaderFileName)
 {
-	std::ifstream inFile(shaderFileName, std::ios::binary | std::ios::in);
-	std::vector<char> content((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
+	std::ifstream inFile(shaderFileName, std::ios::binary | std::ios::ate);
+	size_t fileSize = (size_t)inFile.tellg();
+	std::vector<char> content(fileSize);
+
+	inFile.seekg(0);
+	inFile.read(content.data(), fileSize);
+
 	inFile.close();
 
 	VkShaderModuleCreateInfo creatInfo;
 	creatInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	creatInfo.pCode = (uint32_t*)content.data();
+	creatInfo.pCode = reinterpret_cast<const uint32_t*>(content.data());
 	creatInfo.codeSize = content.size();
 
 	VkShaderModule shader{ VK_NULL_HANDLE };
