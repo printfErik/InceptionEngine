@@ -25,6 +25,9 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createLogicalDevice();
 	createSwapChain();
 	createSwapChainImageViews();
+
+	createCommandPool();
+
 	return true;
 }
 
@@ -529,6 +532,11 @@ void icpVulkanRHI::createSwapChainImageViews()
 			throw std::runtime_error("failed to create image views!");
 		}
 	}
+}
+
+void icpVulkanRHI::createCommandPool()
+{
+
 }
 
 INCEPTION_END_NAMESPACE

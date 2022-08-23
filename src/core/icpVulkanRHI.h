@@ -33,8 +33,6 @@ public:
 	bool initialize(std::shared_ptr<icpWindowSystem> window_system) override;
 	void cleanup();
 
-	
-
 private:
 	void createInstance();
 	void initializeDebugMessenger();
@@ -43,6 +41,8 @@ private:
 	void createLogicalDevice();
 	void createSwapChain();
 	void createSwapChainImageViews();
+	void createCommandPool();
+
 
 	bool checkValidationLayerSupport();
 
