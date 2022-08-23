@@ -20,12 +20,15 @@ icpRenderPipeline::~icpRenderPipeline()
 
 void icpRenderPipeline::cleanup()
 {
-	vkDestroyPipeline(m_rhi->m_device, m_pipeline, nullptr);
-
 	for (auto& shader : m_shaderModules)
 	{
 		vkDestroyShaderModule(m_rhi->m_device, shader, nullptr);
 	}
+
+	vkDestroyRenderPass(m_rhi->m_device, m_renderPass, nullptr);
+	vkDestroyPipelineLayout(m_rhi->m_device, m_pipelineLayout, nullptr);
+	vkDestroyPipeline(m_rhi->m_device, m_pipeline, nullptr);
+	
 }
 
 bool icpRenderPipeline::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
@@ -179,9 +182,6 @@ bool icpRenderPipeline::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 	{
 		throw std::runtime_error("create renderPipeline failed");
 	}
-
-	vkDestroyShaderModule(m_rhi->m_device, vertShader.module, nullptr);
-	vkDestroyShaderModule(m_rhi->m_device, fragShader.module, nullptr);
 
 	return true;
 }
