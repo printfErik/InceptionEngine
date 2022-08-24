@@ -85,6 +85,9 @@ void icpVulkanRHI::createInstance()
 
 void icpVulkanRHI::cleanup()
 {
+
+	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+
 	for (const auto& imgView : m_swapChainImageViews)
 	{
 		vkDestroyImageView(m_device, imgView, nullptr);
@@ -536,6 +539,26 @@ void icpVulkanRHI::createSwapChainImageViews()
 
 void icpVulkanRHI::createCommandPool()
 {
+	VkCommandPoolCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	createInfo.flags = VkCommandPoolCreateFlagBits::VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	createInfo.queueFamilyIndex = m_queueIndices.m_graphicsFamily.value();
+
+	if (vkCreateCommandPool(m_device, &createInfo, nullptr, &m_commandPool))
+	{
+		throw std::runtime_error("failed to create command pool!");
+	}
+}
+
+void icpVulkanRHI::createCommandBuffer()
+{
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = m_commandPool;
+	allocInfo.commandBufferCount = 1;
+	allocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	if (vkAllocateCommandBuffers(m_device, &allocInfo, &))
 
 }
 

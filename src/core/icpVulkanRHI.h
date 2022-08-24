@@ -42,7 +42,7 @@ private:
 	void createSwapChain();
 	void createSwapChainImageViews();
 	void createCommandPool();
-
+	void createCommandBuffer();
 
 	bool checkValidationLayerSupport();
 
@@ -84,6 +84,9 @@ public:
 	std::vector<VkImageView> m_swapChainImageViews;
 	VkFormat m_swapChainImageFormat{ VK_FORMAT_UNDEFINED };
 	VkExtent2D m_swapChainExtent;
+
+	VkCommandPool m_commandPool{ VK_NULL_HANDLE };
+	VkCommandBuffer m_commandBuffer{ VK_NULL_HANDLE };
 
 private:
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };
