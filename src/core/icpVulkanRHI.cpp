@@ -550,7 +550,7 @@ void icpVulkanRHI::createCommandPool()
 	}
 }
 
-void icpVulkanRHI::createCommandBuffer()
+void icpVulkanRHI::allocateCommandBuffer()
 {
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -558,7 +558,10 @@ void icpVulkanRHI::createCommandBuffer()
 	allocInfo.commandBufferCount = 1;
 	allocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-	if (vkAllocateCommandBuffers(m_device, &allocInfo, &))
+	if (vkAllocateCommandBuffers(m_device, &allocInfo, &m_commandBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate command buffer!");
+	}
 
 }
 

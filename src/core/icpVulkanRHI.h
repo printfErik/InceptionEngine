@@ -41,8 +41,9 @@ private:
 	void createLogicalDevice();
 	void createSwapChain();
 	void createSwapChainImageViews();
+
 	void createCommandPool();
-	void createCommandBuffer();
+	void allocateCommandBuffer();
 
 	bool checkValidationLayerSupport();
 

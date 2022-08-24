@@ -16,7 +16,9 @@ public:
 	VkShaderModule createShaderModule(const char* shaderFileName);
 	void cleanup();
 	void createRenderPass();
+	void createFrameBuffers();
 
+	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 private:
 
 	VkPipeline m_pipeline{VK_NULL_HANDLE};
@@ -26,6 +28,8 @@ private:
 	std::vector<VkShaderModule> m_shaderModules;
 
 	std::shared_ptr<icpVulkanRHI> m_rhi = nullptr;
+
+	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
 };
 
