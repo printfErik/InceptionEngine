@@ -15,10 +15,15 @@ public:
 	bool initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI) override;
 	VkShaderModule createShaderModule(const char* shaderFileName);
 	void cleanup();
+
 	void createRenderPass();
+	void createGraphicsPipeline();	
 	void createFrameBuffers();
 
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
+	void render();
+
 private:
 
 	VkPipeline m_pipeline{VK_NULL_HANDLE};

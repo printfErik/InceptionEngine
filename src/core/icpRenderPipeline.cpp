@@ -40,7 +40,14 @@ bool icpRenderPipeline::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 	m_rhi = vulkanRHI;
 
 	createRenderPass();
+	createGraphicsPipeline();
+	createFrameBuffers();
 
+	return true;
+}
+
+void icpRenderPipeline::createGraphicsPipeline()
+{
 	VkGraphicsPipelineCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
@@ -64,11 +71,11 @@ bool icpRenderPipeline::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 
 	info.stageCount = 2;
 	info.pStages = shaderCreateInfos.data();
-	
+
 	// Vertex Input
 	VkPipelineVertexInputStateCreateInfo vertexInput{};
 	vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	
+
 	info.pVertexInputState = &vertexInput;
 
 	// Input Assembly
@@ -95,7 +102,7 @@ bool icpRenderPipeline::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 	// Viewport and Scissor
 	VkPipelineViewportStateCreateInfo viewportState{};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	
+
 	VkViewport viewport;
 	viewport.x = 0.f;
 	viewport.y = 0.f;
@@ -110,7 +117,7 @@ bool icpRenderPipeline::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 	VkRect2D scissor;
 	scissor.extent = m_rhi->m_swapChainExtent;
 	scissor.offset = { 0,0 };
-	
+
 	viewportState.pScissors = &scissor;
 	viewportState.scissorCount = 1;
 
@@ -183,12 +190,11 @@ bool icpRenderPipeline::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 
 	info.basePipelineHandle = VK_NULL_HANDLE;
 
-	if (vkCreateGraphicsPipelines(vulkanRHI->m_device, VK_NULL_HANDLE, 1, &info, VK_NULL_HANDLE, &m_pipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(m_rhi->m_device, VK_NULL_HANDLE, 1, &info, VK_NULL_HANDLE, &m_pipeline) != VK_SUCCESS)
 	{
 		throw std::runtime_error("create renderPipeline failed");
 	}
 
-	return true;
 }
 
 VkShaderModule icpRenderPipeline::createShaderModule(const char* shaderFileName)
@@ -317,6 +323,13 @@ void icpRenderPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint3
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
 		throw std::runtime_error("failed to record command buffer!");
 	}
+}
+
+void icpRenderPipeline::render()
+{
+	m_rhi->waitForFence();
+	auto index = m_rhi->acquireNextImageFromSwapchain();
+	recordCommandBuffer(m_rhi->m_commandBuffer, index);
 }
 
 

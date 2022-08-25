@@ -12,6 +12,7 @@ public:
 	~icpRenderSystem();
 
 	bool initializeRenderSystem(std::shared_ptr<icpWindowSystem> window_system);
+	void drawFrame();
 
 private:
 	std::shared_ptr<icpRHIBase> m_rhi;

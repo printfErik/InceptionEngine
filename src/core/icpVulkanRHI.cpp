@@ -27,6 +27,7 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createSwapChainImageViews();
 
 	createCommandPool();
+	allocateCommandBuffer();
 
 	return true;
 }
@@ -562,7 +563,43 @@ void icpVulkanRHI::allocateCommandBuffer()
 	{
 		throw std::runtime_error("failed to allocate command buffer!");
 	}
+}
 
+void icpVulkanRHI::createSyncObjects()
+{
+	VkSemaphoreCreateInfo semaphoreInfo{};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VkFenceCreateFlagBits::VK_FENCE_CREATE_SIGNALED_BIT;
+
+	if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableForRenderingSemaphore) ||
+		vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedForPresentationSemaphore) ||
+		vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFence) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create sync objects!");
+	}
+}
+
+void icpVulkanRHI::waitForFence()
+{
+	if (vkWaitForFences(m_device, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to wait for fence!");
+	}
+}
+
+uint32_t icpVulkanRHI::acquireNextImageFromSwapchain()
+{
+	uint32_t imageIndex;
+	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableForRenderingSemaphore, m_inFlightFence, &imageIndex);
+	return imageIndex;
+}
+
+void icpVulkanRHI::resetCommandBuffer()
+{
+	vkResetCommandBuffer(m_commandBuffer, 0);
 }
 
 INCEPTION_END_NAMESPACE

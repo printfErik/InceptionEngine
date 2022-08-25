@@ -33,6 +33,11 @@ public:
 	bool initialize(std::shared_ptr<icpWindowSystem> window_system) override;
 	void cleanup();
 
+	void waitForFence();
+	uint32_t acquireNextImageFromSwapchain();
+	void resetCommandBuffer();
+	void submitRendering();
+
 private:
 	void createInstance();
 	void initializeDebugMessenger();
@@ -44,6 +49,8 @@ private:
 
 	void createCommandPool();
 	void allocateCommandBuffer();
+
+	void createSyncObjects();
 
 	bool checkValidationLayerSupport();
 
@@ -88,6 +95,10 @@ public:
 
 	VkCommandPool m_commandPool{ VK_NULL_HANDLE };
 	VkCommandBuffer m_commandBuffer{ VK_NULL_HANDLE };
+
+	VkSemaphore m_imageAvailableForRenderingSemaphore{ VK_NULL_HANDLE };
+	VkSemaphore m_renderFinishedForPresentationSemaphore{ VK_NULL_HANDLE };
+	VkFence m_inFlightFence{ VK_NULL_HANDLE };
 
 private:
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };

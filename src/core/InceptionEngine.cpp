@@ -24,6 +24,7 @@ void InceptionEngine::startEngine()
 	while(!m_windowSystem->shouldClose())
 	{
 		m_windowSystem->pollEvent();
+		m_renderSystem->drawFrame();
 	}
 }
 

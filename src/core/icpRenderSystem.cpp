@@ -3,7 +3,8 @@
 #include <memory>
 
 INCEPTION_BEGIN_NAMESPACE
-	icpRenderSystem::icpRenderSystem()
+
+icpRenderSystem::icpRenderSystem()
 {
 
 }
@@ -22,6 +23,11 @@ bool icpRenderSystem::initializeRenderSystem(std::shared_ptr<icpWindowSystem> wi
 	m_renderPipeline->initialize(std::dynamic_pointer_cast<icpVulkanRHI>(m_rhi));
 
 	return true;
+}
+
+void icpRenderSystem::drawFrame()
+{
+	m_renderPipeline->render();
 }
 
 INCEPTION_END_NAMESPACE
