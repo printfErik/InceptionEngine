@@ -56,12 +56,12 @@ void icpRenderPipeline::createGraphicsPipeline()
 	VkPipelineShaderStageCreateInfo fragShader{};
 
 	vertShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShader.module = createShaderModule("E:\\InceptionEngine\\src\\shaders\\vert.spv");
+	vertShader.module = createShaderModule("E:\\Development\\InceptionEngine\\src\\shaders\\vert.spv");
 	vertShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 	vertShader.pName = "main";
 
 	fragShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShader.module = createShaderModule("E:\\InceptionEngine\\src\\shaders\\fragment.spv");
+	fragShader.module = createShaderModule("E:\\Development\\InceptionEngine\\src\\shaders\\fragment.spv");
 	fragShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 	fragShader.pName = "main";
 
@@ -244,12 +244,22 @@ void icpRenderPipeline::createRenderPass()
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
 
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.attachmentCount = 1;
 	renderPassInfo.pAttachments = &colorAttachment;
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
 
 	if (vkCreateRenderPass(m_rhi->m_device, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create render pass!");
@@ -329,6 +339,7 @@ void icpRenderPipeline::render()
 {
 	m_rhi->waitForFence();
 	auto index = m_rhi->acquireNextImageFromSwapchain();
+	m_rhi->resetCommandBuffer();
 	recordCommandBuffer(m_rhi->m_commandBuffer, index);
 }
 

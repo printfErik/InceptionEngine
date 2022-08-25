@@ -36,7 +36,7 @@ public:
 	void waitForFence();
 	uint32_t acquireNextImageFromSwapchain();
 	void resetCommandBuffer();
-	void submitRendering();
+	void submitRendering(uint32_t _imageIndex);
 
 private:
 	void createInstance();
