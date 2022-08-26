@@ -552,15 +552,17 @@ void icpVulkanRHI::createCommandPool()
 	}
 }
 
-void icpVulkanRHI::allocateCommandBuffer()
+void icpVulkanRHI::allocateCommandBuffers()
 {
+	m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = m_commandPool;
-	allocInfo.commandBufferCount = 1;
+	allocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
 	allocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-	if (vkAllocateCommandBuffers(m_device, &allocInfo, &m_commandBuffer) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffers.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate command buffer!");
 	}
@@ -568,6 +570,10 @@ void icpVulkanRHI::allocateCommandBuffer()
 
 void icpVulkanRHI::createSyncObjects()
 {
+	m_imageAvailableForRenderingSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	m_renderFinishedForPresentationSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -575,9 +581,9 @@ void icpVulkanRHI::createSyncObjects()
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.flags = VkFenceCreateFlagBits::VK_FENCE_CREATE_SIGNALED_BIT;
 
-	if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableForRenderingSemaphore) ||
-		vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedForPresentationSemaphore) ||
-		vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFence) != VK_SUCCESS)
+	if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, m_imageAvailableForRenderingSemaphores.data()) ||
+		vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, m_renderFinishedForPresentationSemaphores.data()) ||
+		vkCreateFence(m_device, &fenceInfo, nullptr, m_inFlightFences.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create sync objects!");
 	}
@@ -595,7 +601,7 @@ void icpVulkanRHI::waitForFence()
 uint32_t icpVulkanRHI::acquireNextImageFromSwapchain()
 {
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableForRenderingSemaphore, m_inFlightFence, &imageIndex);
+	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableForRenderingSemaphore, VK_NULL_HANDLE, &imageIndex);
 	return imageIndex;
 }
 

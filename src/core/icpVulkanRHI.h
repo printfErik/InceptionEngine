@@ -9,6 +9,7 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
+
 struct QueueFamilyIndices
 {
 	std::optional<uint32_t> m_graphicsFamily;
@@ -48,7 +49,7 @@ private:
 	void createSwapChainImageViews();
 
 	void createCommandPool();
-	void allocateCommandBuffer();
+	void allocateCommandBuffers();
 
 	void createSyncObjects();
 
@@ -94,11 +95,13 @@ public:
 	VkExtent2D m_swapChainExtent;
 
 	VkCommandPool m_commandPool{ VK_NULL_HANDLE };
-	VkCommandBuffer m_commandBuffer{ VK_NULL_HANDLE };
+	std::vector<VkCommandBuffer> m_commandBuffers;
 
-	VkSemaphore m_imageAvailableForRenderingSemaphore{ VK_NULL_HANDLE };
-	VkSemaphore m_renderFinishedForPresentationSemaphore{ VK_NULL_HANDLE };
-	VkFence m_inFlightFence{ VK_NULL_HANDLE };
+	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
+	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;
+	std::vector<VkFence> m_inFlightFences;
+
+	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
 
 private:
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };

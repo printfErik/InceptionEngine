@@ -9,7 +9,7 @@ INCEPTION_BEGIN_NAMESPACE
 class icpRenderPipeline : public icpPipelineBase
 {
 public:
-	icpRenderPipeline();
+	icpRenderPipeline(const std::filesystem::path& _configFilePath);
 	~icpRenderPipeline() override;
 
 	bool initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI) override;
@@ -36,6 +36,7 @@ private:
 
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
+	std::filesystem::path m_shaderDirPath;
 };
 
 INCEPTION_END_NAMESPACE

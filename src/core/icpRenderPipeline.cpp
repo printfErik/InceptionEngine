@@ -3,13 +3,12 @@
 #include <vulkan/vulkan.hpp>
 #include <fstream>
 #include <iterator>
-#include <filesystem>
 
 INCEPTION_BEGIN_NAMESPACE
 
-icpRenderPipeline::icpRenderPipeline()
+icpRenderPipeline::icpRenderPipeline(const std::filesystem::path& _configFilePath)
 {
-
+	m_shaderDirPath = _configFilePath;
 }
 
 
@@ -56,12 +55,12 @@ void icpRenderPipeline::createGraphicsPipeline()
 	VkPipelineShaderStageCreateInfo fragShader{};
 
 	vertShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShader.module = createShaderModule("E:\\Development\\InceptionEngine\\src\\shaders\\vert.spv");
+	vertShader.module = createShaderModule((m_shaderDirPath /  "vert.spv").generic_string().c_str());
 	vertShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 	vertShader.pName = "main";
 
 	fragShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShader.module = createShaderModule("E:\\Development\\InceptionEngine\\src\\shaders\\fragment.spv");
+	fragShader.module = createShaderModule((m_shaderDirPath / "fragment.spv").generic_string().c_str());
 	fragShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 	fragShader.pName = "main";
 
@@ -341,6 +340,7 @@ void icpRenderPipeline::render()
 	auto index = m_rhi->acquireNextImageFromSwapchain();
 	m_rhi->resetCommandBuffer();
 	recordCommandBuffer(m_rhi->m_commandBuffer, index);
+	m_rhi->submitRendering(index);
 }
 
 

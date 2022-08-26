@@ -1,7 +1,7 @@
 #include "icpPipelineBase.h"
 INCEPTION_BEGIN_NAMESPACE
 
-icpPipelineBase::icpPipelineBase()
+icpPipelineBase::icpPipelineBase(const std::filesystem::path& _configFilePath)
 {
 
 }
