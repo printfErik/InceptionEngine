@@ -9,6 +9,7 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
+static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
 
 struct QueueFamilyIndices
 {
@@ -34,10 +35,10 @@ public:
 	bool initialize(std::shared_ptr<icpWindowSystem> window_system) override;
 	void cleanup();
 
-	void waitForFence();
-	uint32_t acquireNextImageFromSwapchain();
-	void resetCommandBuffer();
-	void submitRendering(uint32_t _imageIndex);
+	void waitForFence(uint32_t _currentFrame);
+	uint32_t acquireNextImageFromSwapchain(uint32_t _currentFrame);
+	void resetCommandBuffer(uint32_t _currentFrame);
+	void submitRendering(uint32_t _imageIndex, uint32_t _currentFrame);
 
 private:
 	void createInstance();
@@ -100,8 +101,6 @@ public:
 	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;
 	std::vector<VkFence> m_inFlightFences;
-
-	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
 
 private:
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };

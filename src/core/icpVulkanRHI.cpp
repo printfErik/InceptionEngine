@@ -27,7 +27,7 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createSwapChainImageViews();
 
 	createCommandPool();
-	allocateCommandBuffer();
+	allocateCommandBuffers();
 	createSyncObjects();
 
 	return true;
@@ -87,6 +87,12 @@ void icpVulkanRHI::createInstance()
 
 void icpVulkanRHI::cleanup()
 {
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		vkDestroySemaphore(m_device, m_imageAvailableForRenderingSemaphores[i], nullptr);
+		vkDestroySemaphore(m_device, m_renderFinishedForPresentationSemaphores[i], nullptr);
+		vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
+	}
 
 	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
 
@@ -581,54 +587,58 @@ void icpVulkanRHI::createSyncObjects()
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.flags = VkFenceCreateFlagBits::VK_FENCE_CREATE_SIGNALED_BIT;
 
-	if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, m_imageAvailableForRenderingSemaphores.data()) ||
-		vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, m_renderFinishedForPresentationSemaphores.data()) ||
-		vkCreateFence(m_device, &fenceInfo, nullptr, m_inFlightFences.data()) != VK_SUCCESS)
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		throw std::runtime_error("failed to create sync objects!");
+		if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableForRenderingSemaphores[i]) ||
+			vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedForPresentationSemaphores[i]) ||
+			vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create sync objects!");
+		}
 	}
 }
 
-void icpVulkanRHI::waitForFence()
+void icpVulkanRHI::waitForFence(uint32_t _currentFrame)
 {
-	if (vkWaitForFences(m_device, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX) != VK_SUCCESS)
+	if (vkWaitForFences(m_device, 1, &m_inFlightFences[_currentFrame], VK_TRUE, UINT64_MAX) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to wait for fence!");
 	}
-	vkResetFences(m_device, 1, &m_inFlightFence);
+	vkResetFences(m_device, 1, &m_inFlightFences[_currentFrame]);
 }
 
-uint32_t icpVulkanRHI::acquireNextImageFromSwapchain()
+uint32_t icpVulkanRHI::acquireNextImageFromSwapchain(uint32_t _currentFrame)
 {
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableForRenderingSemaphore, VK_NULL_HANDLE, &imageIndex);
+	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableForRenderingSemaphores[_currentFrame], VK_NULL_HANDLE, &imageIndex);
 	return imageIndex;
 }
 
-void icpVulkanRHI::resetCommandBuffer()
+void icpVulkanRHI::resetCommandBuffer(uint32_t _currentFrame)
 {
-	vkResetCommandBuffer(m_commandBuffer, 0);
+	vkResetCommandBuffer(m_commandBuffers[_currentFrame], 0);
 }
 
-void icpVulkanRHI::submitRendering(uint32_t _imageIndex)
+void icpVulkanRHI::submitRendering(uint32_t _imageIndex, uint32_t _currentFrame)
 {
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[] = { m_imageAvailableForRenderingSemaphore };
+	VkSemaphore waitSemaphores[] = { m_imageAvailableForRenderingSemaphores[_currentFrame]};
 	VkPipelineStageFlags waitStages[] = { VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_commandBuffer;
+	submitInfo.pCommandBuffers = &m_commandBuffers[_currentFrame];
 
-	VkSemaphore signalSemaphores[] = { m_renderFinishedForPresentationSemaphore };
+	VkSemaphore signalSemaphores[] = { m_renderFinishedForPresentationSemaphores[_currentFrame]};
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFence) != VK_SUCCESS) {
+	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[_currentFrame]) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
 

@@ -336,11 +336,13 @@ void icpRenderPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint3
 
 void icpRenderPipeline::render()
 {
-	m_rhi->waitForFence();
-	auto index = m_rhi->acquireNextImageFromSwapchain();
-	m_rhi->resetCommandBuffer();
-	recordCommandBuffer(m_rhi->m_commandBuffer, index);
-	m_rhi->submitRendering(index);
+	m_rhi->waitForFence(m_currentFrame);
+	auto index = m_rhi->acquireNextImageFromSwapchain(m_currentFrame);
+	m_rhi->resetCommandBuffer(m_currentFrame);
+	recordCommandBuffer(m_rhi->m_commandBuffers[m_currentFrame], index);
+	m_rhi->submitRendering(index, m_currentFrame);
+
+	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 

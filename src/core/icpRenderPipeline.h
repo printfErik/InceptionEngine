@@ -37,6 +37,8 @@ private:
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
 	std::filesystem::path m_shaderDirPath;
+
+	uint32_t m_currentFrame = 0;
 };
 
 INCEPTION_END_NAMESPACE
