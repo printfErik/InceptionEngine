@@ -23,7 +23,12 @@ void icpRenderPipeline::cleanup()
 	{
 		vkDestroyShaderModule(m_rhi->m_device, shader, nullptr);
 	}
+
 	cleanupSwapChain();
+
+	vkDestroyRenderPass(m_rhi->m_device, m_renderPass, nullptr);
+	vkDestroyPipelineLayout(m_rhi->m_device, m_pipelineLayout, nullptr);
+	vkDestroyPipeline(m_rhi->m_device, m_pipeline, nullptr);
 }
 
 void icpRenderPipeline::cleanupSwapChain()
@@ -32,10 +37,6 @@ void icpRenderPipeline::cleanupSwapChain()
 	{
 		vkDestroyFramebuffer(m_rhi->m_device, framebuffer, nullptr);
 	}
-
-	vkDestroyRenderPass(m_rhi->m_device, m_renderPass, nullptr);
-	vkDestroyPipelineLayout(m_rhi->m_device, m_pipelineLayout, nullptr);
-	vkDestroyPipeline(m_rhi->m_device, m_pipeline, nullptr);
 
 	m_rhi->cleanupSwapChain();
 }
@@ -343,12 +344,41 @@ void icpRenderPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint3
 void icpRenderPipeline::render()
 {
 	m_rhi->waitForFence(m_currentFrame);
-	auto index = m_rhi->acquireNextImageFromSwapchain(m_currentFrame);
+	VkResult result;
+	auto index = m_rhi->acquireNextImageFromSwapchain(m_currentFrame, result);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		recreateSwapChain();
+		return;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		throw std::runtime_error("failed to present swap chain image!");
+	}
+
 	m_rhi->resetCommandBuffer(m_currentFrame);
 	recordCommandBuffer(m_rhi->m_commandBuffers[m_currentFrame], index);
-	m_rhi->submitRendering(index, m_currentFrame);
+	auto result = m_rhi->submitRendering(index, m_currentFrame);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+		recreateSwapChain();
+	}
+	else if (result != VK_SUCCESS) {
+		throw std::runtime_error("failed to present swap chain image!");
+	}
 
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void icpRenderPipeline::recreateSwapChain() {
+	vkDeviceWaitIdle(m_rhi->m_device);
+
+	cleanupSwapChain();
+
+	m_rhi->createSwapChain();
+	m_rhi->createSwapChainImageViews();
+	createFrameBuffers();
 }
 
 

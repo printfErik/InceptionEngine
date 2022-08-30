@@ -613,10 +613,11 @@ void icpVulkanRHI::waitForFence(uint32_t _currentFrame)
 	vkResetFences(m_device, 1, &m_inFlightFences[_currentFrame]);
 }
 
-uint32_t icpVulkanRHI::acquireNextImageFromSwapchain(uint32_t _currentFrame)
+uint32_t icpVulkanRHI::acquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result)
 {
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableForRenderingSemaphores[_currentFrame], VK_NULL_HANDLE, &imageIndex);
+	_result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableForRenderingSemaphores[_currentFrame], VK_NULL_HANDLE, &imageIndex);
+
 	return imageIndex;
 }
 
@@ -625,7 +626,7 @@ void icpVulkanRHI::resetCommandBuffer(uint32_t _currentFrame)
 	vkResetCommandBuffer(m_commandBuffers[_currentFrame], 0);
 }
 
-void icpVulkanRHI::submitRendering(uint32_t _imageIndex, uint32_t _currentFrame)
+VkResult icpVulkanRHI::submitRendering(uint32_t _imageIndex, uint32_t _currentFrame)
 {
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -659,7 +660,7 @@ void icpVulkanRHI::submitRendering(uint32_t _imageIndex, uint32_t _currentFrame)
 
 	presentInfo.pImageIndices = &_imageIndex;
 
-	vkQueuePresentKHR(m_presentQueue, &presentInfo);
+	return vkQueuePresentKHR(m_presentQueue, &presentInfo);
 }
 
 INCEPTION_END_NAMESPACE

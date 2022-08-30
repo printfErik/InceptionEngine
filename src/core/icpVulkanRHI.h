@@ -37,19 +37,19 @@ public:
 	void cleanupSwapChain();
 
 	void waitForFence(uint32_t _currentFrame);
-	uint32_t acquireNextImageFromSwapchain(uint32_t _currentFrame);
+	uint32_t acquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result);
 	void resetCommandBuffer(uint32_t _currentFrame);
 	void submitRendering(uint32_t _imageIndex, uint32_t _currentFrame);
 
+	void createSwapChain();
+	void createSwapChainImageViews();
 private:
 	void createInstance();
 	void initializeDebugMessenger();
 	void createWindowSurface();
 	void initializePhysicalDevice();
 	void createLogicalDevice();
-	void createSwapChain();
-	void createSwapChainImageViews();
-
+	
 	void createCommandPool();
 	void allocateCommandBuffers();
 
@@ -66,6 +66,7 @@ private:
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
 	VkResult createDebugUtilsMessengerEXT(VkInstance instance,
 		const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
 		const VkAllocationCallbacks* pAllocator,
