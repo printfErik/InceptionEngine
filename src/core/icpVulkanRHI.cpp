@@ -96,12 +96,7 @@ void icpVulkanRHI::cleanup()
 
 	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
 
-	for (const auto& imgView : m_swapChainImageViews)
-	{
-		vkDestroyImageView(m_device, imgView, nullptr);
-	}
-
-	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+	cleanupSwapChain();
 
 	vkDestroyDevice(m_device, nullptr);
 
@@ -113,6 +108,16 @@ void icpVulkanRHI::cleanup()
 	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 	
 	vkDestroyInstance(m_instance, nullptr);
+}
+
+void icpVulkanRHI::cleanupSwapChain()
+{
+	for (const auto& imgView : m_swapChainImageViews)
+	{
+		vkDestroyImageView(m_device, imgView, nullptr);
+	}
+
+	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT,

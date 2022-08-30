@@ -34,6 +34,7 @@ public:
 
 	bool initialize(std::shared_ptr<icpWindowSystem> window_system) override;
 	void cleanup();
+	void cleanupSwapChain();
 
 	void waitForFence(uint32_t _currentFrame);
 	uint32_t acquireNextImageFromSwapchain(uint32_t _currentFrame);

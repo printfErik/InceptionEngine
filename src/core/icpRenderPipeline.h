@@ -15,6 +15,8 @@ public:
 	bool initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI) override;
 	VkShaderModule createShaderModule(const char* shaderFileName);
 	void cleanup();
+	
+	void cleanupSwapChain();
 
 	void createRenderPass();
 	void createGraphicsPipeline();	

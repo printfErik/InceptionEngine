@@ -19,19 +19,25 @@ icpRenderPipeline::~icpRenderPipeline()
 
 void icpRenderPipeline::cleanup()
 {
-	for (auto framebuffer : m_swapChainFramebuffers) {
-		vkDestroyFramebuffer(m_rhi->m_device, framebuffer, nullptr);
-	}
-
 	for (auto& shader : m_shaderModules)
 	{
 		vkDestroyShaderModule(m_rhi->m_device, shader, nullptr);
+	}
+	cleanupSwapChain();
+}
+
+void icpRenderPipeline::cleanupSwapChain()
+{
+	for (auto framebuffer : m_swapChainFramebuffers) 
+	{
+		vkDestroyFramebuffer(m_rhi->m_device, framebuffer, nullptr);
 	}
 
 	vkDestroyRenderPass(m_rhi->m_device, m_renderPass, nullptr);
 	vkDestroyPipelineLayout(m_rhi->m_device, m_pipelineLayout, nullptr);
 	vkDestroyPipeline(m_rhi->m_device, m_pipeline, nullptr);
-	
+
+	m_rhi->cleanupSwapChain();
 }
 
 bool icpRenderPipeline::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
