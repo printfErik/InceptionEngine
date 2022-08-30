@@ -26,6 +26,8 @@ public:
 
 	void render();
 
+	void recreateSwapChain();
+
 private:
 
 	VkPipeline m_pipeline{VK_NULL_HANDLE};

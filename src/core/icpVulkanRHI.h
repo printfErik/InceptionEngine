@@ -39,7 +39,7 @@ public:
 	void waitForFence(uint32_t _currentFrame);
 	uint32_t acquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result);
 	void resetCommandBuffer(uint32_t _currentFrame);
-	void submitRendering(uint32_t _imageIndex, uint32_t _currentFrame);
+	VkResult submitRendering(uint32_t _imageIndex, uint32_t _currentFrame);
 
 	void createSwapChain();
 	void createSwapChainImageViews();
@@ -103,6 +103,8 @@ public:
 	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;
 	std::vector<VkFence> m_inFlightFences;
+
+	bool m_framebufferResized = false;
 
 private:
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };

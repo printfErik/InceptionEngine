@@ -13,6 +13,11 @@ icpWindowSystem::~icpWindowSystem()
 	glfwTerminate();
 }
 
+static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+
+}
+
 bool icpWindowSystem::initializeWindowSystem()
 {
 	if (glfwInit() != GLFW_TRUE)
@@ -24,12 +29,14 @@ bool icpWindowSystem::initializeWindowSystem()
 	m_height = 600;
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
 	m_window = glfwCreateWindow(m_width, m_height, "Inception Engine", nullptr, nullptr);
 	if (!m_window)
 	{
 		throw std::runtime_error("glfwCreateWindow failed");
 	}
+
+	glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
 
 	return true;
 }

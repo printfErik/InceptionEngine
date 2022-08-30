@@ -359,10 +359,11 @@ void icpRenderPipeline::render()
 
 	m_rhi->resetCommandBuffer(m_currentFrame);
 	recordCommandBuffer(m_rhi->m_commandBuffers[m_currentFrame], index);
-	auto result = m_rhi->submitRendering(index, m_currentFrame);
+	result = m_rhi->submitRendering(index, m_currentFrame);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_rhi->m_framebufferResized) {
 		recreateSwapChain();
+		m_rhi->m_framebufferResized = false;
 	}
 	else if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to present swap chain image!");
