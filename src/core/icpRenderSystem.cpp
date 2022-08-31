@@ -1,25 +1,25 @@
 #include "icpRenderSystem.h"
 #include "icpVulkanRHI.h"
-#include <memory>
+#include "icpSystemContainer.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
-icpRenderSystem::icpRenderSystem(const std::filesystem::path& _configFilePath)
+icpRenderSystem::icpRenderSystem()
 {
-	m_shaderDirPath = _configFilePath;
 }
 
 icpRenderSystem::~icpRenderSystem()
 {
-
+	m_renderPipeline.reset();
+	m_rhi.reset();
 }
 
-bool icpRenderSystem::initializeRenderSystem(std::shared_ptr<icpWindowSystem> window_system)
+bool icpRenderSystem::initializeRenderSystem()
 {
 	m_rhi = std::make_shared<icpVulkanRHI>();
-	m_rhi->initialize(window_system);
+	m_rhi->initialize(g_system_container.m_windowSystem);
 
-	m_renderPipeline = std::make_shared<icpRenderPipeline>(m_shaderDirPath);
+	m_renderPipeline = std::make_shared<icpRenderPipeline>();
 	m_renderPipeline->initialize(std::dynamic_pointer_cast<icpVulkanRHI>(m_rhi));
 
 	return true;
@@ -28,6 +28,11 @@ bool icpRenderSystem::initializeRenderSystem(std::shared_ptr<icpWindowSystem> wi
 void icpRenderSystem::drawFrame()
 {
 	m_renderPipeline->render();
+}
+
+void icpRenderSystem::setFrameBufferResized(bool _isResized)
+{
+	std::dynamic_pointer_cast<icpVulkanRHI>(m_rhi)->m_framebufferResized = _isResized;
 }
 
 INCEPTION_END_NAMESPACE

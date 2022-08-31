@@ -2,8 +2,8 @@
 #include "icpWindowSystem.h"
 #include "icpRenderSystem.h"
 #include "icpConfigSystem.h"
+#include "icpSystemContainer.h"
 
-#include <filesystem>
 
 INCEPTION_BEGIN_NAMESPACE
 InceptionEngine::~InceptionEngine()
@@ -13,30 +13,22 @@ InceptionEngine::~InceptionEngine()
 
 bool InceptionEngine::initializeEngine(const std::filesystem::path& _configFilePath)
 {
-
-	m_configSystem = std::make_shared<icpConfigSystem>(_configFilePath);
-
-	m_windowSystem = std::make_shared<icpWindowSystem>();
-	m_windowSystem->initializeWindowSystem();
-
-	m_renderSystem = std::make_shared<icpRenderSystem>(_configFilePath);
-	m_renderSystem->initializeRenderSystem(m_windowSystem);
+	g_system_container.initializeAllSystems(_configFilePath);
 	return true;
 }
 
 void InceptionEngine::startEngine()
 {
-	while(!m_windowSystem->shouldClose())
+	while(!g_system_container.m_windowSystem->shouldClose())
 	{
-		m_windowSystem->pollEvent();
-		m_renderSystem->drawFrame();
+		g_system_container.m_windowSystem->pollEvent();
+		g_system_container.m_renderSystem->drawFrame();
 	}
 }
 
 bool InceptionEngine::stopEngine()
 {
-	m_renderSystem.reset();
-	m_windowSystem.reset();
+	g_system_container.shutdownAllSystems();
 	return true;
 }
 

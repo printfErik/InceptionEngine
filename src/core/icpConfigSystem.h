@@ -8,6 +8,8 @@ class icpConfigSystem
 {
 public:
 	icpConfigSystem(const std::filesystem::path& configPath);
+	std::filesystem::path getConfigFilePath();
+
 
 private:
 

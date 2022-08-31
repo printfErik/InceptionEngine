@@ -1,14 +1,16 @@
 #include "icpRenderPipeline.h"
 #include "icpVulkanRHI.h"
+#include "icpSystemContainer.h"
+#include "icpConfigSystem.h"
+
 #include <vulkan/vulkan.hpp>
 #include <fstream>
 #include <iterator>
 
 INCEPTION_BEGIN_NAMESPACE
 
-icpRenderPipeline::icpRenderPipeline(const std::filesystem::path& _configFilePath)
+icpRenderPipeline::icpRenderPipeline()
 {
-	m_shaderDirPath = _configFilePath;
 }
 
 
@@ -62,12 +64,14 @@ void icpRenderPipeline::createGraphicsPipeline()
 	VkPipelineShaderStageCreateInfo fragShader{};
 
 	vertShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShader.module = createShaderModule((m_shaderDirPath /  "vert.spv").generic_string().c_str());
+	auto vertShaderPath = g_system_container.m_configSystem->getConfigFilePath() / "vert.spv";
+	vertShader.module = createShaderModule(vertShaderPath.generic_string().c_str());
 	vertShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 	vertShader.pName = "main";
 
 	fragShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShader.module = createShaderModule((m_shaderDirPath / "fragment.spv").generic_string().c_str());
+	auto fragShaderPath = g_system_container.m_configSystem->getConfigFilePath() / "fragment.spv";
+	fragShader.module = createShaderModule(fragShaderPath.generic_string().c_str());
 	fragShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 	fragShader.pName = "main";
 
@@ -373,6 +377,15 @@ void icpRenderPipeline::render()
 }
 
 void icpRenderPipeline::recreateSwapChain() {
+
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(m_rhi->m_window, &width, &height);
+	while (width == 0 || height == 0) 
+	{
+		glfwGetFramebufferSize(m_rhi->m_window, &width, &height);
+		glfwWaitEvents();
+	}
+
 	vkDeviceWaitIdle(m_rhi->m_device);
 
 	cleanupSwapChain();

@@ -22,11 +22,6 @@ public:
 	void startEngine();
 
 	bool stopEngine();
-
-private:
-	std::shared_ptr<icpRenderSystem> m_renderSystem;
-	std::shared_ptr<icpWindowSystem> m_windowSystem;
-	std::shared_ptr<icpConfigSystem> m_configSystem;
 };
 
 INCEPTION_END_NAMESPACE

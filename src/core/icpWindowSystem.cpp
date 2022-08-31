@@ -1,4 +1,7 @@
 #include "icpWindowSystem.h"
+#include "icpSystemContainer.h"
+#include "icpRenderSystem.h"
+
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -11,11 +14,6 @@ icpWindowSystem::~icpWindowSystem()
 {
 	glfwDestroyWindow(m_window);
 	glfwTerminate();
-}
-
-static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
-{
-
 }
 
 bool icpWindowSystem::initializeWindowSystem()
@@ -36,7 +34,8 @@ bool icpWindowSystem::initializeWindowSystem()
 		throw std::runtime_error("glfwCreateWindow failed");
 	}
 
-	glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
+	glfwSetWindowUserPointer(m_window, this);
+	
 
 	return true;
 }
