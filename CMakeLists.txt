@@ -9,11 +9,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(INCEPTION_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set(ENGINE_CORE_DIR "${INCEPTION_ROOT_DIR}/src/core")
+set(ENGINE_SOURCE_CODE_DIR "${INCEPTION_ROOT_DIR}/src")
 set(THIRD_PARTY_DIR "${INCEPTION_ROOT_DIR}/thirdParty")
 
 add_subdirectory(thirdParty)
-add_subdirectory(src/core)
+add_subdirectory(src)
 
 
 
