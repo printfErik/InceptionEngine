@@ -1,5 +1,5 @@
 #pragma once
-#include "icpMacros.h"
+#include "../core/icpMacros.h"
 
 #include "icpRHI.h"
 #include "icpRenderPipeline.h"

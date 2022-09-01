@@ -1,5 +1,5 @@
 #pragma once
-#include "icpMacros.h"
+#include "../core/icpMacros.h"
 #include "icpWindowSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE

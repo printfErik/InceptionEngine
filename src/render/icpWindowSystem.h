@@ -1,5 +1,5 @@
 #pragma once
-#include "icpMacros.h"
+#include "../core/icpMacros.h"
 #include <iostream>
 
 #define GLFW_INCLUDE_VULKAN

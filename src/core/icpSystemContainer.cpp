@@ -1,6 +1,7 @@
 #include "icpSystemContainer.h"
-#include "icpWindowSystem.h"
-#include "icpRenderSystem.h"
+#include "../render/icpWindowSystem.h"
+#include "../render/icpRenderSystem.h"
+#include "../resource/icpResourceSystem.h"
 #include "icpConfigSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -16,6 +17,8 @@ void icpSystemContainer::initializeAllSystems(const std::filesystem::path& _conf
 {
 	m_configSystem = std::make_shared<icpConfigSystem>(_configFilePath);
 
+	m_resourceSystem = std::make_shared<icpResourceSystem>();
+
 	m_windowSystem = std::make_shared<icpWindowSystem>();
 	m_windowSystem->initializeWindowSystem();
 
@@ -29,6 +32,7 @@ void icpSystemContainer::shutdownAllSystems()
 {
 	m_renderSystem.reset();
 	m_windowSystem.reset();
+	m_resourceSystem.reset();
 	m_configSystem.reset();
 }
 

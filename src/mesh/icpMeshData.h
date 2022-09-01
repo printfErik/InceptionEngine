@@ -36,6 +36,8 @@ struct icpVertex
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[1].offset = offsetof(icpVertex, color);
 
+		return attributeDescriptions;
+
 	}
 };
 
@@ -44,7 +46,6 @@ class icpMeshData
 {
 public:
 	std::vector<icpVertex> m_vertices;
-	std::vector<glm::vec3> m_colors;
 };
 
 

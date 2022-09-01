@@ -1,6 +1,6 @@
 ﻿#include "InceptionEngine.h"
-#include "core/icpWindowSystem.h"
-#include "core/icpRenderSystem.h"
+#include "render/icpWindowSystem.h"
+#include "render/icpRenderSystem.h"
 #include "core/icpConfigSystem.h"
 #include "core/icpSystemContainer.h"
 

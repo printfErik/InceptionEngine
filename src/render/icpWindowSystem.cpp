@@ -1,5 +1,5 @@
 #include "icpWindowSystem.h"
-#include "icpSystemContainer.h"
+#include "../core/icpSystemContainer.h"
 #include "icpRenderSystem.h"
 
 
@@ -21,7 +21,7 @@ bool icpWindowSystem::initializeWindowSystem()
 	if (glfwInit() != GLFW_TRUE)
 	{
 		throw std::runtime_error("glfwInit failed");
-	}
+}
 
 	m_width = 800;
 	m_height = 600;

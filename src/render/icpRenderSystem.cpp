@@ -1,6 +1,6 @@
 #include "icpRenderSystem.h"
 #include "icpVulkanRHI.h"
-#include "icpSystemContainer.h"
+#include "../core/icpSystemContainer.h"
 
 INCEPTION_BEGIN_NAMESPACE
 

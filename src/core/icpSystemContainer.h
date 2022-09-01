@@ -8,6 +8,8 @@ INCEPTION_BEGIN_NAMESPACE
 class icpConfigSystem;
 class icpWindowSystem;
 class icpRenderSystem;
+class icpResourceSystem;
+
 
 class icpSystemContainer 
 {
@@ -20,6 +22,7 @@ public:
 	std::shared_ptr<icpConfigSystem> m_configSystem;
 	std::shared_ptr<icpWindowSystem> m_windowSystem;
 	std::shared_ptr<icpRenderSystem> m_renderSystem;
+	std::shared_ptr<icpResourceSystem> m_resourceSystem;
 
 };
 

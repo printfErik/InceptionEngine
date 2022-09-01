@@ -1,7 +1,7 @@
 #include "icpRenderPipeline.h"
 #include "icpVulkanRHI.h"
-#include "icpSystemContainer.h"
-#include "icpConfigSystem.h"
+#include "../core/icpSystemContainer.h"
+#include "../core/icpConfigSystem.h"
 #include "../mesh/icpMeshData.h"
 
 #include <vulkan/vulkan.hpp>

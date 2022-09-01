@@ -2,7 +2,6 @@
 #include <optional>
 #include <vector>
 
-#include "icpMacros.h"
 #include "icpRHI.h"
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
@@ -51,8 +50,8 @@ private:
 	void createLogicalDevice();
 	
 	void createCommandPool();
+	void createVertexBuffers();
 	void allocateCommandBuffers();
-
 	void createSyncObjects();
 
 	bool checkValidationLayerSupport();
@@ -99,6 +98,8 @@ public:
 
 	VkCommandPool m_commandPool{ VK_NULL_HANDLE };
 	std::vector<VkCommandBuffer> m_commandBuffers;
+
+	VkBuffer m_vertexBuffer;
 
 	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;

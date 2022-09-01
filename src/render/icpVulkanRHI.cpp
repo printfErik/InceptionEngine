@@ -1,5 +1,7 @@
 #include "icpVulkanRHI.h"
-#include "icpSystemContainer.h"
+#include "../core/icpSystemContainer.h"
+#include "../resource/icpResourceSystem.h"
+#include "../mesh/icpMeshResource.h"
 #include <iostream>
 #include <map>
 #include <set>
@@ -27,6 +29,7 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createSwapChainImageViews();
 
 	createCommandPool();
+	createVertexBuffers();
 	allocateCommandBuffers();
 	createSyncObjects();
 
@@ -561,6 +564,14 @@ void icpVulkanRHI::createCommandPool()
 	{
 		throw std::runtime_error("failed to create command pool!");
 	}
+}
+
+void icpVulkanRHI::createVertexBuffers()
+{
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["firstTriangle"]);
+	bufferInfo.size = sizeof(meshP->m_meshData.m_vertices[0]) * meshP->m_meshData.m_vertices.size();
 }
 
 void icpVulkanRHI::allocateCommandBuffers()
