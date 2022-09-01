@@ -1,5 +1,7 @@
 set(third_party_folder "thirdParty")
 
+message(thirdParty )
+
 if(NOT TARGET glm)
     option(BUILD_STATIC_LIBS "" ON)
     option(BUILD_TESTING "" OFF)

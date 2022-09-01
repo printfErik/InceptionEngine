@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include <iostream>
-#include "icpMacros.h"
+#include "core/icpMacros.h"
 #include <filesystem>
 INCEPTION_BEGIN_NAMESPACE
 

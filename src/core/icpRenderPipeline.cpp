@@ -2,6 +2,7 @@
 #include "icpVulkanRHI.h"
 #include "icpSystemContainer.h"
 #include "icpConfigSystem.h"
+#include "../mesh/icpMeshData.h"
 
 #include <vulkan/vulkan.hpp>
 #include <fstream>
@@ -84,7 +85,15 @@ void icpRenderPipeline::createGraphicsPipeline()
 
 	// Vertex Input
 	VkPipelineVertexInputStateCreateInfo vertexInput{};
+
+	auto bindingDescription = icpVertex::getBindingDescription();
+	auto attributeDescription = icpVertex::getAttributeDescription();
+
 	vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexInput.vertexBindingDescriptionCount = 1;
+	vertexInput.pVertexBindingDescriptions = &bindingDescription;
+	vertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescription.size());
+	vertexInput.pVertexAttributeDescriptions = attributeDescription.data();
 
 	info.pVertexInputState = &vertexInput;
 

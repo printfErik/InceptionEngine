@@ -1,9 +1,8 @@
 ﻿#include "InceptionEngine.h"
-#include "icpWindowSystem.h"
-#include "icpRenderSystem.h"
-#include "icpConfigSystem.h"
-#include "icpSystemContainer.h"
-
+#include "core/icpWindowSystem.h"
+#include "core/icpRenderSystem.h"
+#include "core/icpConfigSystem.h"
+#include "core/icpSystemContainer.h"
 
 INCEPTION_BEGIN_NAMESPACE
 InceptionEngine::~InceptionEngine()
