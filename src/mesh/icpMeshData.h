@@ -1,6 +1,6 @@
 #pragma once
 #include "../core/icpMacros.h"
-#include <glm.hpp>
+#include <glm/glm.hpp>
 #include <vulkan/vulkan.hpp>
 #include <array>
 

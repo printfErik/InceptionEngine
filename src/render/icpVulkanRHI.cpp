@@ -28,7 +28,7 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createSwapChain();
 	createSwapChainImageViews();
 
-	createCommandPool();
+	createCommandPools();
 	createVertexBuffers();
 	allocateCommandBuffers();
 	createSyncObjects();
@@ -97,9 +97,13 @@ void icpVulkanRHI::cleanup()
 		vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
 	}
 
-	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+	vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
+	vkDestroyCommandPool(m_device, m_transferCommandPool, nullptr);
 
 	cleanupSwapChain();
+
+	vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
+	vkFreeMemory(m_device, m_deviceMem, nullptr);
 
 	vkDestroyDevice(m_device, nullptr);
 
@@ -338,6 +342,11 @@ QueueFamilyIndices icpVulkanRHI::findQueueFamilies(VkPhysicalDevice device)
 			indices.m_graphicsFamily = i;
 		}
 
+		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
+		{
+			indices.m_transferFamily = i;
+		}
+
 		VkBool32 isPresentSupport = false;
 		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &isPresentSupport);
 		if (isPresentSupport)
@@ -359,7 +368,7 @@ void icpVulkanRHI::createLogicalDevice()
 	m_queueIndices = findQueueFamilies(m_physicalDevice);
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> queueFamilies = { m_queueIndices.m_graphicsFamily.value(), m_queueIndices.m_presentFamily.value() };
+	std::set<uint32_t> queueFamilies = { m_queueIndices.m_graphicsFamily.value(), m_queueIndices.m_presentFamily.value(), m_queueIndices.m_transferFamily.value()};
 
 	float queuePriority = 1.0f;
 	for (uint32_t queueFamily : queueFamilies)
@@ -393,6 +402,7 @@ void icpVulkanRHI::createLogicalDevice()
 	// initialize queues of this device
 	vkGetDeviceQueue(m_device, m_queueIndices.m_graphicsFamily.value(), 0, &m_graphicsQueue);
 	vkGetDeviceQueue(m_device, m_queueIndices.m_presentFamily.value(), 0, &m_presentQueue);
+	vkGetDeviceQueue(m_device, m_queueIndices.m_transferFamily.value(), 0, &m_transferQueue);
 }
 
 SwapChainSupportDetails icpVulkanRHI::querySwapChainSupport(VkPhysicalDevice device)
@@ -553,17 +563,28 @@ void icpVulkanRHI::createSwapChainImageViews()
 	}
 }
 
-void icpVulkanRHI::createCommandPool()
+void icpVulkanRHI::createCommandPools()
 {
-	VkCommandPoolCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	createInfo.flags = VkCommandPoolCreateFlagBits::VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	createInfo.queueFamilyIndex = m_queueIndices.m_graphicsFamily.value();
+	VkCommandPoolCreateInfo gCreateInfo{};
+	gCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	gCreateInfo.flags = VkCommandPoolCreateFlagBits::VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	gCreateInfo.queueFamilyIndex = m_queueIndices.m_graphicsFamily.value();
 
-	if (vkCreateCommandPool(m_device, &createInfo, nullptr, &m_commandPool))
+	if (vkCreateCommandPool(m_device, &gCreateInfo, nullptr, &m_graphicsCommandPool))
+	{
+		throw std::runtime_error("failed to create graphics command pool!");
+	}
+
+	VkCommandPoolCreateInfo tCreateInfo{};
+	tCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	tCreateInfo.flags = VkCommandPoolCreateFlagBits::VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	tCreateInfo.queueFamilyIndex = m_queueIndices.m_transferFamily.value();
+
+	if (vkCreateCommandPool(m_device, &tCreateInfo, nullptr, &m_transferCommandPool))
 	{
 		throw std::runtime_error("failed to create command pool!");
 	}
+
 }
 
 void icpVulkanRHI::createVertexBuffers()
@@ -572,19 +593,76 @@ void icpVulkanRHI::createVertexBuffers()
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["firstTriangle"]);
 	bufferInfo.size = sizeof(meshP->m_meshData.m_vertices[0]) * meshP->m_meshData.m_vertices.size();
+	bufferInfo.sharingMode = VkSharingMode::VK_SHARING_MODE_EXCLUSIVE;
+	bufferInfo.usage = VkBufferUsageFlagBits::VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+
+	if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &m_vertexBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create vertex buffer!");
+	}
+
+	VkMemoryRequirements memRequirement{};
+
+	vkGetBufferMemoryRequirements(m_device, m_vertexBuffer, &memRequirement);
+
+	VkMemoryAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateInfo.allocationSize = memRequirement.size;
+	allocateInfo.memoryTypeIndex = findMemoryType(memRequirement.memoryTypeBits, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	if (vkAllocateMemory(m_device, &allocateInfo, nullptr, &m_deviceMem) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate memory!");
+	}
+
+	vkBindBufferMemory(m_device, m_vertexBuffer, m_deviceMem, 0);
+
+	void* data;
+	vkMapMemory(m_device, m_deviceMem, 0, bufferInfo.size, 0, &data);
+	memcpy(data, meshP->m_meshData.m_vertices.data(), (size_t)bufferInfo.size);
+	vkUnmapMemory(m_device, m_deviceMem);
+
+}
+
+uint32_t icpVulkanRHI::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+	{
+		if ((typeFilter & (1 << i)) && (properties & memProperties.memoryTypes[i].propertyFlags) == properties)
+		{
+			return i;
+		}
+	}
+	throw std::runtime_error("failed to find memory type");
+	return UINT32_MAX;
 }
 
 void icpVulkanRHI::allocateCommandBuffers()
 {
-	m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	m_graphicsCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
-	VkCommandBufferAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = m_commandPool;
-	allocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
-	allocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	VkCommandBufferAllocateInfo gAllocInfo{};
+	gAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	gAllocInfo.commandPool = m_graphicsCommandPool;
+	gAllocInfo.commandBufferCount = (uint32_t)m_graphicsCommandBuffers.size();
+	gAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-	if (vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffers.data()) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(m_device, &gAllocInfo, m_graphicsCommandBuffers.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate command buffer!");
+	}
+
+	m_transferCommandBuffers.resize(1); // for transfer use
+
+	VkCommandBufferAllocateInfo tAllocInfo{};
+	tAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	tAllocInfo.commandPool = m_transferCommandPool;
+	tAllocInfo.commandBufferCount = (uint32_t)m_transferCommandBuffers.size();
+	tAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	if (vkAllocateCommandBuffers(m_device, &tAllocInfo, m_transferCommandBuffers.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate command buffer!");
 	}
@@ -634,7 +712,7 @@ uint32_t icpVulkanRHI::acquireNextImageFromSwapchain(uint32_t _currentFrame, VkR
 
 void icpVulkanRHI::resetCommandBuffer(uint32_t _currentFrame)
 {
-	vkResetCommandBuffer(m_commandBuffers[_currentFrame], 0);
+	vkResetCommandBuffer(m_graphicsCommandBuffers[_currentFrame], 0);
 }
 
 VkResult icpVulkanRHI::submitRendering(uint32_t _imageIndex, uint32_t _currentFrame)
@@ -649,7 +727,7 @@ VkResult icpVulkanRHI::submitRendering(uint32_t _imageIndex, uint32_t _currentFr
 	submitInfo.pWaitDstStageMask = waitStages;
 
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_commandBuffers[_currentFrame];
+	submitInfo.pCommandBuffers = &m_graphicsCommandBuffers[_currentFrame];
 
 	VkSemaphore signalSemaphores[] = { m_renderFinishedForPresentationSemaphores[_currentFrame]};
 	submitInfo.signalSemaphoreCount = 1;

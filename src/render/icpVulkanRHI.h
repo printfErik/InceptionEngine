@@ -14,8 +14,14 @@ struct QueueFamilyIndices
 {
 	std::optional<uint32_t> m_graphicsFamily;
 	std::optional<uint32_t> m_presentFamily;
+	std::optional<uint32_t> m_transferFamily;
 
-	bool isComplete() const { return m_graphicsFamily.has_value() && m_presentFamily.has_value(); }
+	bool isComplete() const 
+	{ 
+		return m_graphicsFamily.has_value() 
+			&& m_presentFamily.has_value()
+			&& m_transferFamily.has_value();
+	}
 };
 
 struct SwapChainSupportDetails
@@ -49,7 +55,7 @@ private:
 	void initializePhysicalDevice();
 	void createLogicalDevice();
 	
-	void createCommandPool();
+	void createCommandPools();
 	void createVertexBuffers();
 	void allocateCommandBuffers();
 	void createSyncObjects();
@@ -79,6 +85,7 @@ private:
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 public:
 	VkInstance m_instance{ VK_NULL_HANDLE };
 	VkSurfaceKHR m_surface{ VK_NULL_HANDLE };
@@ -88,7 +95,7 @@ public:
 	VkDevice m_device{ VK_NULL_HANDLE };
 	VkQueue  m_graphicsQueue{ VK_NULL_HANDLE };
 	VkQueue m_presentQueue{ VK_NULL_HANDLE };
-
+	VkQueue m_transferQueue{ VK_NULL_HANDLE };
 
 	VkSwapchainKHR m_swapChain{ VK_NULL_HANDLE };
 	std::vector<VkImage> m_swapChainImages;
@@ -96,10 +103,13 @@ public:
 	VkFormat m_swapChainImageFormat{ VK_FORMAT_UNDEFINED };
 	VkExtent2D m_swapChainExtent;
 
-	VkCommandPool m_commandPool{ VK_NULL_HANDLE };
-	std::vector<VkCommandBuffer> m_commandBuffers;
+	VkCommandPool m_graphicsCommandPool{ VK_NULL_HANDLE };
+	VkCommandPool m_transferCommandPool{ VK_NULL_HANDLE };
+	std::vector<VkCommandBuffer> m_graphicsCommandBuffers;
+	std::vector<VkCommandBuffer> m_transferCommandBuffers;
 
 	VkBuffer m_vertexBuffer;
+	VkDeviceMemory m_deviceMem;
 
 	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;

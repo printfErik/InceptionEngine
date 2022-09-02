@@ -2,7 +2,8 @@
 #include "icpVulkanRHI.h"
 #include "../core/icpSystemContainer.h"
 #include "../core/icpConfigSystem.h"
-#include "../mesh/icpMeshData.h"
+#include "../mesh/icpMeshResource.h"
+#include "../resource/icpResourceSystem.h"
 
 #include <vulkan/vulkan.hpp>
 #include <fstream>
@@ -345,7 +346,12 @@ void icpRenderPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint3
 	scissor.extent = m_rhi->m_swapChainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	std::vector<VkBuffer> vertexBuffers{ m_rhi->m_vertexBuffer };
+	std::vector<VkDeviceSize> offsets{ 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
+
+	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["firstTriangle"]);
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(meshP->m_meshData.m_vertices.size()), 1, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -371,7 +377,7 @@ void icpRenderPipeline::render()
 	}
 
 	m_rhi->resetCommandBuffer(m_currentFrame);
-	recordCommandBuffer(m_rhi->m_commandBuffers[m_currentFrame], index);
+	recordCommandBuffer(m_rhi->m_graphicsCommandBuffers[m_currentFrame], index);
 	result = m_rhi->submitRendering(index, m_currentFrame);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_rhi->m_framebufferResized) {
