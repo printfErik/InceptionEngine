@@ -60,6 +60,8 @@ private:
 	void allocateCommandBuffers();
 	void createSyncObjects();
 
+	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
 	bool checkValidationLayerSupport();
 
 	bool isDeviceSuitable(VkPhysicalDevice device);
@@ -109,7 +111,8 @@ public:
 	std::vector<VkCommandBuffer> m_transferCommandBuffers;
 
 	VkBuffer m_vertexBuffer;
-	VkDeviceMemory m_deviceMem;
+
+	VkDeviceMemory m_vertexBufferMem;
 
 	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;

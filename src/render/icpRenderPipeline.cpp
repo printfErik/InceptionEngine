@@ -42,7 +42,6 @@ void icpRenderPipeline::cleanupSwapChain()
 		vkDestroyFramebuffer(m_rhi->m_device, framebuffer, nullptr);
 	}
 
-	m_rhi->cleanupSwapChain();
 }
 
 bool icpRenderPipeline::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
@@ -404,6 +403,7 @@ void icpRenderPipeline::recreateSwapChain() {
 	vkDeviceWaitIdle(m_rhi->m_device);
 
 	cleanupSwapChain();
+	m_rhi->cleanupSwapChain();
 
 	m_rhi->createSwapChain();
 	m_rhi->createSwapChainImageViews();
