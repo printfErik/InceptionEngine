@@ -349,8 +349,10 @@ void icpRenderPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint3
 	std::vector<VkDeviceSize> offsets{ 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
 
+	vkCmdBindIndexBuffer(commandBuffer, m_rhi->m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
 	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["firstTriangle"]);
-	vkCmdDraw(commandBuffer, static_cast<uint32_t>(meshP->m_meshData.m_vertices.size()), 1, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshP->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 

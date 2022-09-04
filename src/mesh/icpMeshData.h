@@ -46,6 +46,7 @@ class icpMeshData
 {
 public:
 	std::vector<icpVertex> m_vertices;
+	std::vector<uint32_t> m_vertexIndices;
 };
 
 

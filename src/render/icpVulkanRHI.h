@@ -57,6 +57,7 @@ private:
 	
 	void createCommandPools();
 	void createVertexBuffers();
+	void createIndexBuffers();
 	void allocateCommandBuffers();
 	void createSyncObjects();
 
@@ -111,8 +112,10 @@ public:
 	std::vector<VkCommandBuffer> m_transferCommandBuffers;
 
 	VkBuffer m_vertexBuffer;
+	VkBuffer m_indexBuffer;
 
 	VkDeviceMemory m_vertexBufferMem;
+	VkDeviceMemory m_indexBufferMem;
 
 	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;

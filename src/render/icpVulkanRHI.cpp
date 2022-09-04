@@ -31,6 +31,7 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 
 	createCommandPools();
 	createVertexBuffers();
+	createIndexBuffers();
 	allocateCommandBuffers();
 	createSyncObjects();
 
@@ -678,6 +679,49 @@ void icpVulkanRHI::createVertexBuffers()
 	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
 	vkFreeMemory(m_device, stagingBufferMem, nullptr);
 }
+
+void icpVulkanRHI::createIndexBuffers()
+{
+	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["firstTriangle"]);
+
+	VkDeviceSize bufferSize = sizeof(meshP->m_meshData.m_vertexIndices[0]) * meshP->m_meshData.m_vertexIndices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMem;
+
+	VkSharingMode mode = m_queueIndices.m_graphicsFamily.value() == m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+	icpVulkanUtility::createVulkanBuffer(
+		bufferSize,
+		mode,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
+		stagingBuffer,
+		stagingBufferMem,
+		m_device,
+		m_physicalDevice);
+
+	void* data;
+	vkMapMemory(m_device, stagingBufferMem, 0, bufferSize, 0, &data);
+	memcpy(data, meshP->m_meshData.m_vertexIndices.data(), (size_t)bufferSize);
+	vkUnmapMemory(m_device, stagingBufferMem);
+
+	icpVulkanUtility::createVulkanBuffer(bufferSize,
+		mode,
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		m_indexBuffer,
+		m_indexBufferMem,
+		m_device,
+		m_physicalDevice);
+
+	copyBuffer(stagingBuffer, m_indexBuffer, bufferSize);
+
+	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+	vkFreeMemory(m_device, stagingBufferMem, nullptr);
+}
+
+
 
 void icpVulkanRHI::allocateCommandBuffers()
 {
