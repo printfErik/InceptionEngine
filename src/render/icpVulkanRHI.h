@@ -1,14 +1,26 @@
 #pragma once
 #include <optional>
 #include <vector>
+#include <chrono>
 
 #include "icpRHI.h"
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+
+#define GLM_FORCE_RADIANS
+#include <glm/gtc/matrix_transform.hpp>
 
 INCEPTION_BEGIN_NAMESPACE
 
 static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
+
+struct UniformBufferObject
+{
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 projection;
+};
 
 struct QueueFamilyIndices
 {
@@ -48,6 +60,8 @@ public:
 
 	void createSwapChain();
 	void createSwapChainImageViews();
+
+	void updateUniformBuffers(uint32_t _curImage);
 private:
 	void createInstance();
 	void initializeDebugMessenger();
@@ -56,10 +70,17 @@ private:
 	void createLogicalDevice();
 	
 	void createCommandPools();
+
 	void createVertexBuffers();
 	void createIndexBuffers();
+	void createUniformBuffers();
+
+	void createDecriptorPools();
+	void allocateDescriptorSets();
+
 	void allocateCommandBuffers();
 	void createSyncObjects();
+	void createDescriptorSetLayout();
 
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
@@ -88,7 +109,6 @@ private:
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 public:
 	VkInstance m_instance{ VK_NULL_HANDLE };
 	VkSurfaceKHR m_surface{ VK_NULL_HANDLE };
@@ -113,13 +133,19 @@ public:
 
 	VkBuffer m_vertexBuffer;
 	VkBuffer m_indexBuffer;
+	std::vector<VkBuffer> m_uniformBuffers;
 
 	VkDeviceMemory m_vertexBufferMem;
 	VkDeviceMemory m_indexBufferMem;
+	std::vector<VkDeviceMemory> m_uniformBufferMem;
 
 	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;
 	std::vector<VkFence> m_inFlightFences;
+
+	VkDescriptorSetLayout m_descriptorSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorPool m_descriptorPool{ VK_NULL_HANDLE };
+	std::vector<VkDescriptorSet> m_descriptorSets;
 
 	bool m_framebufferResized = false;
 

@@ -26,14 +26,20 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createWindowSurface();
 	initializePhysicalDevice();
 	createLogicalDevice();
-	createSwapChain();
-	createSwapChainImageViews();
 
 	createCommandPools();
 	createVertexBuffers();
 	createIndexBuffers();
+	createUniformBuffers();
+	createDecriptorPools();
+	allocateDescriptorSets();
 	allocateCommandBuffers();
+
+	createDescriptorSetLayout();
 	createSyncObjects();
+
+	createSwapChain();
+	createSwapChainImageViews();
 
 	return true;
 }
@@ -112,6 +118,10 @@ void icpVulkanRHI::cleanup()
 
 	cleanupSwapChain();
 
+	vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+
+	vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
+
 	vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
 	vkFreeMemory(m_device, m_vertexBufferMem, nullptr);
 
@@ -129,6 +139,12 @@ void icpVulkanRHI::cleanup()
 
 void icpVulkanRHI::cleanupSwapChain()
 {
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		vkDestroyBuffer(m_device, m_uniformBuffers[i], nullptr);
+		vkFreeMemory(m_device, m_uniformBufferMem[i], nullptr);
+	}
+
 	for (const auto& imgView : m_swapChainImageViews)
 	{
 		vkDestroyImageView(m_device, imgView, nullptr);
@@ -721,7 +737,83 @@ void icpVulkanRHI::createIndexBuffers()
 	vkFreeMemory(m_device, stagingBufferMem, nullptr);
 }
 
+void icpVulkanRHI::createUniformBuffers()
+{
+	auto bufferSize = sizeof(UniformBufferObject);
 
+	m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	m_uniformBufferMem.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkSharingMode mode = m_queueIndices.m_graphicsFamily.value() == m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpVulkanUtility::createVulkanBuffer(
+			bufferSize,
+			mode,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
+			m_uniformBuffers[i],
+			m_uniformBufferMem[i],
+			m_device,
+			m_physicalDevice);
+	}
+}
+
+void icpVulkanRHI::createDecriptorPools()
+{
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes = &poolSize;
+	poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
+
+	if (vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create descriptor pool !");
+	}
+}
+
+void icpVulkanRHI::allocateDescriptorSets()
+{
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_descriptorSetLayout);
+
+	VkDescriptorSetAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateInfo.descriptorSetCount = 1;
+	allocateInfo.descriptorPool = m_descriptorPool;
+	allocateInfo.pSetLayouts = layouts.data();
+
+	m_descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+
+	if (vkAllocateDescriptorSets(m_device, &allocateInfo, m_descriptorSets.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate descriptor sets!");
+	}
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = m_uniformBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(UniformBufferObject);
+
+		VkWriteDescriptorSet descriptorWrite{};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = m_descriptorSets[i];
+		descriptorWrite.dstBinding = 0;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrite.descriptorCount = 1;
+		descriptorWrite.pBufferInfo = &bufferInfo;
+
+		vkUpdateDescriptorSets(m_device, 1, &descriptorWrite, 0, nullptr);
+	}
+
+}
 
 void icpVulkanRHI::allocateCommandBuffers()
 {
@@ -751,6 +843,26 @@ void icpVulkanRHI::allocateCommandBuffers()
 		throw std::runtime_error("failed to allocate command buffer!");
 	}
 }
+
+void icpVulkanRHI::createDescriptorSetLayout()
+{
+	VkDescriptorSetLayoutBinding uboLayoutBinding{};
+	uboLayoutBinding.binding = 0;
+	uboLayoutBinding.descriptorCount = 1;
+	uboLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	uboLayoutBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+
+	VkDescriptorSetLayoutCreateInfo createInfo{};
+	createInfo.bindingCount = 1;
+	createInfo.pBindings = &uboLayoutBinding;
+	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+	if (vkCreateDescriptorSetLayout(m_device, &createInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create descriptor set layout!");
+	}
+}
+
 
 void icpVulkanRHI::createSyncObjects()
 {
@@ -835,5 +947,25 @@ VkResult icpVulkanRHI::submitRendering(uint32_t _imageIndex, uint32_t _currentFr
 
 	return vkQueuePresentKHR(m_presentQueue, &presentInfo);
 }
+
+void icpVulkanRHI::updateUniformBuffers(uint32_t _curImage)
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto current = std::chrono::high_resolution_clock::now();
+
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(current - startTime).count();
+
+	UniformBufferObject ubo{};
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.projection = glm::perspective(glm::radians(45.0f), m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 10.0f);
+	ubo.projection[1][1] *= -1;
+
+	void* data;
+	vkMapMemory(m_device, m_uniformBufferMem[_curImage], 0, sizeof(ubo), 0, &data);
+	memcpy(data, &ubo, sizeof(ubo));
+	vkUnmapMemory(m_device, m_uniformBufferMem[_curImage]);
+}
+
 
 INCEPTION_END_NAMESPACE

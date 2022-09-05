@@ -108,7 +108,8 @@ void icpRenderPipeline::createGraphicsPipeline()
 	// Layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &m_rhi->m_descriptorSetLayout;
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 
 	if (vkCreatePipelineLayout(m_rhi->m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
@@ -376,6 +377,10 @@ void icpRenderPipeline::render()
 	{
 		throw std::runtime_error("failed to present swap chain image!");
 	}
+
+	m_rhi->updateUniformBuffers(m_currentFrame);
+
+	vkResetFences(m_rhi->m_device, 1, &m_rhi->m_inFlightFences[m_currentFrame]);
 
 	m_rhi->resetCommandBuffer(m_currentFrame);
 	recordCommandBuffer(m_rhi->m_graphicsCommandBuffers[m_currentFrame], index);
