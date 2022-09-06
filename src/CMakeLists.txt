@@ -14,5 +14,7 @@ target_link_libraries(${PROJECT_NAME} glfw)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/glm)
 
+target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/stb)
+
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")

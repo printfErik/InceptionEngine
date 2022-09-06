@@ -1,8 +1,15 @@
 #include "icpResourceSystem.h"
 #include "../mesh/icpMeshResource.h"
-INCEPTION_BEGIN_NAMESPACE
+#include "../render/icpImageResource.h"
+#include "../core/icpSystemContainer.h"
 
-icpResourceSystem::icpResourceSystem()
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+#include "../core/icpConfigSystem.h"
+
+INCEPTION_BEGIN_NAMESPACE
+	icpResourceSystem::icpResourceSystem()
 {
 	std::shared_ptr<icpResourceBase> simpleTri = std::make_shared<icpMeshResource>();
 	
@@ -22,6 +29,25 @@ icpResourceSystem::icpResourceSystem()
 icpResourceSystem::~icpResourceSystem()
 {
 
+}
+
+void icpResourceSystem::loadImageResource(const std::filesystem::path& imgPath)
+{
+	int width, height, channel;
+	stbi_uc* img = stbi_load((g_system_container.m_configSystem->getConfigFilePath().parent_path() / "resources\\textures\\superman.png").string().data(),
+		&width, &height, &channel, STBI_rgb_alpha);
+
+	if (!img)
+	{
+		throw std::runtime_error("failed to load texture!");
+	}
+
+	std::shared_ptr<icpImageResource> imgRes = std::make_shared<icpImageResource>();
+	imgRes->setImageBuffer(img, width * height * STBI_rgb_alpha, width, height, STBI_rgb_alpha);
+
+	m_resources.m_allResources["superman"] = imgRes;
+
+	stbi_image_free(img);
 }
 
 INCEPTION_END_NAMESPACE

@@ -151,7 +151,7 @@ void icpRenderPipeline::createGraphicsPipeline()
 	rastInfo.depthBiasEnable = VK_FALSE;
 	rastInfo.lineWidth = 1.f;
 	rastInfo.cullMode = VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT;
-	rastInfo.frontFace = VkFrontFace::VK_FRONT_FACE_CLOCKWISE;
+	rastInfo.frontFace = VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rastInfo.polygonMode = VkPolygonMode::VK_POLYGON_MODE_FILL;
 
 	info.pRasterizationState = &rastInfo;
@@ -214,7 +214,6 @@ void icpRenderPipeline::createGraphicsPipeline()
 	{
 		throw std::runtime_error("create renderPipeline failed");
 	}
-
 }
 
 VkShaderModule icpRenderPipeline::createShaderModule(const char* shaderFileName)
@@ -309,7 +308,8 @@ void icpRenderPipeline::createFrameBuffers()
 	}
 }
 
-void icpRenderPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+void icpRenderPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+{
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -352,6 +352,7 @@ void icpRenderPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint3
 
 	vkCmdBindIndexBuffer(commandBuffer, m_rhi->m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_rhi->m_descriptorSets[m_currentFrame], 0, nullptr);
 	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["firstTriangle"]);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshP->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
 

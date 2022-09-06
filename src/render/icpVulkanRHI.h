@@ -74,7 +74,7 @@ private:
 	void createVertexBuffers();
 	void createIndexBuffers();
 	void createUniformBuffers();
-
+	void createTextureImages();
 	void createDecriptorPools();
 	void allocateDescriptorSets();
 
@@ -138,6 +138,9 @@ public:
 	VkDeviceMemory m_vertexBufferMem;
 	VkDeviceMemory m_indexBufferMem;
 	std::vector<VkDeviceMemory> m_uniformBufferMem;
+
+	VkImage m_textureImage;
+	VkDeviceMemory m_textureBufferMem;
 
 	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;

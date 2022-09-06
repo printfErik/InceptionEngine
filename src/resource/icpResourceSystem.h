@@ -19,6 +19,8 @@ public:
 
 	~icpResourceSystem();
 
+	void loadImageResource(const std::filesystem::path& imgPath);
+
 	icpResourceContainer m_resources;
 
 };

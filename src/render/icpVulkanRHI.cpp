@@ -3,6 +3,7 @@
 #include "../resource/icpResourceSystem.h"
 #include "../mesh/icpMeshResource.h"
 #include "icpVulkanUtility.h"
+#include "icpImageResource.h"
 #include <iostream>
 #include <map>
 #include <set>
@@ -31,6 +32,7 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createVertexBuffers();
 	createIndexBuffers();
 	createUniformBuffers();
+	createTextureImages();
 	createDecriptorPools();
 	allocateDescriptorSets();
 	allocateCommandBuffers();
@@ -760,6 +762,70 @@ void icpVulkanRHI::createUniformBuffers()
 	}
 }
 
+void icpVulkanRHI::createTextureImages()
+{
+	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["superman"]);
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMem;
+
+	icpVulkanUtility::createVulkanBuffer(
+		imgP->getImgBuffer().size(),
+		VK_SHARING_MODE_EXCLUSIVE,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		stagingBuffer,
+		stagingBufferMem,
+		m_device,
+		m_physicalDevice
+	);
+
+	void* data;
+	vkMapMemory(m_device, stagingBufferMem, 0, imgP->getImgBuffer().size(), 0, &data);
+	memcpy(data, imgP->getImgBuffer().data(), imgP->getImgBuffer().size());
+	vkUnmapMemory(m_device, stagingBufferMem);
+
+	VkImageCreateInfo imageInfo{};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageInfo.extent.width = imgP->m_imgWidth;
+	imageInfo.extent.height = imgP->m_height;
+	imageInfo.extent.depth = 1;
+	imageInfo.mipLevels = 1;
+	imageInfo.arrayLayers = 1;
+	imageInfo.format = VkFormat::VK_FORMAT_R8G8B8A8_SRGB;
+	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.flags = 0;
+
+	if (vkCreateImage(m_device, &imageInfo, nullptr, &m_textureImage) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create image");
+	}
+
+	VkMemoryRequirements memRequirement{};
+
+	vkGetImageMemoryRequirements(m_device, m_textureImage, &memRequirement);
+
+	VkMemoryAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateInfo.allocationSize = memRequirement.size;
+	allocateInfo.memoryTypeIndex = icpVulkanUtility::findMemoryType(
+		memRequirement.memoryTypeBits, 
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_physicalDevice);
+
+	if (vkAllocateMemory(m_device, &allocateInfo, nullptr, &m_textureBufferMem) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate memory!");
+	}
+
+	vkBindImageMemory(m_device, m_textureImage, m_textureBufferMem, 0);
+}
+
+
 void icpVulkanRHI::createDecriptorPools()
 {
 	VkDescriptorPoolSize poolSize{};
@@ -812,7 +878,6 @@ void icpVulkanRHI::allocateDescriptorSets()
 
 		vkUpdateDescriptorSets(m_device, 1, &descriptorWrite, 0, nullptr);
 	}
-
 }
 
 void icpVulkanRHI::allocateCommandBuffers()
