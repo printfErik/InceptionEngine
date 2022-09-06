@@ -22,6 +22,31 @@ public:
 		uint32_t typeFilter,
 		VkMemoryPropertyFlags properties,
 		VkPhysicalDevice& physicalDevice);
+
+	static void createVulkanImage(
+		uint32_t width,
+		uint32_t height,
+		VkFormat format,
+		VkImageTiling tiling,
+		VkImageUsageFlags usage,
+		VkMemoryPropertyFlags properties,
+		VkImage& image,
+		VkDeviceMemory& imageMem,
+		VkDevice& device,
+		VkPhysicalDevice& physicalDevice
+	);
+
+	static VkCommandBuffer beginSingleTimeCommands(
+		VkCommandPool& cbPool,
+		VkDevice& device
+	);
+
+	static void endSingleTimeCommandsAndSubmit(
+		VkCommandBuffer cb,
+		VkQueue& queue,
+		VkCommandPool& cbPool,
+		VkDevice& device
+	);
 };
 
 
