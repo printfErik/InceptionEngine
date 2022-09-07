@@ -10,10 +10,10 @@ public:
 	icpConfigSystem(const std::filesystem::path& configPath);
 	std::filesystem::path getConfigFilePath();
 
-
-private:
-
 	std::filesystem::path m_configFilePath;
+	std::filesystem::path m_shaderFolderPath;
+	std::filesystem::path m_imageResourcePath;
+	std::filesystem::path m_modelResourcePath;
 };
 
 

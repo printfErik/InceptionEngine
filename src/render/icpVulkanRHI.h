@@ -6,9 +6,10 @@
 #include "icpRHI.h"
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
 
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 INCEPTION_BEGIN_NAMESPACE
@@ -75,6 +76,10 @@ private:
 	void createIndexBuffers();
 	void createUniformBuffers();
 	void createTextureImages();
+	void createTextureImageViews();
+	void createTextureSampler();
+	void createDepthResources();
+
 	void createDecriptorPools();
 	void allocateDescriptorSets();
 
@@ -83,6 +88,12 @@ private:
 	void createDescriptorSetLayout();
 
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	void copyBuffer2Image(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height);
+
+	VkFormat findDepthFormat();
+
+	void transitionImageLayout(VkImage image, VkFormat format,
+		VkImageLayout oldLayout, VkImageLayout newLayout);
 
 	bool checkValidationLayerSupport();
 
@@ -141,6 +152,12 @@ public:
 
 	VkImage m_textureImage;
 	VkDeviceMemory m_textureBufferMem;
+	VkImageView m_textureImageView;
+	VkSampler m_textureSampler;
+
+	VkImage m_depthImage;
+	VkDeviceMemory m_depthBufferMem;
+	VkImageView m_depthImageView;
 
 	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;

@@ -47,6 +47,20 @@ public:
 		VkCommandPool& cbPool,
 		VkDevice& device
 	);
+
+	static VkImageView createImageView(
+		VkImage image,
+		VkFormat format,
+		VkImageAspectFlags aspectFlags,
+		VkDevice& device
+	);
+
+	static VkFormat findSupportedFormat(
+		const std::vector<VkFormat>& candidates,
+		VkImageTiling tiling,
+		VkFormatFeatureFlags features,
+		VkPhysicalDevice& physicalDevice
+	);
 };
 
 
