@@ -812,8 +812,8 @@ void icpVulkanRHI::createUniformBuffers()
 
 void icpVulkanRHI::createTextureImages()
 {
-	auto imgPath = g_system_container.m_configSystem->getConfigFilePath() / "..\\"
-	g_system_container.m_resourceSystem->loadImageResource("E:\\InceptionEngine\\resources\\textures\\superman.png");
+	auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / "superman.png";
+	g_system_container.m_resourceSystem->loadImageResource(imgPath);
 
 	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["superman"]);
 
