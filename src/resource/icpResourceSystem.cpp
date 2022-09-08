@@ -34,7 +34,7 @@ icpResourceSystem::~icpResourceSystem()
 void icpResourceSystem::loadImageResource(const std::filesystem::path& imgPath)
 {
 	int width, height, channel;
-	stbi_uc* img = stbi_load((g_system_container.m_configSystem->getConfigFilePath().parent_path() / "resources\\textures\\superman.png").string().data(),
+	stbi_uc* img = stbi_load(imgPath.string().c_str(),
 		&width, &height, &channel, STBI_rgb_alpha);
 
 	if (!img)

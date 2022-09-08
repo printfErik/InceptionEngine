@@ -159,6 +159,4 @@ void icpVulkanUtility::endSingleTimeCommandsAndSubmit(
 	vkFreeCommandBuffers(device, cbPool, 1, &cb);
 }
 
-
-
 INCEPTION_END_NAMESPACE

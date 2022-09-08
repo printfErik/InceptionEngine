@@ -47,6 +47,15 @@ public:
 		VkCommandPool& cbPool,
 		VkDevice& device
 	);
+
+	static void copyBuffer(
+		VkBuffer srcBuffer, 
+		VkBuffer dstBuffer, 
+		VkDeviceSize size,
+		VkQueue& queue,
+		VkCommandPool& cbPool,
+		VkDevice& device
+	);
 };
 
 

@@ -65,13 +65,13 @@ void icpRenderPipeline::createGraphicsPipeline()
 	VkPipelineShaderStageCreateInfo fragShader{};
 
 	vertShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	auto vertShaderPath = g_system_container.m_configSystem->getConfigFilePath() / "vert.spv";
+	auto vertShaderPath = g_system_container.m_configSystem->m_shaderPath/ "vert.spv";
 	vertShader.module = createShaderModule(vertShaderPath.generic_string().c_str());
 	vertShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 	vertShader.pName = "main";
 
 	fragShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	auto fragShaderPath = g_system_container.m_configSystem->getConfigFilePath() / "fragment.spv";
+	auto fragShaderPath = g_system_container.m_configSystem->m_shaderPath / "fragment.spv";
 	fragShader.module = createShaderModule(fragShaderPath.generic_string().c_str());
 	fragShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 	fragShader.pName = "main";

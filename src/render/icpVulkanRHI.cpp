@@ -11,9 +11,10 @@
 #include <algorithm>
 #include <cstdint>
 
-INCEPTION_BEGIN_NAMESPACE
+#include "../core/icpConfigSystem.h"
 
-icpVulkanRHI::~icpVulkanRHI()
+INCEPTION_BEGIN_NAMESPACE
+	icpVulkanRHI::~icpVulkanRHI()
 {
 	cleanup();
 }
@@ -27,7 +28,9 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createWindowSurface();
 	initializePhysicalDevice();
 	createLogicalDevice();
-
+	createSwapChain();
+	createSwapChainImageViews();
+	createDescriptorSetLayout();
 	createCommandPools();
 	createVertexBuffers();
 	createIndexBuffers();
@@ -36,12 +39,7 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createDecriptorPools();
 	allocateDescriptorSets();
 	allocateCommandBuffers();
-
-	createDescriptorSetLayout();
 	createSyncObjects();
-
-	createSwapChain();
-	createSwapChainImageViews();
 
 	return true;
 }
@@ -621,42 +619,91 @@ void icpVulkanRHI::createCommandPools()
 	}
 }
 
-void icpVulkanRHI::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
-{
-	VkCommandBufferAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = m_transferCommandPool;
-	allocInfo.commandBufferCount = 1;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+void icpVulkanRHI::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+	VkCommandBuffer commandBuffer = icpVulkanUtility::beginSingleTimeCommands(m_transferCommandPool, m_device);
 
-	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer);
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = oldLayout;
+	barrier.newLayout = newLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
 
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	VkPipelineStageFlags sourceStage;
+	VkPipelineStageFlags destinationStage;
 
-	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-	VkBufferCopy copyRegin{};
-	copyRegin.srcOffset = 0;
-	copyRegin.dstOffset = 0;
-	copyRegin.size = size;
-	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegin);
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-	vkEndCommandBuffer(commandBuffer);
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else {
+		throw std::invalid_argument("unsupported layout transition!");
+	}
 
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
+	vkCmdPipelineBarrier(
+		commandBuffer,
+		sourceStage, destinationStage,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
 
-	vkQueueSubmit(m_transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(m_transferQueue);
-
-	vkFreeCommandBuffers(m_device, m_transferCommandPool, 1, &commandBuffer);
+	icpVulkanUtility::endSingleTimeCommandsAndSubmit(commandBuffer, m_transferQueue, m_transferCommandPool, m_device);
 }
 
+void icpVulkanRHI::copyBuffer(
+	VkBuffer srcBuffer,
+	VkBuffer dstBuffer,
+	VkDeviceSize size)
+{
+	VkCommandBuffer commandBuffer = icpVulkanUtility::beginSingleTimeCommands(m_transferCommandPool, m_device);
+
+	VkBufferCopy copyRegion{};
+	copyRegion.size = size;
+	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+	icpVulkanUtility::endSingleTimeCommandsAndSubmit(commandBuffer, m_transferQueue, m_transferCommandPool, m_device);
+}
+
+void icpVulkanRHI::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+	VkCommandBuffer commandBuffer = icpVulkanUtility::beginSingleTimeCommands(m_transferCommandPool, m_device);
+
+	VkBufferImageCopy region{};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+	region.imageOffset = { 0, 0, 0 };
+	region.imageExtent = {
+		width,
+		height,
+		1
+	};
+
+	vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+	icpVulkanUtility::endSingleTimeCommandsAndSubmit(commandBuffer, m_transferQueue, m_transferCommandPool, m_device);
+}
 
 void icpVulkanRHI::createVertexBuffers()
 {
@@ -764,6 +811,8 @@ void icpVulkanRHI::createUniformBuffers()
 
 void icpVulkanRHI::createTextureImages()
 {
+	g_system_container.m_resourceSystem->loadImageResource(g_system_container.m_configSystem->m_texturePath / "superman.png");
+
 	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["superman"]);
 
 	VkBuffer stagingBuffer;
@@ -797,6 +846,13 @@ void icpVulkanRHI::createTextureImages()
 		m_device,
 		m_physicalDevice
 	);
+
+	transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	copyBufferToImage(stagingBuffer, m_textureImage, static_cast<uint32_t>(imgP->m_imgWidth), static_cast<uint32_t>(imgP->m_height));
+	transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+	vkFreeMemory(m_device, stagingBufferMem, nullptr);
 }
 
 
@@ -824,7 +880,7 @@ void icpVulkanRHI::allocateDescriptorSets()
 
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateInfo.descriptorSetCount = 1;
+	allocateInfo.descriptorSetCount = static_cast<uint32_t>(layouts.size());
 	allocateInfo.descriptorPool = m_descriptorPool;
 	allocateInfo.pSetLayouts = layouts.data();
 
@@ -835,7 +891,8 @@ void icpVulkanRHI::allocateDescriptorSets()
 		throw std::runtime_error("failed to allocate descriptor sets!");
 	}
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+	{
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = m_uniformBuffers[i];
 		bufferInfo.offset = 0;

@@ -11,9 +11,9 @@ public:
 	std::filesystem::path getConfigFilePath();
 
 
-private:
-
 	std::filesystem::path m_configFilePath;
+	std::filesystem::path m_shaderPath;
+	std::filesystem::path m_texturePath;
 };
 
 
