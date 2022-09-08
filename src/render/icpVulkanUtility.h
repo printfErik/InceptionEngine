@@ -48,14 +48,13 @@ public:
 		VkDevice& device
 	);
 
-	static void copyBuffer(
-		VkBuffer srcBuffer, 
-		VkBuffer dstBuffer, 
-		VkDeviceSize size,
-		VkQueue& queue,
-		VkCommandPool& cbPool,
-		VkDevice& device
+	static VkImageView createImageView(
+		VkImage image, 
+		VkFormat format,
+		VkDevice device
 	);
+
+
 };
 
 

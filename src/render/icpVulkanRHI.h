@@ -74,7 +74,11 @@ private:
 	void createVertexBuffers();
 	void createIndexBuffers();
 	void createUniformBuffers();
+
+	void createTextureSamplers();
 	void createTextureImages();
+	void createTextureImageViews();
+
 	void createDecriptorPools();
 	void allocateDescriptorSets();
 
@@ -144,6 +148,8 @@ public:
 
 	VkImage m_textureImage;
 	VkDeviceMemory m_textureBufferMem;
+	VkImageView m_textureImageView;
+	VkSampler m_textureSampler;
 
 	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;

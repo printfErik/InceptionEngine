@@ -288,7 +288,8 @@ void icpRenderPipeline::createRenderPass()
 void icpRenderPipeline::createFrameBuffers()
 {
 	m_swapChainFramebuffers.resize(m_rhi->m_swapChainImageViews.size());
-	for (size_t i = 0; i < m_rhi->m_swapChainImageViews.size(); i++) {
+	for (size_t i = 0; i < m_rhi->m_swapChainImageViews.size(); i++) 
+	{
 		VkImageView attachments[] = {
 			m_rhi->m_swapChainImageViews[i]
 		};
