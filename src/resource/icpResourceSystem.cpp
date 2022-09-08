@@ -14,10 +14,10 @@ INCEPTION_BEGIN_NAMESPACE
 	std::shared_ptr<icpResourceBase> simpleTri = std::make_shared<icpMeshResource>();
 	
 	icpMeshData meshData;
-	meshData.m_vertices.push_back({ {-0.5f, -0.5f, 0.0f}, { 1.0f, 0.0f, 0.0f }, {1.f, 0.f} });
-	meshData.m_vertices.push_back({ {0.5f, -0.5f, 0.0f}, { 0.0f, 1.0f, 0.0f }, {0.f, 0.f} });
-	meshData.m_vertices.push_back({ {0.5f, 0.5f, 0.0f}, { 0.0f, 0.0f, 1.0f }, {0.f, 1.f} });
-	meshData.m_vertices.push_back({ {-0.5f, 0.5f, 0.0f}, { 0.0f, 0.0f, 1.0f }, {1.f, 1.f} });
+	meshData.m_vertices.push_back({ {-1.f, -1.f, 0.0f}, { 1.0f, 0.0f, 0.0f }, {1.f, 0.f} });
+	meshData.m_vertices.push_back({ {1.f, -1.f, 0.0f}, { 0.0f, 1.0f, 0.0f }, {0.f, 0.f} });
+	meshData.m_vertices.push_back({ {1.f, 1.f, 0.0f}, { 0.0f, 0.0f, 1.0f }, {0.f, 1.f} });
+	meshData.m_vertices.push_back({ {-1.f, 1.f, 0.0f}, { 0.0f, 0.0f, 1.0f }, {1.f, 1.f} });
 
 	meshData.m_vertexIndices = { 0, 1, 2, 2, 3, 0 };
 
