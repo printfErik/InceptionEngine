@@ -26,6 +26,6 @@ if (NOT TARGET tinyobjloader)
 endif()
 
 if (NOT TARGET imgui)
-	add_subdirectory(imgui)
+	include(imgui.cmake)
 	set_target_properties(imgui PROPERTIES FOLDER ${third_party_folder}/imgui)
 endif()
