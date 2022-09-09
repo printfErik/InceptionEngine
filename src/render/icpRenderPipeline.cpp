@@ -42,7 +42,6 @@ void icpRenderPipeline::cleanupSwapChain()
 	{
 		vkDestroyFramebuffer(m_rhi->m_device, framebuffer, nullptr);
 	}
-
 }
 
 bool icpRenderPipeline::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
@@ -387,7 +386,7 @@ void icpRenderPipeline::recordCommandBuffer(VkCommandBuffer commandBuffer, uint3
 	vkCmdBindIndexBuffer(commandBuffer, m_rhi->m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_rhi->m_descriptorSets[m_currentFrame], 0, nullptr);
-	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["firstTriangle"]);
+	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["viking_room"]);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshP->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);

@@ -7,6 +7,9 @@
 #include <vulkan/vulkan.hpp>
 #include <array>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
+
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -48,6 +51,13 @@ struct icpVertex
 		return attributeDescriptions;
 
 	}
+
+	bool operator==(const icpVertex& v1) const
+	{
+		return position == v1.position
+			&& color == v1.color
+			&& texCoord == v1.texCoord;
+	}
 };
 
 
@@ -58,5 +68,16 @@ public:
 	std::vector<uint32_t> m_vertexIndices;
 };
 
-
 INCEPTION_END_NAMESPACE
+
+namespace std
+{
+	template<>
+	struct hash<Inception::icpVertex>
+	{
+		size_t operator()(Inception::icpVertex const& vertex) const
+		{
+			return ((hash<glm::vec3>()(vertex.position) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.texCoord) << 1);
+		}
+	};
+}

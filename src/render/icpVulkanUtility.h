@@ -26,6 +26,7 @@ public:
 	static void createVulkanImage(
 		uint32_t width,
 		uint32_t height,
+		uint32_t mipmapLevel,
 		VkFormat format,
 		VkImageTiling tiling,
 		VkImageUsageFlags usage,
@@ -52,6 +53,7 @@ public:
 		VkImage image,
 		VkFormat format,
 		VkImageAspectFlags aspectFlags,
+		uint32_t mipmapLevel,
 		VkDevice& device
 	);
 

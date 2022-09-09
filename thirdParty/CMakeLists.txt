@@ -20,3 +20,7 @@ if(NOT TARGET glfw)
     set_target_properties(update_mappings PROPERTIES FOLDER ${third_party_folder}/glfw)
 endif()
 
+if (NOT TARGET tinyobjloader)
+	add_subdirectory(tinyobjloader)
+	set_target_properties(tinyobjloader PROPERTIES FOLDER ${third_party_folder}/tinyobjloader)
+endif()

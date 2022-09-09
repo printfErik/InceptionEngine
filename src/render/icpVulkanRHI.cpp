@@ -14,7 +14,8 @@
 #include "../core/icpConfigSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	icpVulkanRHI::~icpVulkanRHI()
+
+icpVulkanRHI::~icpVulkanRHI()
 {
 	cleanup();
 }
@@ -36,9 +37,8 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createDepthResources();
 
 	createTextureImages();
-	createTextureImageViews();
 	createTextureSampler();
-
+	createObjModels();
 	createVertexBuffers();
 	createIndexBuffers();
 	createUniformBuffers();
@@ -114,6 +114,8 @@ void icpVulkanRHI::createInstance()
 
 void icpVulkanRHI::cleanup()
 {
+	cleanupSwapChain();
+
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		vkDestroySemaphore(m_device, m_imageAvailableForRenderingSemaphores[i], nullptr);
@@ -124,14 +126,27 @@ void icpVulkanRHI::cleanup()
 	vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
 	vkDestroyCommandPool(m_device, m_transferCommandPool, nullptr);
 
-	cleanupSwapChain();
-
 	vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+	{
+		vkDestroyBuffer(m_device, m_uniformBuffers[i], nullptr);
+		vkFreeMemory(m_device, m_uniformBufferMem[i], nullptr);
+	}
+
+	vkDestroySampler(m_device, m_textureSampler, nullptr);
+	vkDestroyImageView(m_device, m_textureImageView, nullptr);
+
+	vkDestroyImage(m_device, m_textureImage, nullptr);
+	vkFreeMemory(m_device, m_textureBufferMem, nullptr);
 
 	vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
 
 	vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
 	vkFreeMemory(m_device, m_vertexBufferMem, nullptr);
+
+	vkDestroyBuffer(m_device, m_indexBuffer, nullptr);
+	vkFreeMemory(m_device, m_indexBufferMem, nullptr);
 
 	vkDestroyDevice(m_device, nullptr);
 
@@ -147,11 +162,9 @@ void icpVulkanRHI::cleanup()
 
 void icpVulkanRHI::cleanupSwapChain()
 {
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		vkDestroyBuffer(m_device, m_uniformBuffers[i], nullptr);
-		vkFreeMemory(m_device, m_uniformBufferMem[i], nullptr);
-	}
+	vkDestroyImageView(m_device, m_depthImageView, nullptr);
+	vkDestroyImage(m_device, m_depthImage, nullptr);
+	vkFreeMemory(m_device, m_depthBufferMem, nullptr);
 
 	for (const auto& imgView : m_swapChainImageViews)
 	{
@@ -584,7 +597,7 @@ void icpVulkanRHI::createSwapChainImageViews()
 	m_swapChainImageViews.resize(m_swapChainImages.size());
 
 	for (size_t i = 0; i < m_swapChainImages.size(); i++) {
-		m_swapChainImageViews[i] = icpVulkanUtility::createImageView(m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, m_device);
+		m_swapChainImageViews[i] = icpVulkanUtility::createImageView(m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, m_device);
 	}
 }
 
@@ -655,7 +668,7 @@ void icpVulkanRHI::copyBuffer2Image(VkBuffer srcBuffer, VkImage dstImage, uint32
 }
 
 
-void icpVulkanRHI::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+void icpVulkanRHI::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipmapLevel)
 {
 	VkCommandBuffer commandBuffer = icpVulkanUtility::beginSingleTimeCommands(m_transferCommandPool, m_device);
 
@@ -670,7 +683,7 @@ void icpVulkanRHI::transitionImageLayout(VkImage image, VkFormat format, VkImage
 	barrier.image = image;
 	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.levelCount = mipmapLevel;
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = 1;
 
@@ -707,9 +720,17 @@ void icpVulkanRHI::transitionImageLayout(VkImage image, VkFormat format, VkImage
 	icpVulkanUtility::endSingleTimeCommandsAndSubmit(commandBuffer, m_transferQueue, m_transferCommandPool, m_device);
 }
 
+void icpVulkanRHI::createObjModels()
+{
+	auto objPath = g_system_container.m_configSystem->m_modelResourcePath / "viking_room.obj";
+	g_system_container.m_resourceSystem->loadObjModelResource(objPath);
+}
+
+
 void icpVulkanRHI::createVertexBuffers()
 {
-	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["firstTriangle"]);
+	auto objPair = *(g_system_container.m_resourceSystem->m_resources.m_allResources.begin());
+	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(objPair.second);
 
 	auto bufferSize = sizeof(meshP->m_meshData.m_vertices[0]) * meshP->m_meshData.m_vertices.size();
 
@@ -749,7 +770,8 @@ void icpVulkanRHI::createVertexBuffers()
 
 void icpVulkanRHI::createIndexBuffers()
 {
-	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["firstTriangle"]);
+	auto objPair = *(g_system_container.m_resourceSystem->m_resources.m_allResources.begin());
+	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(objPair.second);
 
 	VkDeviceSize bufferSize = sizeof(meshP->m_meshData.m_vertexIndices[0]) * meshP->m_meshData.m_vertexIndices.size();
 
@@ -813,10 +835,10 @@ void icpVulkanRHI::createUniformBuffers()
 
 void icpVulkanRHI::createTextureImages()
 {
-	auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / "superman.png";
+	auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / "viking_room.png";
 	g_system_container.m_resourceSystem->loadImageResource(imgPath);
 
-	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["superman"]);
+	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["viking_room"]);
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMem;
@@ -840,6 +862,7 @@ void icpVulkanRHI::createTextureImages()
 	icpVulkanUtility::createVulkanImage(
 		static_cast<uint32_t>(imgP->m_imgWidth),
 		static_cast<uint32_t>(imgP->m_height),
+		static_cast<uint32_t>(imgP->m_mipmapLevel),
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -850,17 +873,20 @@ void icpVulkanRHI::createTextureImages()
 		m_physicalDevice
 	);
 
-	transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+	transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(imgP->m_mipmapLevel));
 	copyBuffer2Image(stagingBuffer, m_textureImage, static_cast<uint32_t>(imgP->m_imgWidth), static_cast<uint32_t>(imgP->m_height));
-	transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, static_cast<uint32_t>(imgP->m_mipmapLevel));
 
 	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
 	vkFreeMemory(m_device, stagingBufferMem, nullptr);
+
+	createTextureImageViews(imgP->m_mipmapLevel);
 }
 
-void icpVulkanRHI::createTextureImageViews()
+void icpVulkanRHI::createTextureImageViews(size_t mipmaplevel)
 {
-	m_textureImageView = icpVulkanUtility::createImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, m_device);
+	m_textureImageView = icpVulkanUtility::createImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipmaplevel,m_device);
 }
 
 void icpVulkanRHI::createTextureSampler()
@@ -902,7 +928,8 @@ void icpVulkanRHI::createDepthResources() {
 
 	icpVulkanUtility::createVulkanImage(
 		m_swapChainExtent.width, 
-		m_swapChainExtent.height, 
+		m_swapChainExtent.height,
+		0,
 		depthFormat, 
 		VK_IMAGE_TILING_OPTIMAL, 
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
@@ -912,7 +939,7 @@ void icpVulkanRHI::createDepthResources() {
 		m_device,
 		m_physicalDevice
 	);
-	m_depthImageView = icpVulkanUtility::createImageView(m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, m_device);
+	m_depthImageView = icpVulkanUtility::createImageView(m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, m_device);
 }
 
 bool hasStencilComponent(VkFormat format) {

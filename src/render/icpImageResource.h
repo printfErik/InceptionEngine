@@ -17,6 +17,8 @@ public:
 	size_t m_height = 0;
 	size_t m_channelNum = 0;
 
+	size_t m_mipmapLevel = 0;
+
 private:
 
 	std::vector<unsigned char> m_imgBuffer;

@@ -61,6 +61,7 @@ void icpVulkanUtility::createVulkanBuffer(
 void icpVulkanUtility::createVulkanImage(
 	uint32_t width,
 	uint32_t height,
+	uint32_t mipmapLevel,
 	VkFormat format,
 	VkImageTiling tiling,
 	VkImageUsageFlags usage,
@@ -77,7 +78,7 @@ void icpVulkanUtility::createVulkanImage(
 	imageInfo.extent.width = width;
 	imageInfo.extent.height = height;
 	imageInfo.extent.depth = 1;
-	imageInfo.mipLevels = 1;
+	imageInfo.mipLevels = mipmapLevel;
 	imageInfo.arrayLayers = 1;
 	imageInfo.format = format;
 	imageInfo.tiling = tiling;
@@ -159,7 +160,12 @@ void icpVulkanUtility::endSingleTimeCommandsAndSubmit(
 	vkFreeCommandBuffers(device, cbPool, 1, &cb);
 }
 
-VkImageView icpVulkanUtility::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkDevice& device)
+VkImageView icpVulkanUtility::createImageView(
+	VkImage image, 
+	VkFormat format,
+	VkImageAspectFlags aspectFlags,
+	uint32_t mipmapLevel,
+	VkDevice& device)
 {
 	VkImageViewCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -172,7 +178,7 @@ VkImageView icpVulkanUtility::createImageView(VkImage image, VkFormat format, Vk
 	createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 	createInfo.subresourceRange.aspectMask = aspectFlags;
 	createInfo.subresourceRange.baseMipLevel = 0;
-	createInfo.subresourceRange.levelCount = 1;
+	createInfo.subresourceRange.levelCount = mipmapLevel;
 	createInfo.subresourceRange.baseArrayLayer = 0;
 	createInfo.subresourceRange.layerCount = 1;
 

@@ -20,6 +20,7 @@ public:
 	~icpResourceSystem();
 
 	void loadImageResource(const std::filesystem::path& imgPath);
+	void loadObjModelResource(const std::filesystem::path& objPath);
 
 	icpResourceContainer m_resources;
 
