@@ -18,9 +18,9 @@ static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
 
 struct UniformBufferObject
 {
-	glm::mat4 model;
-	glm::mat4 view;
-	glm::mat4 projection;
+	alignas(16) glm::mat4 model;
+	alignas(16) glm::mat4 view;
+	alignas(16) glm::mat4 projection;
 };
 
 struct QueueFamilyIndices
@@ -63,6 +63,14 @@ public:
 	void createSwapChainImageViews();
 
 	void updateUniformBuffers(uint32_t _curImage);
+
+	void createDepthResources();
+	void createUniformBuffers();
+	void createDecriptorPools();
+	void allocateDescriptorSets();
+
+	void allocateCommandBuffers();
+
 private:
 	void createInstance();
 	void initializeDebugMessenger();
@@ -74,23 +82,16 @@ private:
 
 	void createVertexBuffers();
 	void createIndexBuffers();
-	void createUniformBuffers();
+	
 	void createTextureImages();
 	void createTextureImageViews();
 	void createTextureSampler();
-	void createDepthResources();
 
-	void createDecriptorPools();
-	void allocateDescriptorSets();
-
-	void allocateCommandBuffers();
 	void createSyncObjects();
 	void createDescriptorSetLayout();
 
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 	void copyBuffer2Image(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height);
-
-	VkFormat findDepthFormat();
 
 	void transitionImageLayout(VkImage image, VkFormat format,
 		VkImageLayout oldLayout, VkImageLayout newLayout);

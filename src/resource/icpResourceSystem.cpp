@@ -19,7 +19,12 @@ INCEPTION_BEGIN_NAMESPACE
 	meshData.m_vertices.push_back({ {0.5f, 0.5f, 0.0f}, { 0.0f, 0.0f, 1.0f }, {0.f, 1.f} });
 	meshData.m_vertices.push_back({ {-0.5f, 0.5f, 0.0f}, { 0.0f, 0.0f, 1.0f }, {1.f, 1.f} });
 
-	meshData.m_vertexIndices = { 0, 1, 2, 2, 3, 0 };
+	meshData.m_vertices.push_back({ {-0.5f, -0.5f, -0.5f}, { 1.0f, 0.0f, 0.0f }, {1.f, 0.f} });
+	meshData.m_vertices.push_back({ {0.5f, -0.5f, -0.5f}, { 0.0f, 1.0f, 0.0f },{0.f, 0.f} });
+	meshData.m_vertices.push_back({ {0.5f, 0.5f, -0.5f}, { 0.0f, 0.0f, 1.0f }, {0.f, 1.f} });
+	meshData.m_vertices.push_back({ {-0.5f, 0.5f, -0.5f}, { 0.0f, 0.0f, 1.0f }, {1.f, 1.f} });
+
+	meshData.m_vertexIndices = { 0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4 };
 
 	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(simpleTri);
 	meshP->m_meshData = meshData;

@@ -183,7 +183,8 @@ VkImageView icpVulkanUtility::createImageView(VkImage image, VkFormat format, Vk
 	return view;
 }
 
-VkFormat icpVulkanUtility::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice& physicalDevice) {
+VkFormat icpVulkanUtility::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features, VkPhysicalDevice& physicalDevice)
+{
 	for (VkFormat format : candidates) 
 	{
 		VkFormatProperties props;
@@ -198,6 +199,15 @@ VkFormat icpVulkanUtility::findSupportedFormat(const std::vector<VkFormat>& cand
 	}
 
 	throw std::runtime_error("failed to find supported format!");
+}
+
+VkFormat icpVulkanUtility::findDepthFormat(VkPhysicalDevice physicalDevice) {
+	return icpVulkanUtility::findSupportedFormat(
+		{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		physicalDevice
+	);
 }
 
 

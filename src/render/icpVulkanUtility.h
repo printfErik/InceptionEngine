@@ -61,6 +61,8 @@ public:
 		VkFormatFeatureFlags features,
 		VkPhysicalDevice& physicalDevice
 	);
+
+	static VkFormat findDepthFormat(VkPhysicalDevice physicalDevice);
 };
 
 

@@ -29,24 +29,25 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	initializePhysicalDevice();
 	createLogicalDevice();
 
+	createSwapChain();
+	createSwapChainImageViews();
+	createDescriptorSetLayout();
 	createCommandPools();
 	createDepthResources();
-	createVertexBuffers();
-	createIndexBuffers();
-	createUniformBuffers();
+
 	createTextureImages();
 	createTextureImageViews();
 	createTextureSampler();
 
+	createVertexBuffers();
+	createIndexBuffers();
+	createUniformBuffers();
+
 	createDecriptorPools();
-	createDescriptorSetLayout();
 	allocateDescriptorSets();
 	allocateCommandBuffers();
 
 	createSyncObjects();
-
-	createSwapChain();
-	createSwapChainImageViews();
 
 	return true;
 }
@@ -583,7 +584,7 @@ void icpVulkanRHI::createSwapChainImageViews()
 	m_swapChainImageViews.resize(m_swapChainImages.size());
 
 	for (size_t i = 0; i < m_swapChainImages.size(); i++) {
-		m_swapChainImageViews[i] = icpVulkanUtility::createImageView(m_swapChainImages[i], VkFormat::VK_FORMAT_R8G8B8A8_SRGB, m_device);
+		m_swapChainImageViews[i] = icpVulkanUtility::createImageView(m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, m_device);
 	}
 }
 
@@ -832,13 +833,13 @@ void icpVulkanRHI::createTextureImages()
 	);
 
 	void* data;
-	vkMapMemory(m_device, stagingBufferMem, 0, imgP->getImgBuffer().size(), 0, &data);
+	vkMapMemory(m_device, stagingBufferMem, 0, static_cast<uint32_t>(imgP->getImgBuffer().size()), 0, &data);
 	memcpy(data, imgP->getImgBuffer().data(), imgP->getImgBuffer().size());
 	vkUnmapMemory(m_device, stagingBufferMem);
 
 	icpVulkanUtility::createVulkanImage(
-		imgP->m_imgWidth,
-		imgP->m_height,
+		static_cast<uint32_t>(imgP->m_imgWidth),
+		static_cast<uint32_t>(imgP->m_height),
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -859,7 +860,7 @@ void icpVulkanRHI::createTextureImages()
 
 void icpVulkanRHI::createTextureImageViews()
 {
-	m_textureImageView = icpVulkanUtility::createImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, m_device);
+	m_textureImageView = icpVulkanUtility::createImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, m_device);
 }
 
 void icpVulkanRHI::createTextureSampler()
@@ -897,7 +898,7 @@ void icpVulkanRHI::createTextureSampler()
 }
 
 void icpVulkanRHI::createDepthResources() {
-	VkFormat depthFormat = findDepthFormat();
+	VkFormat depthFormat = icpVulkanUtility::findDepthFormat(m_physicalDevice);
 
 	icpVulkanUtility::createVulkanImage(
 		m_swapChainExtent.width, 
@@ -912,15 +913,6 @@ void icpVulkanRHI::createDepthResources() {
 		m_physicalDevice
 	);
 	m_depthImageView = icpVulkanUtility::createImageView(m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, m_device);
-}
-
-VkFormat icpVulkanRHI::findDepthFormat() {
-	return icpVulkanUtility::findSupportedFormat(
-		{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-		VK_IMAGE_TILING_OPTIMAL,
-		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT,
-		m_physicalDevice
-	);
 }
 
 bool hasStencilComponent(VkFormat format) {
@@ -1032,6 +1024,7 @@ void icpVulkanRHI::createDescriptorSetLayout()
 	uboLayoutBinding.binding = 0;
 	uboLayoutBinding.descriptorCount = 1;
 	uboLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	uboLayoutBinding.pImmutableSamplers = nullptr;
 	uboLayoutBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 
 	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
