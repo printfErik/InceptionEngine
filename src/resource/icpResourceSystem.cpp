@@ -2,12 +2,13 @@
 #include "../mesh/icpMeshResource.h"
 #include "../render/icpImageResource.h"
 #include "../core/icpSystemContainer.h"
+#include <iostream>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #define TINYOBJLOADER_USE_MAPBOX_EARCUT
-#include <iostream>
+#define TINYOBJLOADER_IMPLEMENTATION 
 #include <tiny_obj_loader.h>
 
 #include "../core/icpConfigSystem.h"
