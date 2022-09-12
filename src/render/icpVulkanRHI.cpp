@@ -929,7 +929,7 @@ void icpVulkanRHI::createDepthResources() {
 	icpVulkanUtility::createVulkanImage(
 		m_swapChainExtent.width, 
 		m_swapChainExtent.height,
-		0,
+		1,
 		depthFormat, 
 		VK_IMAGE_TILING_OPTIMAL, 
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
