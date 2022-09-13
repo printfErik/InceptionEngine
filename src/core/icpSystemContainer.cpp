@@ -21,7 +21,7 @@ void icpSystemContainer::initializeAllSystems(const std::filesystem::path& _conf
 	m_resourceSystem = std::make_shared<icpResourceSystem>();
 
 	m_cameraSystem = std::make_shared<icpCameraSystem>();
-	m_cameraSystem->in
+	m_cameraSystem->initialize();
 
 	m_windowSystem = std::make_shared<icpWindowSystem>();
 	m_windowSystem->initializeWindowSystem();

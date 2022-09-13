@@ -13,7 +13,9 @@ INCEPTION_BEGIN_NAMESPACE
 struct icpCamera
 {
 	glm::vec3 clearColor;
-	float near = 0.f;
+	float fov = 0.f;
+	float aspectRatio = 0.f;
+	float near = 0.1f;
 	float far = 1000.f;
 	glm::vec3 position;
 	glm::qua<float> rotation;

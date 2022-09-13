@@ -2,6 +2,7 @@
 #include "../core/icpSystemContainer.h"
 #include "../resource/icpResourceSystem.h"
 #include "../mesh/icpMeshResource.h"
+#include "icpCameraSystem.h"
 #include "icpVulkanUtility.h"
 #include "icpImageResource.h"
 #include <iostream>
@@ -952,7 +953,7 @@ void icpVulkanRHI::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t 
 	int32_t mipmapWidth = width;
 	int32_t mipmapHeight = height;
 
-	for (int32_t i = 1; i < mipmapLevels; i++)
+	for (uint32_t i = 1; i < mipmapLevels; i++)
 	{
 		barrier.subresourceRange.baseMipLevel = i - 1;
 		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -1012,8 +1013,6 @@ void icpVulkanRHI::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t 
 		0, nullptr,
 		0, nullptr,
 		1, &barrier);
-
-	
 
 	icpVulkanUtility::endSingleTimeCommandsAndSubmit(cb, m_graphicsQueue, m_graphicsCommandPool, m_device);
 }
@@ -1262,10 +1261,13 @@ void icpVulkanRHI::updateUniformBuffers(uint32_t _curImage)
 
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(current - startTime).count();
 
+	auto camera = g_system_container.m_cameraSystem->m_cameras[0];
+
 	UniformBufferObject ubo{};
 	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.projection = glm::perspective(glm::radians(45.0f), m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 10.0f);
+	ubo.view = camera.viewMatrix;
+	camera.aspectRatio = m_swapChainExtent.width / (float)m_swapChainExtent.height;
+	ubo.projection = glm::perspective(camera.fov, camera.aspectRatio, camera.near, camera.far);
 	ubo.projection[1][1] *= -1;
 
 	void* data;
