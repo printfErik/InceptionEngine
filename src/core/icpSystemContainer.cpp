@@ -1,6 +1,7 @@
 #include "icpSystemContainer.h"
 #include "../render/icpWindowSystem.h"
 #include "../render/icpRenderSystem.h"
+#include "../render/icpCameraSystem.h"
 #include "../resource/icpResourceSystem.h"
 #include "icpConfigSystem.h"
 
@@ -18,6 +19,9 @@ void icpSystemContainer::initializeAllSystems(const std::filesystem::path& _conf
 	m_configSystem = std::make_shared<icpConfigSystem>(_configFilePath);
 
 	m_resourceSystem = std::make_shared<icpResourceSystem>();
+
+	m_cameraSystem = std::make_shared<icpCameraSystem>();
+	m_cameraSystem->in
 
 	m_windowSystem = std::make_shared<icpWindowSystem>();
 	m_windowSystem->initializeWindowSystem();

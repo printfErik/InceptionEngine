@@ -18,6 +18,7 @@ icpWindowSystem::~icpWindowSystem()
 
 void icpWindowSystem::onKeyCallBack(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	/*
 	if (action == GLFW_PRESS)
 	{
 		switch (key)
@@ -26,6 +27,7 @@ void icpWindowSystem::onKeyCallBack(GLFWwindow* window, int key, int scancode, i
 
 		}
 	}
+	*/
 }
 
 bool icpWindowSystem::initializeWindowSystem()
