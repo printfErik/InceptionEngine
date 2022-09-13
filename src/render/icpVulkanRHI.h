@@ -88,6 +88,8 @@ private:
 	void createTextureImageViews(size_t mipmaplevel);
 	void createTextureSampler();
 
+	void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t width, int32_t height, uint32_t mipmapLevels);
+
 	void createSyncObjects();
 	void createDescriptorSetLayout();
 

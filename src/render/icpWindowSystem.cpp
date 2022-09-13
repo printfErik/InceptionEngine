@@ -16,12 +16,24 @@ icpWindowSystem::~icpWindowSystem()
 	glfwTerminate();
 }
 
+void icpWindowSystem::onKeyCallBack(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (action == GLFW_PRESS)
+	{
+		switch (key)
+		{
+		case GLFW_KEY_W:
+
+		}
+	}
+}
+
 bool icpWindowSystem::initializeWindowSystem()
 {
 	if (glfwInit() != GLFW_TRUE)
 	{
 		throw std::runtime_error("glfwInit failed");
-}
+	}
 
 	m_width = 800;
 	m_height = 600;
@@ -35,7 +47,7 @@ bool icpWindowSystem::initializeWindowSystem()
 	}
 
 	glfwSetWindowUserPointer(m_window, this);
-	
+	glfwSetKeyCallback(m_window, onKeyCallBack);
 
 	return true;
 }

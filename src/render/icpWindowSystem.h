@@ -17,7 +17,11 @@ public:
 	bool shouldClose() const;
 	void pollEvent() const;
 
+	static void onKeyCallBack(GLFWwindow* window, int key, int scancode, int action, int mods);
+
 private:
+
+	
 
 	GLFWwindow* m_window = nullptr;
 	int m_width = 0;
