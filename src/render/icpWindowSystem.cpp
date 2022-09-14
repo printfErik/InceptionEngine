@@ -46,6 +46,33 @@ void icpWindowSystem::onKeyCallBack(GLFWwindow* window, int key, int scancode, i
 			break;
 		}
 	}
+
+	if (action == GLFW_RELEASE)
+	{
+		switch (key)
+		{
+		case GLFW_KEY_W:
+			window_system->m_command &= (0xFFFFFFFF ^ (unsigned int)eEditorCommand::CAMERA_FORWARD);
+			break;
+		case GLFW_KEY_A:
+			window_system->m_command &= (0xFFFFFFFF ^ (unsigned int)eEditorCommand::CAMERA_LEFT);
+			break;
+		case GLFW_KEY_S:
+			window_system->m_command &= (0xFFFFFFFF ^ (unsigned int)eEditorCommand::CMAERA_BACK);
+			break;
+		case GLFW_KEY_D:
+			window_system->m_command &= (0xFFFFFFFF ^ (unsigned int)eEditorCommand::CAMERA_RIGHT);
+			break;
+		case GLFW_KEY_Q:
+			window_system->m_command &= (0xFFFFFFFF ^ (unsigned int)eEditorCommand::CAMERA_UP);
+			break;
+		case GLFW_KEY_E:
+			window_system->m_command &= (0xFFFFFFFF ^ (unsigned int)eEditorCommand::CAMERA_DOWN);
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 void icpWindowSystem::onMouseButtonCallBack(GLFWwindow* window, int button, int action, int mods)
@@ -64,8 +91,7 @@ void icpWindowSystem::onMouseButtonCallBack(GLFWwindow* window, int button, int 
 			window_system->m_mouseCoordBefore[0] = xpos;
 			window_system->m_mouseCoordBefore[1] = ypos;
 			auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
-			auto oriCameraRot = camera->m_rotation;
-			window_system->m_originCameraRot = oriCameraRot;
+			window_system->m_originCameraRot = camera->m_rotation;
 			break;
 		}
 		default:
@@ -82,6 +108,8 @@ void icpWindowSystem::onMouseButtonCallBack(GLFWwindow* window, int button, int 
 			window_system->m_mouseRightButtonDown = false;
 			window_system->m_mouseCoordBefore[0] = 0.0;
 			window_system->m_mouseCoordBefore[1] = 0.0;
+			window_system->m_mouseCurCoord[0] = 0.0;
+			window_system->m_mouseCurCoord[1] = 0.0;
 			window_system->m_originCameraRot = glm::qua<float>();
 			break;
 		}
@@ -112,8 +140,8 @@ bool icpWindowSystem::initializeWindowSystem()
 		throw std::runtime_error("glfwInit failed");
 	}
 
-	m_width = 300;
-	m_height = 300;
+	m_width = 1280;
+	m_height = 720;
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
@@ -170,11 +198,11 @@ void icpWindowSystem::handleKeyEvent()
 	}
 	if (m_command & (unsigned int)eEditorCommand::CAMERA_RIGHT)
 	{
-		cameraOffset += cameraRotation * glm::vec3(camera->m_cameraSpeed, 0.f, 0.f);
+		cameraOffset += cameraRotation * glm::vec3(-camera->m_cameraSpeed, 0.f, 0.f);
 	}
 	if (m_command & (unsigned int)eEditorCommand::CAMERA_LEFT)
 	{
-		cameraOffset += cameraRotation * glm::vec3(-camera->m_cameraSpeed, 0.f, 0.f);
+		cameraOffset += cameraRotation * glm::vec3(camera->m_cameraSpeed, 0.f, 0.f);
 	}
 	if (m_command & (unsigned int)eEditorCommand::CAMERA_UP)
 	{
@@ -187,21 +215,21 @@ void icpWindowSystem::handleKeyEvent()
 
 	g_system_container.m_cameraSystem->moveCamera(camera, cameraOffset);
 
-	m_command = 0;
 }
 
 void icpWindowSystem::handleCursorMovement()
 {
-	if (!m_mouseRightButtonDown)
+	if (m_mouseCurCoord[0] == 0.0 && m_mouseCurCoord[1] == 0.0)
 	{
 		return;
 	}
 	
-	
+	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
+
 	auto relativeXpos = m_mouseCurCoord[0] - m_mouseCoordBefore[0];
 	auto relativeYpos = m_mouseCurCoord[1] - m_mouseCoordBefore[1];
 
-	g_system_container.m_cameraSystem->rotateCamera(camera, relativeXpos, relativeYpos, oriCameraRot);
+	g_system_container.m_cameraSystem->rotateCamera(camera, relativeXpos, relativeYpos, m_originCameraRot);
 }
 
 

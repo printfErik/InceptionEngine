@@ -11,7 +11,7 @@ void icpCameraComponent::initializeCamera()
 	m_fov = glm::radians(45.f);
 	m_near = 0.1f;
 	m_far = 100.f;
-	m_cameraSpeed = 0.1f;
+	m_cameraSpeed = 0.001f;
 	m_cameraRotationSpeed = glm::radians(0.1f);
 	m_rotation = glm::qua<float>(1.f, 0.f, 0.f, 0.f);
 }
@@ -51,8 +51,8 @@ void icpCameraSystem::updateCameraViewMatrix(std::shared_ptr<icpCameraComponent>
 
 void icpCameraSystem::rotateCamera(std::shared_ptr<icpCameraComponent> camera, double relativeXpos, double relativeYpos, const glm::qua<float>& oriQua)
 {
-	camera->m_rotation = glm::rotate(oriQua, camera->m_cameraRotationSpeed * (float)relativeXpos, glm::vec3(-1.f, 0.f, 0.f));
-	camera->m_rotation = glm::rotate(camera->m_rotation, camera->m_cameraRotationSpeed * (float)relativeYpos, glm::vec3(0.f, -1.f, 0.f));
+	camera->m_rotation = glm::rotate(oriQua, camera->m_cameraRotationSpeed * (float)relativeXpos, glm::vec3(0.f, -1.f, 0.f));
+	camera->m_rotation = glm::rotate(camera->m_rotation, camera->m_cameraRotationSpeed * (float)relativeYpos, glm::vec3(1.f, 0.f, 0.f));
 
 	auto inverse = glm::conjugate(camera->m_rotation);
 
