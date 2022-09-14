@@ -866,7 +866,7 @@ void icpVulkanRHI::createTextureImages()
 		static_cast<uint32_t>(imgP->m_mipmapLevel),
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		m_textureImage,
 		m_textureBufferMem,
@@ -1261,13 +1261,16 @@ void icpVulkanRHI::updateUniformBuffers(uint32_t _curImage)
 
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(current - startTime).count();
 
-	auto camera = g_system_container.m_cameraSystem->m_cameras[0];
+	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
 
 	UniformBufferObject ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = camera.viewMatrix;
-	camera.aspectRatio = m_swapChainExtent.width / (float)m_swapChainExtent.height;
-	ubo.projection = glm::perspective(camera.fov, camera.aspectRatio, camera.near, camera.far);
+	auto firstRotate = glm::rotate(glm::mat4(1.f), glm::radians(90.0f), glm::vec3(0.f, 1.f, 0.f));
+	auto secondRotate = glm::rotate(glm::mat4(1.f), glm::radians(90.0f), glm::vec3(0.f, 0.f, 1.f));
+	//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo.model = secondRotate * firstRotate;
+	ubo.view = camera->m_viewMatrix;
+	camera->m_aspectRatio = m_swapChainExtent.width / (float)m_swapChainExtent.height;
+	ubo.projection = glm::perspective(camera->m_fov, camera->m_aspectRatio, camera->m_near, camera->m_far);
 	ubo.projection[1][1] *= -1;
 
 	void* data;

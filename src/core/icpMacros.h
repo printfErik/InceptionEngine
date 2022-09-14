@@ -4,6 +4,7 @@
 #include <vector>
 #include <filesystem>
 #include <string>
+#include <array>
 
 #define INCEPTION_BEGIN_NAMESPACE namespace Inception {
 

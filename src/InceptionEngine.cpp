@@ -20,7 +20,7 @@ void InceptionEngine::startEngine()
 {
 	while(!g_system_container.m_windowSystem->shouldClose())
 	{
-		g_system_container.m_windowSystem->pollEvent();
+		g_system_container.m_windowSystem->tickWindow();
 		g_system_container.m_renderSystem->drawFrame();
 	}
 }

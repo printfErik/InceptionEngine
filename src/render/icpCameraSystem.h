@@ -7,19 +7,30 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/euler_angles.hpp>
 
 INCEPTION_BEGIN_NAMESPACE
 
-struct icpCamera
+class icpCameraComponent
 {
-	glm::vec3 clearColor;
-	float fov = 0.f;
-	float aspectRatio = 0.f;
-	float near = 0.1f;
-	float far = 1000.f;
-	glm::vec3 position;
-	glm::qua<float> rotation;
-	glm::mat4 viewMatrix;
+public:
+	glm::vec3 m_clearColor;
+	float m_fov = 0.f;
+	float m_aspectRatio = 0.f;
+	float m_near = 0.f;
+	float m_far = 0.f;
+	glm::vec3 m_position;
+	glm::qua<float> m_rotation;
+	glm::mat4 m_viewMatrix;
+	float m_cameraSpeed;
+	float m_cameraRotationSpeed;
+	glm::vec3 m_viewDir;
+	glm::vec3 m_upDir;
+
+	void initializeCamera();
+	
+private:
+
 };
 
 
@@ -31,13 +42,16 @@ public:
 	~icpCameraSystem();
 
 	void initialize();
-	//moveCamera();
+	std::shared_ptr<icpCameraComponent> getCurrentCamera();
+	void moveCamera(std::shared_ptr<icpCameraComponent> camera, const glm::vec3& offset);
+	void rotateCamera(std::shared_ptr<icpCameraComponent> camera, double relativeXpos, double relativeYpos, const glm::qua<float>& oriQua);
+
+	void updateCameraViewMatrix(std::shared_ptr<icpCameraComponent> camera);
 
 
-	std::vector<icpCamera> m_cameras;
 private:
 
-	
+	std::vector<std::shared_ptr<icpCameraComponent>> m_cameras;
 
 };
 

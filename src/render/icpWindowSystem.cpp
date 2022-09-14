@@ -1,7 +1,7 @@
 #include "icpWindowSystem.h"
 #include "../core/icpSystemContainer.h"
 #include "icpRenderSystem.h"
-
+#include "icpCameraSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -18,17 +18,92 @@ icpWindowSystem::~icpWindowSystem()
 
 void icpWindowSystem::onKeyCallBack(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	/*
-	if (action == GLFW_PRESS)
+	icpWindowSystem* window_system = (icpWindowSystem*)glfwGetWindowUserPointer(window);
+
+	if (action == GLFW_PRESS && window_system->m_mouseRightButtonDown == true)
 	{
 		switch (key)
 		{
 		case GLFW_KEY_W:
-
+			window_system->m_command |= (unsigned int)eEditorCommand::CAMERA_FORWARD;
+			break;
+		case GLFW_KEY_A:
+			window_system->m_command |= (unsigned int)eEditorCommand::CAMERA_LEFT;
+			break;
+		case GLFW_KEY_S:
+			window_system->m_command |= (unsigned int)eEditorCommand::CMAERA_BACK;
+			break;
+		case GLFW_KEY_D:
+			window_system->m_command |= (unsigned int)eEditorCommand::CAMERA_RIGHT;
+			break;
+		case GLFW_KEY_Q:
+			window_system->m_command |= (unsigned int)eEditorCommand::CAMERA_UP;
+			break;
+		case GLFW_KEY_E:
+			window_system->m_command |= (unsigned int)eEditorCommand::CAMERA_DOWN;
+			break;
+		default:
+			break;
 		}
 	}
-	*/
 }
+
+void icpWindowSystem::onMouseButtonCallBack(GLFWwindow* window, int button, int action, int mods)
+{
+	icpWindowSystem* window_system = (icpWindowSystem*)glfwGetWindowUserPointer(window);
+
+	if (action == GLFW_PRESS)
+	{
+		switch (button)
+		{
+		case GLFW_MOUSE_BUTTON_RIGHT:
+		{
+			window_system->m_mouseRightButtonDown = true;
+			double xpos, ypos;
+			glfwGetCursorPos(window, &xpos, &ypos);
+			window_system->m_mouseCoordBefore[0] = xpos;
+			window_system->m_mouseCoordBefore[1] = ypos;
+			auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
+			auto oriCameraRot = camera->m_rotation;
+			window_system->m_originCameraRot = oriCameraRot;
+			break;
+		}
+		default:
+			break;
+		}
+	}
+
+	if (action == GLFW_RELEASE)
+	{
+		switch (button)
+		{
+		case GLFW_MOUSE_BUTTON_RIGHT:
+		{
+			window_system->m_mouseRightButtonDown = false;
+			window_system->m_mouseCoordBefore[0] = 0.0;
+			window_system->m_mouseCoordBefore[1] = 0.0;
+			window_system->m_originCameraRot = glm::qua<float>();
+			break;
+		}
+		default:
+			break;
+		}
+	}
+}
+
+void icpWindowSystem::onCursorPosCallBack(GLFWwindow* window, double xpos, double ypos)
+{
+	icpWindowSystem* window_system = (icpWindowSystem*)glfwGetWindowUserPointer(window);
+	if (!window_system->m_mouseRightButtonDown)
+	{
+		return;
+	}
+
+	window_system->m_mouseCurCoord[0] = xpos;
+	window_system->m_mouseCurCoord[1] = ypos;
+
+}
+
 
 bool icpWindowSystem::initializeWindowSystem()
 {
@@ -37,8 +112,8 @@ bool icpWindowSystem::initializeWindowSystem()
 		throw std::runtime_error("glfwInit failed");
 	}
 
-	m_width = 800;
-	m_height = 600;
+	m_width = 300;
+	m_height = 300;
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
@@ -50,6 +125,8 @@ bool icpWindowSystem::initializeWindowSystem()
 
 	glfwSetWindowUserPointer(m_window, this);
 	glfwSetKeyCallback(m_window, onKeyCallBack);
+	glfwSetMouseButtonCallback(m_window, onMouseButtonCallBack);
+	glfwSetCursorPosCallback(m_window, onCursorPosCallBack);
 
 	return true;
 }
@@ -69,6 +146,63 @@ void icpWindowSystem::pollEvent() const
 	glfwPollEvents();
 }
 
+void icpWindowSystem::tickWindow()
+{
+	pollEvent();
+
+	handleCursorMovement();
+	handleKeyEvent();
+}
+
+void icpWindowSystem::handleKeyEvent()
+{
+	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
+	auto cameraRotation = camera->m_rotation;
+	glm::vec3 cameraOffset = glm::vec3(0.f);
+
+	if(m_command & (unsigned int)eEditorCommand::CAMERA_FORWARD)
+	{
+		cameraOffset += cameraRotation * glm::vec3(0.f, 0.f, camera->m_cameraSpeed);
+	}
+	if (m_command & (unsigned int)eEditorCommand::CMAERA_BACK)
+	{
+		cameraOffset += cameraRotation * glm::vec3(0.f, 0.f, -camera->m_cameraSpeed);
+	}
+	if (m_command & (unsigned int)eEditorCommand::CAMERA_RIGHT)
+	{
+		cameraOffset += cameraRotation * glm::vec3(camera->m_cameraSpeed, 0.f, 0.f);
+	}
+	if (m_command & (unsigned int)eEditorCommand::CAMERA_LEFT)
+	{
+		cameraOffset += cameraRotation * glm::vec3(-camera->m_cameraSpeed, 0.f, 0.f);
+	}
+	if (m_command & (unsigned int)eEditorCommand::CAMERA_UP)
+	{
+		cameraOffset += cameraRotation * glm::vec3(0.f, camera->m_cameraSpeed, 0.f);
+	}
+	if (m_command & (unsigned int)eEditorCommand::CAMERA_DOWN)
+	{
+		cameraOffset += cameraRotation * glm::vec3(0.f, -camera->m_cameraSpeed, 0.f);
+	}
+
+	g_system_container.m_cameraSystem->moveCamera(camera, cameraOffset);
+
+	m_command = 0;
+}
+
+void icpWindowSystem::handleCursorMovement()
+{
+	if (!m_mouseRightButtonDown)
+	{
+		return;
+	}
+	
+	
+	auto relativeXpos = m_mouseCurCoord[0] - m_mouseCoordBefore[0];
+	auto relativeYpos = m_mouseCurCoord[1] - m_mouseCoordBefore[1];
+
+	g_system_container.m_cameraSystem->rotateCamera(camera, relativeXpos, relativeYpos, oriCameraRot);
+}
 
 
 INCEPTION_END_NAMESPACE
