@@ -140,8 +140,8 @@ bool icpWindowSystem::initializeWindowSystem()
 		throw std::runtime_error("glfwInit failed");
 	}
 
-	m_width = 1280;
-	m_height = 720;
+	m_width = 300;
+	m_height = 300;
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
@@ -185,24 +185,24 @@ void icpWindowSystem::tickWindow()
 void icpWindowSystem::handleKeyEvent()
 {
 	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
-	auto cameraRotation = camera->m_rotation;
+	auto cameraRotation = glm::conjugate(camera->m_rotation) ;
 	glm::vec3 cameraOffset = glm::vec3(0.f);
 
 	if(m_command & (unsigned int)eEditorCommand::CAMERA_FORWARD)
 	{
-		cameraOffset += cameraRotation * glm::vec3(0.f, 0.f, camera->m_cameraSpeed);
+		cameraOffset += cameraRotation * glm::vec3(0.f, 0.f, -camera->m_cameraSpeed);
 	}
 	if (m_command & (unsigned int)eEditorCommand::CMAERA_BACK)
 	{
-		cameraOffset += cameraRotation * glm::vec3(0.f, 0.f, -camera->m_cameraSpeed);
+		cameraOffset += cameraRotation * glm::vec3(0.f, 0.f, camera->m_cameraSpeed);
 	}
 	if (m_command & (unsigned int)eEditorCommand::CAMERA_RIGHT)
 	{
-		cameraOffset += cameraRotation * glm::vec3(-camera->m_cameraSpeed, 0.f, 0.f);
+		cameraOffset += cameraRotation * glm::vec3(camera->m_cameraSpeed, 0.f, 0.f);
 	}
 	if (m_command & (unsigned int)eEditorCommand::CAMERA_LEFT)
 	{
-		cameraOffset += cameraRotation * glm::vec3(camera->m_cameraSpeed, 0.f, 0.f);
+		cameraOffset += cameraRotation * glm::vec3(-camera->m_cameraSpeed, 0.f, 0.f);
 	}
 	if (m_command & (unsigned int)eEditorCommand::CAMERA_UP)
 	{
@@ -213,7 +213,8 @@ void icpWindowSystem::handleKeyEvent()
 		cameraOffset += cameraRotation * glm::vec3(0.f, -camera->m_cameraSpeed, 0.f);
 	}
 
-	g_system_container.m_cameraSystem->moveCamera(camera, cameraOffset);
+	if (cameraOffset != glm::vec3(0.f))
+		g_system_container.m_cameraSystem->moveCamera(camera, cameraOffset);
 
 }
 

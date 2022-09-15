@@ -1264,11 +1264,11 @@ void icpVulkanRHI::updateUniformBuffers(uint32_t _curImage)
 	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
 
 	UniformBufferObject ubo{};
-	auto firstRotate = glm::rotate(glm::mat4(1.f), glm::radians(90.0f), glm::vec3(0.f, 1.f, 0.f));
-	auto secondRotate = glm::rotate(glm::mat4(1.f), glm::radians(90.0f), glm::vec3(0.f, 0.f, 1.f));
+	auto firstRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(0.f, 0.f, 1.f));
+	auto secondRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(1.f, 0.f, 0.f));
 	//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.model = secondRotate * firstRotate;
-	ubo.view = camera->m_viewMatrix;
+	ubo.model = secondRotate * firstRotate ; //glm::mat4(1.0f);
+	ubo.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
 	camera->m_aspectRatio = m_swapChainExtent.width / (float)m_swapChainExtent.height;
 	ubo.projection = glm::perspective(camera->m_fov, camera->m_aspectRatio, camera->m_near, camera->m_far);
 	ubo.projection[1][1] *= -1;
