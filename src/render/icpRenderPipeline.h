@@ -28,11 +28,12 @@ public:
 
 	void recreateSwapChain();
 
+	VkRenderPass m_renderPass{ VK_NULL_HANDLE };
 private:
 
 	VkPipeline m_pipeline{VK_NULL_HANDLE};
 	VkPipelineLayout m_pipelineLayout{ VK_NULL_HANDLE };
-	VkRenderPass m_renderPass{ VK_NULL_HANDLE };
+	
 
 	std::vector<VkShaderModule> m_shaderModules;
 

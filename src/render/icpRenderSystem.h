@@ -16,9 +16,11 @@ public:
 	void drawFrame();
 	void setFrameBufferResized(bool _isResized);
 
-private:
+
 	std::shared_ptr<icpRHIBase> m_rhi;
 	std::shared_ptr<icpRenderPipeline> m_renderPipeline;
+
+private:
 };
 
 INCEPTION_END_NAMESPACE
