@@ -45,18 +45,18 @@ void icpCameraSystem::moveCamera(std::shared_ptr<icpCameraComponent> camera, con
 
 glm::mat4 icpCameraSystem::getCameraViewMatrix(std::shared_ptr<icpCameraComponent> camera)
 {
+	camera->m_upDir = glm::conjugate(camera->m_rotation) * glm::vec3(0, 1.f, 0.f);
+	camera->m_viewDir = glm::conjugate(camera->m_rotation) * glm::vec3(0.f, 0.f, -1.f);
 	camera->m_viewMatrix = glm::lookAt(camera->m_position, camera->m_position + camera->m_viewDir, camera->m_upDir);
 	return camera->m_viewMatrix;
 }
 
-void icpCameraSystem::rotateCamera(std::shared_ptr<icpCameraComponent> camera, double relativeXpos, double relativeYpos, const glm::qua<float>& oriQua)
+void icpCameraSystem::rotateCamera(std::shared_ptr<icpCameraComponent> camera, double relativeXpos, double relativeYpos)
 {
-	camera->m_rotation = glm::rotate(oriQua, camera->m_cameraRotationSpeed * (float)relativeXpos, glm::vec3(0.f, 1.f, 0.f));
-	camera->m_rotation = glm::rotate(camera->m_rotation, camera->m_cameraRotationSpeed * (float)relativeYpos, glm::vec3(1.f, 0.f, 0.f));
+	auto pitch = glm::qua<float>(glm::vec3(camera->m_cameraRotationSpeed * (float)relativeYpos, 0.f, 0.f));
+	auto yaw = glm::qua<float>(glm::vec3(0.f, camera->m_cameraRotationSpeed * (float)relativeXpos, 0.f));
 
-	auto inverse = glm::conjugate(camera->m_rotation);
-
-	camera->m_viewDir = inverse * glm::vec3(0, 0.f, -1.f);
+	camera->m_rotation = pitch * camera->m_rotation * yaw;
 }
 
 INCEPTION_END_NAMESPACE

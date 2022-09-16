@@ -43,14 +43,12 @@ public:
 
 	bool m_mouseRightButtonDown = false;
 
-	std::array<double, 2> m_mouseCoordBefore{ 0.0, 0.0 };
-	std::array<double, 2> m_mouseCurCoord{ 0.0, 0.0 };
+	std::array<float, 2> m_mouseCurCoord{ 0.0f, 0.0f };
 
 	glm::qua<float> m_originCameraRot;
 
 	void tickWindow();
 	void handleKeyEvent();
-	void handleCursorMovement();
 private:
 
 	GLFWwindow* m_window = nullptr;

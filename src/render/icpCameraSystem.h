@@ -44,7 +44,7 @@ public:
 	void initialize();
 	std::shared_ptr<icpCameraComponent> getCurrentCamera();
 	void moveCamera(std::shared_ptr<icpCameraComponent> camera, const glm::vec3& offset);
-	void rotateCamera(std::shared_ptr<icpCameraComponent> camera, double relativeXpos, double relativeYpos, const glm::qua<float>& oriQua);
+	void rotateCamera(std::shared_ptr<icpCameraComponent> camera, double relativeXpos, double relativeYpos);
 
 	glm::mat4 getCameraViewMatrix(std::shared_ptr<icpCameraComponent> camera);
 
