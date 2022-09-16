@@ -4,6 +4,7 @@
 #include "../render/icpCameraSystem.h"
 #include "../resource/icpResourceSystem.h"
 #include "icpConfigSystem.h"
+#include "../ui/icpUiSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -29,6 +30,9 @@ void icpSystemContainer::initializeAllSystems(const std::filesystem::path& _conf
 	m_renderSystem = std::make_shared<icpRenderSystem>();
 	m_renderSystem->initializeRenderSystem();
 
+	m_uiSystem = std::make_shared<icpUiSystem>();
+	m_uiSystem->initializeUiCanvas();
+
 	glfwSetFramebufferSizeCallback(m_windowSystem->getWindow(), framebufferResizeCallback);
 }
 
@@ -36,6 +40,7 @@ void icpSystemContainer::shutdownAllSystems()
 {
 	m_renderSystem.reset();
 	m_windowSystem.reset();
+	m_cameraSystem.reset();
 	m_resourceSystem.reset();
 	m_configSystem.reset();
 }

@@ -2,7 +2,7 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-void icpCameraComponent::initializeCamera()
+void icpCameraComponent::initializeCamera() // todo read from mapfile
 {
 	m_position = glm::vec3(0.f, 0.f, 5.f);
 	m_viewDir = glm::vec3(0.f, 0.f, -1.f);

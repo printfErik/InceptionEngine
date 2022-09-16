@@ -10,6 +10,7 @@ class icpWindowSystem;
 class icpRenderSystem;
 class icpResourceSystem;
 class icpCameraSystem;
+class icpUiSystem;
 
 class icpSystemContainer 
 {
@@ -24,6 +25,7 @@ public:
 	std::shared_ptr<icpCameraSystem> m_cameraSystem;
 	std::shared_ptr<icpRenderSystem> m_renderSystem;
 	std::shared_ptr<icpResourceSystem> m_resourceSystem;
+	std::shared_ptr<icpUiSystem> m_uiSystem;
 
 };
 
