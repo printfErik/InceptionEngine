@@ -44,7 +44,7 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createIndexBuffers();
 	createUniformBuffers();
 
-	createDecriptorPools();
+	createDescriptorPools();
 	allocateDescriptorSets();
 	allocateCommandBuffers();
 
@@ -1041,7 +1041,7 @@ bool hasStencilComponent(VkFormat format) {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void icpVulkanRHI::createDecriptorPools()
+void icpVulkanRHI::createDescriptorPools()
 {
 	std::array<VkDescriptorPoolSize, 2> poolSize{};
 	poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

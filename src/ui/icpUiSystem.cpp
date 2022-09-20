@@ -22,12 +22,22 @@ void icpUiSystem::initializeUiCanvas()
 
 	ImGui_ImplGlfw_InitForVulkan(window, true);
 
-	auto renderSystem = g_system_container.m_renderSystem;
+	const auto& renderSystem = g_system_container.m_renderSystem;
+	const auto& vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(renderSystem->m_rhi);
+	const auto& pipeline = renderSystem->m_renderPipeline;
 
 	ImGui_ImplVulkan_InitInfo info{};
-	info.QueueFamily = 
+	info.Device = vulkanRHI->m_device;
+	info.DescriptorPool = vulkanRHI->m_descriptorPool;
+	info.ImageCount = 3;
+	info.Instance = vulkanRHI->m_instance;
+	info.MinImageCount = 3;
+	info.PhysicalDevice = vulkanRHI->m_physicalDevice;
+	info.Queue = vulkanRHI->m_graphicsQueue;
+	info.QueueFamily = vulkanRHI->m_queueIndices.m_graphicsFamily.value();
+	info.Subpass = 0;
 
-	ImGui_ImplVulkan_Init()
+	ImGui_ImplVulkan_Init(&info, pipeline->m_renderPass);
 	
 }
 

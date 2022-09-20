@@ -66,7 +66,7 @@ public:
 
 	void createDepthResources();
 	void createUniformBuffers();
-	void createDecriptorPools();
+	void createDescriptorPools();
 	void allocateDescriptorSets();
 
 	void allocateCommandBuffers();
