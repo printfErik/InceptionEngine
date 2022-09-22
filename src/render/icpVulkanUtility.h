@@ -65,6 +65,11 @@ public:
 	);
 
 	static VkFormat findDepthFormat(VkPhysicalDevice physicalDevice);
+
+	static VkShaderModule createShaderModule(
+		const char* filePath,
+		VkDevice device
+	);
 };
 
 

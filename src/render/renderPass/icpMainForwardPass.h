@@ -15,6 +15,15 @@ public:
 	void createFrameBuffers();
 
 	void createRenderPass();
+	void cleanup() override;
+	void render() override;
+
+	void cleanupSwapChain();
+	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void recreateSwapChain();
+private:
+
+	uint32_t m_currentFrame = 0;
 };
 
 INCEPTION_END_NAMESPACE

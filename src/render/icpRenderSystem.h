@@ -2,7 +2,7 @@
 #include "../core/icpMacros.h"
 
 #include "icpRHI.h"
-#include "icpRenderPipeline.h"
+#include "icpRenderPassManager.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -18,7 +18,7 @@ public:
 
 
 	std::shared_ptr<icpRHIBase> m_rhi;
-	std::shared_ptr<icpRenderPipeline> m_renderPipeline;
+	std::shared_ptr<icpRenderPassManager> m_renderPassManager;
 
 private:
 };

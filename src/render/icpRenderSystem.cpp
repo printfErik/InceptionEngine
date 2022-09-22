@@ -10,7 +10,7 @@ icpRenderSystem::icpRenderSystem()
 
 icpRenderSystem::~icpRenderSystem()
 {
-	m_renderPipeline.reset();
+	m_renderPassManager.reset();
 	m_rhi.reset();
 }
 
@@ -19,15 +19,15 @@ bool icpRenderSystem::initializeRenderSystem()
 	m_rhi = std::make_shared<icpVulkanRHI>();
 	m_rhi->initialize(g_system_container.m_windowSystem);
 
-	m_renderPipeline = std::make_shared<icpRenderPipeline>();
-	m_renderPipeline->initialize(std::dynamic_pointer_cast<icpVulkanRHI>(m_rhi));
+	m_renderPassManager = std::make_shared<icpRenderPassManager>();
+	m_renderPassManager->initialize(std::dynamic_pointer_cast<icpVulkanRHI>(m_rhi));
 
 	return true;
 }
 
 void icpRenderSystem::drawFrame()
 {
-	m_renderPipeline->render();
+	m_renderPassManager->render();
 }
 
 void icpRenderSystem::setFrameBufferResized(bool _isResized)

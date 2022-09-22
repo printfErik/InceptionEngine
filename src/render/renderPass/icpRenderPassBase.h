@@ -19,6 +19,7 @@ public:
 	struct RendePassInitInfo
 	{
 		std::shared_ptr<icpVulkanRHI> rhi;
+		eRenderPass passType;
 	};
 
 	struct RenederPipelineInfo
@@ -32,9 +33,11 @@ public:
 
 	virtual void initializeRenderPass(RendePassInitInfo initInfo) = 0;
 	virtual void setupPipeline() = 0;
+	virtual void cleanup() = 0;
+	virtual void render() = 0;
 
 protected:
-	VkFramebuffer m_frameBuffer;
+	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 	VkRenderPass m_renderPassObj;
 
 	RenederPipelineInfo m_pipelineInfo;

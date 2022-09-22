@@ -1,5 +1,8 @@
 #include "icpMainForwardPass.h"
 #include "../icpVulkanUtility.h"
+#include "../../core/icpSystemContainer.h"
+#include "../../core/icpConfigSystem.h"
+#include "../../mesh/icpMeshResource.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -83,13 +86,13 @@ void icpMainForwardPass::setupPipeline()
 
 	vertShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	auto vertShaderPath = g_system_container.m_configSystem->m_shaderFolderPath / "vert.spv";
-	vertShader.module = createShaderModule(vertShaderPath.generic_string().c_str());
+	vertShader.module = icpVulkanUtility::createShaderModule(vertShaderPath.generic_string().c_str(), m_rhi->m_device);
 	vertShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 	vertShader.pName = "main";
 
 	fragShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	auto fragShaderPath = g_system_container.m_configSystem->m_shaderFolderPath / "fragment.spv";
-	fragShader.module = createShaderModule(fragShaderPath.generic_string().c_str());
+	fragShader.module = icpVulkanUtility::createShaderModule(fragShaderPath.generic_string().c_str(), m_rhi->m_device);
 	fragShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 	fragShader.pName = "main";
 
@@ -129,12 +132,12 @@ void icpMainForwardPass::setupPipeline()
 	pipelineLayoutInfo.pSetLayouts = &m_rhi->m_descriptorSetLayout;
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-	if (vkCreatePipelineLayout(m_rhi->m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(m_rhi->m_device, &pipelineLayoutInfo, nullptr, &m_pipelineInfo.m_pipelineLayout) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
 
-	info.layout = m_pipelineLayout;
+	info.layout = m_pipelineInfo.m_pipelineLayout;
 
 	// Viewport and Scissor
 	VkPipelineViewportStateCreateInfo viewportState{};
@@ -235,12 +238,172 @@ void icpMainForwardPass::setupPipeline()
 
 	info.basePipelineHandle = VK_NULL_HANDLE;
 
-	if (vkCreateGraphicsPipelines(m_rhi->m_device, VK_NULL_HANDLE, 1, &info, VK_NULL_HANDLE, &m_pipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(m_rhi->m_device, VK_NULL_HANDLE, 1, &info, VK_NULL_HANDLE, &m_pipelineInfo.m_pipeline) != VK_SUCCESS)
 	{
 		throw std::runtime_error("create renderPipeline failed");
 	}
+
+	vkDestroyShaderModule(m_rhi->m_device, vertShader.module, nullptr);
+	vkDestroyShaderModule(m_rhi->m_device, fragShader.module, nullptr);
 }
 
+void icpMainForwardPass::createFrameBuffers()
+{
+	m_swapChainFramebuffers.resize(m_rhi->m_swapChainImageViews.size());
 
+	for (size_t i = 0; i < m_rhi->m_swapChainImageViews.size(); i++)
+	{
+		std::array<VkImageView, 2> attachments =
+		{
+			m_rhi->m_swapChainImageViews[i],
+			m_rhi->m_depthImageView
+		};
 
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = m_renderPassObj;
+		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		framebufferInfo.pAttachments = attachments.data();
+		framebufferInfo.width = m_rhi->m_swapChainExtent.width;
+		framebufferInfo.height = m_rhi->m_swapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_rhi->m_device, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create framebuffer!");
+		}
+	}
+}
+
+void icpMainForwardPass::cleanup()
+{
+	cleanupSwapChain();
+
+	vkDestroyRenderPass(m_rhi->m_device, m_renderPassObj, nullptr);
+	vkDestroyPipelineLayout(m_rhi->m_device, m_pipelineInfo.m_pipelineLayout, nullptr);
+	vkDestroyPipeline(m_rhi->m_device, m_pipelineInfo.m_pipeline, nullptr);
+}
+
+void icpMainForwardPass::cleanupSwapChain()
+{
+	for (auto framebuffer : m_swapChainFramebuffers)
+	{
+		vkDestroyFramebuffer(m_rhi->m_device, framebuffer, nullptr);
+	}
+}
+
+void icpMainForwardPass::render()
+{
+	m_rhi->waitForFence(m_currentFrame);
+	VkResult result;
+	auto index = m_rhi->acquireNextImageFromSwapchain(m_currentFrame, result);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		recreateSwapChain();
+		return;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		throw std::runtime_error("failed to present swap chain image!");
+	}
+
+	m_rhi->updateUniformBuffers(m_currentFrame);
+
+	vkResetFences(m_rhi->m_device, 1, &m_rhi->m_inFlightFences[m_currentFrame]);
+
+	m_rhi->resetCommandBuffer(m_currentFrame);
+	recordCommandBuffer(m_rhi->m_graphicsCommandBuffers[m_currentFrame], index);
+	result = m_rhi->submitRendering(index, m_currentFrame);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_rhi->m_framebufferResized) {
+		recreateSwapChain();
+		m_rhi->m_framebufferResized = false;
+	}
+	else if (result != VK_SUCCESS) {
+		throw std::runtime_error("failed to present swap chain image!");
+	}
+
+	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+{
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+		throw std::runtime_error("failed to begin recording command buffer!");
+	}
+
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = m_renderPassObj;
+	renderPassInfo.framebuffer = m_swapChainFramebuffers[imageIndex];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = m_rhi->m_swapChainExtent;
+
+	std::array<VkClearValue, 2> clearColors{};
+	clearColors[0].color = { {0.f,0.f,0.f,1.f} };
+	clearColors[1].depthStencil = { 1.f, 0 };
+
+	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+	renderPassInfo.pClearValues = clearColors.data();
+
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
+
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = (float)m_rhi->m_swapChainExtent.width;
+	viewport.height = (float)m_rhi->m_swapChainExtent.height;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = m_rhi->m_swapChainExtent;
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	std::vector<VkBuffer> vertexBuffers{ m_rhi->m_vertexBuffer };
+	std::vector<VkDeviceSize> offsets{ 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
+
+	vkCmdBindIndexBuffer(commandBuffer, m_rhi->m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &m_rhi->m_descriptorSets[m_currentFrame], 0, nullptr);
+	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["viking_room"]);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshP->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
+
+	vkCmdEndRenderPass(commandBuffer);
+
+	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to record command buffer!");
+	}
+}
+
+void icpMainForwardPass::recreateSwapChain() {
+
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(m_rhi->m_window, &width, &height);
+	while (width == 0 || height == 0)
+	{
+		glfwGetFramebufferSize(m_rhi->m_window, &width, &height);
+		glfwWaitEvents();
+	}
+
+	vkDeviceWaitIdle(m_rhi->m_device);
+
+	cleanupSwapChain();
+	m_rhi->cleanupSwapChain();
+
+	m_rhi->createSwapChain();
+	m_rhi->createSwapChainImageViews();
+	m_rhi->createDepthResources();
+	createFrameBuffers();
+}
 INCEPTION_END_NAMESPACE

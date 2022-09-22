@@ -1,4 +1,7 @@
 #include "icpVulkanUtility.h"
+#include <fstream>
+#include <iterator>
+
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -214,6 +217,31 @@ VkFormat icpVulkanUtility::findDepthFormat(VkPhysicalDevice physicalDevice) {
 		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT,
 		physicalDevice
 	);
+}
+
+VkShaderModule icpVulkanUtility::createShaderModule(const char* shaderFileName, VkDevice device)
+{
+	std::ifstream inFile(shaderFileName, std::ios::binary | std::ios::ate);
+	size_t fileSize = (size_t)inFile.tellg();
+	std::vector<char> content(fileSize);
+
+	inFile.seekg(0);
+	inFile.read(content.data(), fileSize);
+
+	inFile.close();
+
+	VkShaderModuleCreateInfo creatInfo{};
+	creatInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	creatInfo.pCode = reinterpret_cast<const uint32_t*>(content.data());
+	creatInfo.codeSize = content.size();
+
+	VkShaderModule shader{ VK_NULL_HANDLE };
+	if (vkCreateShaderModule(device, &creatInfo, nullptr, &shader) != VK_SUCCESS)
+	{
+		throw std::runtime_error("create shader module failed");
+	}
+
+	return shader;
 }
 
 
