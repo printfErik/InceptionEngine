@@ -1,3 +1,4 @@
+#pragma once
 #include "../../core/icpMacros.h"
 #include "../icpVulkanRHI.h"
 
@@ -18,8 +19,9 @@ public:
 
 	struct RendePassInitInfo
 	{
-		std::shared_ptr<icpVulkanRHI> rhi;
+		std::shared_ptr<icpVulkanRHI> rhi{ nullptr };
 		eRenderPass passType;
+		std::shared_ptr<icpRenderPassBase> dependency{ nullptr };
 	};
 
 	struct RenederPipelineInfo
@@ -29,19 +31,22 @@ public:
 	};
 
 	icpRenderPassBase() = default;
-	virtual ~icpRenderPassBase() = 0;
+	virtual ~icpRenderPassBase() {}
 
 	virtual void initializeRenderPass(RendePassInitInfo initInfo) = 0;
 	virtual void setupPipeline() = 0;
 	virtual void cleanup() = 0;
 	virtual void render() = 0;
 
-protected:
+
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
-	VkRenderPass m_renderPassObj;
+	VkRenderPass m_renderPassObj{ VK_NULL_HANDLE };
 
-	RenederPipelineInfo m_pipelineInfo;
+	RenederPipelineInfo m_pipelineInfo{};
 
+	std::shared_ptr<icpRenderPassBase> m_dependency{ nullptr };
+
+protected:
 	std::shared_ptr<icpVulkanRHI> m_rhi;
 };
 

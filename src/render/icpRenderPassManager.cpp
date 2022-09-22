@@ -1,17 +1,16 @@
 #include "icpRenderPassManager.h"
 #include "icpVulkanRHI.h"
 #include "icpVulkanUtility.h"
-#include "../core/icpSystemContainer.h"
-#include "../mesh/icpMeshResource.h"
-#include "../resource/icpResourceSystem.h"
+#include "renderPass/icpMainForwardPass.h"
+#include "renderPass/icpUiPass.h"
 
 #include <vulkan/vulkan.hpp>
 
 #include "renderPass/icpRenderPassBase.h"
 
-
 INCEPTION_BEGIN_NAMESPACE
-	icpRenderPassManager::icpRenderPassManager()
+
+icpRenderPassManager::icpRenderPassManager()
 {
 }
 
@@ -28,18 +27,19 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 	icpRenderPassBase::RendePassInitInfo mainPassCreateInfo;
 	mainPassCreateInfo.rhi = m_rhi;
 	mainPassCreateInfo.passType = eRenderPass::MAIN_FORWARD_PASS;
-	auto mainForwordPass = std::make_shared<icpRenderPassBase>();
+	std::shared_ptr<icpRenderPassBase> mainForwordPass = std::make_shared<icpMainForwardPass>();
 	mainForwordPass->initializeRenderPass(mainPassCreateInfo);
 
-	m_renderPasses.emplace_back(mainForwordPass);
+	m_renderPasses.push_back(mainForwordPass);
 
 	icpRenderPassBase::RendePassInitInfo uiPassInfo;
 	uiPassInfo.rhi = m_rhi;
 	uiPassInfo.passType = eRenderPass::UI_PASS;
-	auto uiPass = std::make_shared<icpRenderPassBase>();
-	uiPass->initializeRenderPass(mainPassCreateInfo);
+	uiPassInfo.dependency = m_renderPasses[0];
+	std::shared_ptr<icpRenderPassBase> uiPass = std::make_shared<icpUiPass>();
+	uiPass->initializeRenderPass(uiPassInfo);
 
-	m_renderPasses.emplace_back(uiPass);
+	m_renderPasses.push_back(uiPass);
 
 	return true;
 }

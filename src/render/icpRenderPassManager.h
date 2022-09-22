@@ -15,8 +15,6 @@ public:
 
 	bool initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI);
 	void cleanup();
-	
-	void cleanupSwapChain();
 
 	void render();
 

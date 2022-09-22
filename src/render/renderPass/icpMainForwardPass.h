@@ -1,3 +1,4 @@
+#pragma once
 #include "../../core/icpMacros.h"
 #include "icpRenderPassBase.h"
 
@@ -10,21 +11,21 @@ public:
 	virtual ~icpMainForwardPass() override;
 
 	void initializeRenderPass(RendePassInitInfo initInfo) override;
-
 	void setupPipeline() override;
+	void cleanup() override;
+	void render() override;
 
 	void createFrameBuffers();
 
 	void createRenderPass();
-	void cleanup() override;
-	void render() override;
-
 	void cleanupSwapChain();
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void recreateSwapChain();
-private:
 
 	uint32_t m_currentFrame = 0;
+private:
+
+	
 };
 
 INCEPTION_END_NAMESPACE
