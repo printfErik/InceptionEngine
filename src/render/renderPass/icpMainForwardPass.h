@@ -7,6 +7,7 @@ class icpMainForwardPass : public icpRenderPassBase
 {
 public:
 	icpMainForwardPass() = default;
+	virtual ~icpMainForwardPass() override;
 
 	void initializeRenderPass(RendePassInitInfo initInfo) override;
 

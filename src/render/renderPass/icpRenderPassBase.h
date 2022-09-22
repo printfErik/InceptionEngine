@@ -28,8 +28,8 @@ public:
 		VkPipelineLayout m_pipelineLayout;
 	};
 
-	icpRenderPassBase();
-	virtual ~icpRenderPassBase();
+	icpRenderPassBase() = default;
+	virtual ~icpRenderPassBase() = 0;
 
 	virtual void initializeRenderPass(RendePassInitInfo initInfo) = 0;
 	virtual void setupPipeline() = 0;

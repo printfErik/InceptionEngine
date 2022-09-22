@@ -6,6 +6,11 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
+icpMainForwardPass::~icpMainForwardPass()
+{
+	
+}
+
 void icpMainForwardPass::initializeRenderPass(RendePassInitInfo initInfo)
 {
 	m_rhi = initInfo.rhi;
