@@ -15,6 +15,7 @@ public:
 	void initializeRenderPass(RendePassInitInfo initInfo) override;
 	void setupPipeline() override;
 
+	void createRenderPass();
 };
 
 INCEPTION_END_NAMESPACE
