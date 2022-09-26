@@ -623,6 +623,15 @@ void icpVulkanRHI::createCommandPools()
 	{
 		throw std::runtime_error("failed to create command pool!");
 	}
+
+	VkCommandPoolCreateInfo uiPoolCreateInfo = {};
+	uiPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	uiPoolCreateInfo.queueFamilyIndex = m_queueIndices.m_graphicsFamily.value();
+	uiPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+	if (vkCreateCommandPool(m_device, &uiPoolCreateInfo, nullptr, m_uiCommandPool) != VK_SUCCESS) {
+		throw std::runtime_error("Could not create graphics command pool");
+	}
 }
 
 void icpVulkanRHI::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -1123,7 +1132,7 @@ void icpVulkanRHI::allocateCommandBuffers()
 
 	if (vkAllocateCommandBuffers(m_device, &gAllocInfo, m_graphicsCommandBuffers.data()) != VK_SUCCESS)
 	{
-		throw std::runtime_error("failed to allocate command buffer!");
+		throw std::runtime_error("failed to allocate graphics command buffer!");
 	}
 
 	m_transferCommandBuffers.resize(1); // for transfer use
@@ -1136,8 +1145,22 @@ void icpVulkanRHI::allocateCommandBuffers()
 
 	if (vkAllocateCommandBuffers(m_device, &tAllocInfo, m_transferCommandBuffers.data()) != VK_SUCCESS)
 	{
-		throw std::runtime_error("failed to allocate command buffer!");
+		throw std::runtime_error("failed to allocate transfer command buffer!");
 	}
+
+	m_uiCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT); // for transfer use
+
+	VkCommandBufferAllocateInfo uiAllocInfo{};
+	uiAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	uiAllocInfo.commandPool = m_uiCommandPool;
+	uiAllocInfo.commandBufferCount = (uint32_t)m_uiCommandBuffers.size();
+	uiAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	if (vkAllocateCommandBuffers(m_device, &tAllocInfo, m_transferCommandBuffers.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate ui command buffer!");
+	}
+
 }
 
 void icpVulkanRHI::createDescriptorSetLayout()
@@ -1278,6 +1301,7 @@ void icpVulkanRHI::updateUniformBuffers(uint32_t _curImage)
 	memcpy(data, &ubo, sizeof(ubo));
 	vkUnmapMemory(m_device, m_uniformBufferMem[_curImage]);
 }
+
 
 
 INCEPTION_END_NAMESPACE

@@ -71,6 +71,7 @@ public:
 
 	void allocateCommandBuffers();
 
+
 private:
 	void createInstance();
 	void initializeDebugMessenger();
@@ -143,8 +144,11 @@ public:
 
 	VkCommandPool m_graphicsCommandPool{ VK_NULL_HANDLE };
 	VkCommandPool m_transferCommandPool{ VK_NULL_HANDLE };
+	VkCommandPool m_uiCommandPool{ VK_NULL_HANDLE };
+
 	std::vector<VkCommandBuffer> m_graphicsCommandBuffers;
 	std::vector<VkCommandBuffer> m_transferCommandBuffers;
+	std::vector<VkCommandBuffer> m_uiCommandBuffers;
 
 	VkBuffer m_vertexBuffer;
 	VkBuffer m_indexBuffer;
