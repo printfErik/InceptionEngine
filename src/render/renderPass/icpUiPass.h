@@ -16,6 +16,9 @@ public:
 	void setupPipeline() override;
 
 	void createRenderPass();
+
+	void recordCommandBuffer(uint32_t curFrameIndex);
+	void createFrameBuffers();
 };
 
 INCEPTION_END_NAMESPACE

@@ -45,9 +45,12 @@ void icpUiPass::initializeRenderPass(RendePassInitInfo initInfo)
 
 	ImGui_ImplVulkan_Init(&info, m_renderPassObj);
 
-	VkCommandBuffer command_buffer = icpVulkanUtility::beginSingleTimeCommands(m_rhi->m_graphicsCommandPool, m_rhi->m_device);
+	createFrameBuffers();
+
+	VkCommandBuffer command_buffer = icpVulkanUtility::beginSingleTimeCommands(m_rhi->m_uiCommandPool, m_rhi->m_device);
 	ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
-	icpVulkanUtility::endSingleTimeCommandsAndSubmit(command_buffer, m_rhi->m_graphicsQueue, m_rhi->m_graphicsCommandPool, m_rhi->m_device);
+	icpVulkanUtility::endSingleTimeCommandsAndSubmit(command_buffer, m_rhi->m_graphicsQueue, m_rhi->m_uiCommandPool, m_rhi->m_device);
+
 
 }
 
@@ -55,6 +58,28 @@ void icpUiPass::setupPipeline()
 {
 	
 }
+
+void icpUiPass::createFrameBuffers()
+{
+	VkImageView attachment[1];
+	VkFramebufferCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	info.renderPass = m_renderPassObj;
+	info.attachmentCount = 1;
+	info.pAttachments = attachment;
+	info.width = m_rhi->m_swapChainExtent.width;
+	info.height = m_rhi->m_swapChainExtent.height;
+	info.layers = 1;
+	for (uint32_t i = 0; i < m_rhi->m_swapChainImageViews.size(); i++)
+	{
+		attachment[0] = m_rhi->m_swapChainImageViews[i];
+		if(vkCreateFramebuffer(m_rhi->m_device, &info, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create framebuffer!");
+		}
+	}
+}
+
 
 void icpUiPass::render()
 {
@@ -64,13 +89,31 @@ void icpUiPass::render()
 	ImGui::ShowDemoWindow();
 	ImGui::Render();
 
-	//auto mainPass = dynamic_pointer_cast<icpMainForwardPass>(m_dependency);
+	m_rhi->waitForFence(m_currentFrame);
+	VkResult result;
+	auto index = m_rhi->acquireNextImageFromSwapchain(m_currentFrame, result);
 
-	//ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_rhi->m_graphicsCommandBuffers[mainPass->m_currentFrame]);
+	recordCommandBuffer(m_currentFrame);
 
-
-
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_rhi->m_uiCommandBuffers[index]);
 }
+
+void icpUiPass::recordCommandBuffer(uint32_t curFrameIndex)
+{
+	VkRenderPassBeginInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	info.renderPass = m_renderPassObj;
+	info.framebuffer = m_swapChainFramebuffers[curFrameIndex];
+	info.renderArea.extent = m_rhi->m_swapChainExtent;
+	std::array<VkClearValue, 2> clearColors{};
+	clearColors[0].color = { {0.f,0.f,0.f,1.f} };
+	clearColors[1].depthStencil = { 1.f, 0 };
+
+	info.clearValueCount = static_cast<uint32_t>(clearColors.size());
+	info.pClearValues = clearColors.data();
+	vkCmdBeginRenderPass(m_rhi->m_uiCommandBuffers[curFrameIndex], &info, VK_SUBPASS_CONTENTS_INLINE);
+}
+
 
 void icpUiPass::cleanup()
 {
