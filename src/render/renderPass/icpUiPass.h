@@ -19,6 +19,8 @@ public:
 
 	void recordCommandBuffer(uint32_t curFrameIndex);
 	void createFrameBuffers();
+
+	uint32_t m_currentFrame = 0;
 };
 
 INCEPTION_END_NAMESPACE

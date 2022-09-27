@@ -629,7 +629,7 @@ void icpVulkanRHI::createCommandPools()
 	uiPoolCreateInfo.queueFamilyIndex = m_queueIndices.m_graphicsFamily.value();
 	uiPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-	if (vkCreateCommandPool(m_device, &uiPoolCreateInfo, nullptr, m_uiCommandPool) != VK_SUCCESS) {
+	if (vkCreateCommandPool(m_device, &uiPoolCreateInfo, nullptr, &m_uiCommandPool) != VK_SUCCESS) {
 		throw std::runtime_error("Could not create graphics command pool");
 	}
 }
@@ -1054,15 +1054,16 @@ void icpVulkanRHI::createDescriptorPools()
 {
 	std::array<VkDescriptorPoolSize, 2> poolSize{};
 	poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize[0].descriptorCount = MAX_FRAMES_IN_FLIGHT;
+	poolSize[0].descriptorCount = 100;
 	poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSize[1].descriptorCount = MAX_FRAMES_IN_FLIGHT;
+	poolSize[1].descriptorCount = 100;
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSize.size());
+	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	poolInfo.poolSizeCount = sizeof(poolSize) / sizeof(poolSize[0]);
 	poolInfo.pPoolSizes = poolSize.data();
-	poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
+	poolInfo.maxSets = 200;
 
 	if (vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS)
 	{
@@ -1148,7 +1149,7 @@ void icpVulkanRHI::allocateCommandBuffers()
 		throw std::runtime_error("failed to allocate transfer command buffer!");
 	}
 
-	m_uiCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT); // for transfer use
+	m_uiCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkCommandBufferAllocateInfo uiAllocInfo{};
 	uiAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1156,7 +1157,7 @@ void icpVulkanRHI::allocateCommandBuffers()
 	uiAllocInfo.commandBufferCount = (uint32_t)m_uiCommandBuffers.size();
 	uiAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-	if (vkAllocateCommandBuffers(m_device, &tAllocInfo, m_transferCommandBuffers.data()) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(m_device, &uiAllocInfo, m_uiCommandBuffers.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate ui command buffer!");
 	}
