@@ -298,42 +298,41 @@ void icpMainForwardPass::cleanupSwapChain()
 	}
 }
 
-void icpMainForwardPass::render()
+void icpMainForwardPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info)
 {
-	m_rhi->waitForFence(m_currentFrame);
-	VkResult result;
-	auto index = m_rhi->acquireNextImageFromSwapchain(m_currentFrame, result);
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	if (acquireImageResult == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		recreateSwapChain();
 		return;
 	}
-	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	else if (acquireImageResult != VK_SUCCESS && acquireImageResult != VK_SUBOPTIMAL_KHR)
 	{
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 
-	m_rhi->updateUniformBuffers(m_currentFrame);
+	m_rhi->updateUniformBuffers(currentFrame);
 
-	//vkResetFences(m_rhi->m_device, 1, &m_rhi->m_inFlightFences[m_currentFrame]);
+	m_rhi->resetCommandBuffer(currentFrame);
+	recordCommandBuffer(m_rhi->m_graphicsCommandBuffers[currentFrame], frameBufferIndex, currentFrame);
 
-	m_rhi->resetCommandBuffer(m_currentFrame);
-	recordCommandBuffer(m_rhi->m_graphicsCommandBuffers[m_currentFrame], index);
-	result = m_rhi->submitRendering(index, m_currentFrame);
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_rhi->m_framebufferResized) {
-		recreateSwapChain();
-		m_rhi->m_framebufferResized = false;
-	}
-	else if (result != VK_SUCCESS) {
-		throw std::runtime_error("failed to present swap chain image!");
-	}
+	m_waitSemaphores[0] = m_rhi->m_imageAvailableForRenderingSemaphores[currentFrame];
+	m_waitStages[0] = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT ;
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = m_waitSemaphores;
+	submitInfo.pWaitDstStageMask = m_waitStages;
 
-	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &m_rhi->m_graphicsCommandBuffers[currentFrame];
+
+	info = submitInfo;
+
+	//auto result = m_rhi->submitRendering(frameBufferIndex, currentFrame);
 }
 
-void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -380,7 +379,7 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 
 	vkCmdBindIndexBuffer(commandBuffer, m_rhi->m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &m_rhi->m_descriptorSets[m_currentFrame], 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &m_rhi->m_descriptorSets[curFrame], 0, nullptr);
 	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["viking_room"]);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshP->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
 

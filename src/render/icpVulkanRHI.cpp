@@ -1255,9 +1255,6 @@ VkResult icpVulkanRHI::submitRendering(uint32_t _imageIndex, uint32_t _currentFr
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &m_graphicsCommandBuffers[_currentFrame];
 
-	VkSemaphore signalSemaphores[] = { m_renderFinishedForPresentationSemaphores[_currentFrame]};
-	submitInfo.signalSemaphoreCount = 0;
-	//submitInfo.pSignalSemaphores = signalSemaphores;
 
 	return vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[_currentFrame]);
 }

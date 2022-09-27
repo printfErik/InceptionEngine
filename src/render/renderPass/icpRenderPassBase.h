@@ -36,7 +36,7 @@ public:
 	virtual void initializeRenderPass(RendePassInitInfo initInfo) = 0;
 	virtual void setupPipeline() = 0;
 	virtual void cleanup() = 0;
-	virtual void render() = 0;
+	virtual void render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) = 0;
 
 
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;

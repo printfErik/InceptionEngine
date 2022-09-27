@@ -11,16 +11,15 @@ public:
 	virtual ~icpUiPass() override;
 
 	void cleanup() override;
-	void render() override;
+	void render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) override;
 	void initializeRenderPass(RendePassInitInfo initInfo) override;
 	void setupPipeline() override;
 
 	void createRenderPass();
 
-	void recordCommandBuffer(uint32_t curFrameIndex);
+	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex);
 	void createFrameBuffers();
 
-	uint32_t m_currentFrame = 0;
 };
 
 INCEPTION_END_NAMESPACE

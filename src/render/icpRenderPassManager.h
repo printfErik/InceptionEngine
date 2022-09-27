@@ -23,6 +23,8 @@ private:
 	std::shared_ptr<icpVulkanRHI> m_rhi = nullptr;
 
 	std::vector<std::shared_ptr<icpRenderPassBase>> m_renderPasses;
+
+	uint32_t m_currentFrame = 0;
 };
 
 INCEPTION_END_NAMESPACE

@@ -13,16 +13,17 @@ public:
 	void initializeRenderPass(RendePassInitInfo initInfo) override;
 	void setupPipeline() override;
 	void cleanup() override;
-	void render() override;
+	void render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) override;
 
 	void createFrameBuffers();
 
 	void createRenderPass();
 	void cleanupSwapChain();
-	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
 	void recreateSwapChain();
 
-	uint32_t m_currentFrame = 0;
+	VkSemaphore m_waitSemaphores[1];
+	VkPipelineStageFlags m_waitStages[1];
 private:
 
 	

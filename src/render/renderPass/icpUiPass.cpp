@@ -83,7 +83,7 @@ void icpUiPass::createFrameBuffers()
 }
 
 
-void icpUiPass::render()
+void icpUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info)
 {
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
@@ -91,55 +91,35 @@ void icpUiPass::render()
 	ImGui::ShowDemoWindow();
 	ImGui::Render();
 
-	//m_rhi->waitForFence(m_currentFrame);
-	VkResult result;
-	auto index = m_rhi->acquireNextImageFromSwapchain(m_currentFrame, result);
+	vkResetCommandBuffer(m_rhi->m_uiCommandBuffers[currentFrame], 0);
+	recordCommandBuffer(m_rhi->m_uiCommandBuffers[currentFrame], frameBufferIndex);
 
-	vkResetFences(m_rhi->m_device, 1, &m_rhi->m_inFlightFences[m_currentFrame]);
-	vkResetCommandBuffer(m_rhi->m_uiCommandBuffers[m_currentFrame], 0);
-	recordCommandBuffer(index);
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_rhi->m_uiCommandBuffers[currentFrame]);
 
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_rhi->m_uiCommandBuffers[m_currentFrame]);
-
-	vkCmdEndRenderPass(m_rhi->m_uiCommandBuffers[m_currentFrame]);
+	vkCmdEndRenderPass(m_rhi->m_uiCommandBuffers[currentFrame]);
 	
 	VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	VkSubmitInfo info = {};
-	info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	info.waitSemaphoreCount = 0;
-	info.pWaitSemaphores = &m_rhi->m_imageAvailableForRenderingSemaphores[m_currentFrame];
-	info.pWaitDstStageMask = &wait_stage;
-	info.commandBufferCount = 1;
-	info.pCommandBuffers = &m_rhi->m_uiCommandBuffers[m_currentFrame];
-	info.signalSemaphoreCount = 1;
-	info.pSignalSemaphores = &m_rhi->m_renderFinishedForPresentationSemaphores[m_currentFrame];
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.waitSemaphoreCount = 0;
+	//submitInfo.pWaitSemaphores = &m_rhi->m_imageAvailableForRenderingSemaphores[currentFrame];
+	//submitInfo.pWaitDstStageMask = &wait_stage;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &m_rhi->m_uiCommandBuffers[currentFrame];
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &m_rhi->m_renderFinishedForPresentationSemaphores[currentFrame];
 
-	vkEndCommandBuffer(m_rhi->m_uiCommandBuffers[m_currentFrame]);
-	vkQueueSubmit(m_rhi->m_graphicsQueue, 1, &info, m_rhi->m_inFlightFences[m_currentFrame]);
+	vkEndCommandBuffer(m_rhi->m_uiCommandBuffers[currentFrame]);
 
-	VkPresentInfoKHR presentInfo{};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &m_rhi->m_renderFinishedForPresentationSemaphores[m_currentFrame];
-
-	VkSwapchainKHR swapChains[] = { m_rhi->m_swapChain };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-
-	presentInfo.pImageIndices = &index;
-
-	vkQueuePresentKHR(m_rhi->m_presentQueue, &presentInfo);
-
-	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	info = submitInfo;
 }
 
-void icpUiPass::recordCommandBuffer(uint32_t curFrameIndex)
+void icpUiPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	if (vkBeginCommandBuffer(m_rhi->m_uiCommandBuffers[m_currentFrame], &beginInfo) != VK_SUCCESS) {
+	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
 
@@ -154,7 +134,7 @@ void icpUiPass::recordCommandBuffer(uint32_t curFrameIndex)
 
 	info.clearValueCount = static_cast<uint32_t>(clearColors.size());
 	info.pClearValues = clearColors.data();
-	vkCmdBeginRenderPass(m_rhi->m_uiCommandBuffers[m_currentFrame], &info, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 
