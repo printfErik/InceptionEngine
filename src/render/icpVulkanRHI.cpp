@@ -1256,26 +1256,10 @@ VkResult icpVulkanRHI::submitRendering(uint32_t _imageIndex, uint32_t _currentFr
 	submitInfo.pCommandBuffers = &m_graphicsCommandBuffers[_currentFrame];
 
 	VkSemaphore signalSemaphores[] = { m_renderFinishedForPresentationSemaphores[_currentFrame]};
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
+	submitInfo.signalSemaphoreCount = 0;
+	//submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[_currentFrame]) != VK_SUCCESS) {
-		throw std::runtime_error("failed to submit draw command buffer!");
-	}
-
-	VkPresentInfoKHR presentInfo{};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalSemaphores;
-
-	VkSwapchainKHR swapChains[] = { m_swapChain };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-
-	presentInfo.pImageIndices = &_imageIndex;
-
-	return vkQueuePresentKHR(m_presentQueue, &presentInfo);
+	return vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[_currentFrame]);
 }
 
 void icpVulkanRHI::updateUniformBuffers(uint32_t _curImage)

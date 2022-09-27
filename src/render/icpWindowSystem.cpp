@@ -135,8 +135,8 @@ bool icpWindowSystem::initializeWindowSystem()
 		throw std::runtime_error("glfwInit failed");
 	}
 
-	m_width = 500;
-	m_height = 500;
+	m_width = 2000;
+	m_height = 2000;
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 

@@ -83,7 +83,7 @@ void icpResourceSystem::loadObjModelResource(const std::filesystem::path& objPat
 
 	if (!reader.Warning().empty())
 	{
-		std::cout << reader.Warning() << std::endl;
+		//std::cout << reader.Warning() << std::endl;
 	}
 
 	auto& attrib = reader.GetAttrib();

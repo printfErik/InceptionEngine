@@ -31,7 +31,7 @@ void icpMainForwardPass::createRenderPass()
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentDescription depthAttachment{};
 	depthAttachment.format = icpVulkanUtility::findDepthFormat(m_rhi->m_physicalDevice);
@@ -316,7 +316,7 @@ void icpMainForwardPass::render()
 
 	m_rhi->updateUniformBuffers(m_currentFrame);
 
-	vkResetFences(m_rhi->m_device, 1, &m_rhi->m_inFlightFences[m_currentFrame]);
+	//vkResetFences(m_rhi->m_device, 1, &m_rhi->m_inFlightFences[m_currentFrame]);
 
 	m_rhi->resetCommandBuffer(m_currentFrame);
 	recordCommandBuffer(m_rhi->m_graphicsCommandBuffers[m_currentFrame], index);

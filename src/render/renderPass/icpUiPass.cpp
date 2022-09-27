@@ -19,7 +19,6 @@ icpUiPass::~icpUiPass()
 
 void icpUiPass::initializeRenderPass(RendePassInitInfo initInfo)
 {
-
 	m_rhi = initInfo.rhi;
 
 	createRenderPass();
@@ -61,22 +60,22 @@ void icpUiPass::setupPipeline()
 
 void icpUiPass::createFrameBuffers()
 {
-	VkImageView attachment[1];
-	VkFramebufferCreateInfo info = {};
-	info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	info.renderPass = m_renderPassObj;
-	info.attachmentCount = 1;
-	info.pAttachments = attachment;
-	info.width = m_rhi->m_swapChainExtent.width;
-	info.height = m_rhi->m_swapChainExtent.height;
-	info.layers = 1;
-
 	m_swapChainFramebuffers.resize(m_rhi->m_swapChainImageViews.size());
 
-	for (uint32_t i = 0; i < m_rhi->m_swapChainImageViews.size(); i++)
+	for (size_t i = 0; i < m_rhi->m_swapChainImageViews.size(); i++)
 	{
+		VkImageView attachment[1];
 		attachment[0] = m_rhi->m_swapChainImageViews[i];
-		if(vkCreateFramebuffer(m_rhi->m_device, &info, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS)
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = m_renderPassObj;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachment;
+		framebufferInfo.width = m_rhi->m_swapChainExtent.width;
+		framebufferInfo.height = m_rhi->m_swapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_rhi->m_device, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create framebuffer!");
 		}
@@ -92,14 +91,13 @@ void icpUiPass::render()
 	ImGui::ShowDemoWindow();
 	ImGui::Render();
 
-	m_rhi->waitForFence(m_currentFrame);
+	//m_rhi->waitForFence(m_currentFrame);
 	VkResult result;
 	auto index = m_rhi->acquireNextImageFromSwapchain(m_currentFrame, result);
 
 	vkResetFences(m_rhi->m_device, 1, &m_rhi->m_inFlightFences[m_currentFrame]);
-
 	vkResetCommandBuffer(m_rhi->m_uiCommandBuffers[m_currentFrame], 0);
-	recordCommandBuffer(m_currentFrame);
+	recordCommandBuffer(index);
 
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_rhi->m_uiCommandBuffers[m_currentFrame]);
 
@@ -108,7 +106,7 @@ void icpUiPass::render()
 	VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	VkSubmitInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	info.waitSemaphoreCount = 1;
+	info.waitSemaphoreCount = 0;
 	info.pWaitSemaphores = &m_rhi->m_imageAvailableForRenderingSemaphores[m_currentFrame];
 	info.pWaitDstStageMask = &wait_stage;
 	info.commandBufferCount = 1;
