@@ -1241,24 +1241,6 @@ void icpVulkanRHI::resetCommandBuffer(uint32_t _currentFrame)
 	vkResetCommandBuffer(m_graphicsCommandBuffers[_currentFrame], 0);
 }
 
-VkResult icpVulkanRHI::submitRendering(uint32_t _imageIndex, uint32_t _currentFrame)
-{
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-	VkSemaphore waitSemaphores[] = { m_imageAvailableForRenderingSemaphores[_currentFrame]};
-	VkPipelineStageFlags waitStages[] = { VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_graphicsCommandBuffers[_currentFrame];
-
-
-	return vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[_currentFrame]);
-}
-
 void icpVulkanRHI::updateUniformBuffers(uint32_t _curImage)
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();

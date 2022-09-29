@@ -20,7 +20,7 @@ public:
 	void createRenderPass();
 	void cleanupSwapChain();
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
-	void recreateSwapChain();
+	void recreateSwapChain() override;
 
 	VkSemaphore m_waitSemaphores[1];
 	VkPipelineStageFlags m_waitStages[1];

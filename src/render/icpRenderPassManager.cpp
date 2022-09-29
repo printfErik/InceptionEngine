@@ -54,10 +54,15 @@ void icpRenderPassManager::cleanup()
 
 void icpRenderPassManager::render()
 {
+	m_rhi->waitForFence(m_currentFrame);
+
 	VkResult result;
 	auto index = m_rhi->acquireNextImageFromSwapchain(m_currentFrame, result);
 
-	m_rhi->waitForFence(m_currentFrame);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		return;
+	}
 
 	std::vector<VkSubmitInfo> infos;
 
@@ -69,14 +74,6 @@ void icpRenderPassManager::render()
 	}
 
 	result = vkQueueSubmit(m_rhi->m_graphicsQueue, static_cast<uint32_t>(infos.size()), infos.data(), m_rhi->m_inFlightFences[m_currentFrame]);
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_rhi->m_framebufferResized) {
-		//recreateSwapChain();
-		m_rhi->m_framebufferResized = false;
-	}
-	else if (result != VK_SUCCESS) {
-		throw std::runtime_error("failed to present swap chain image!");
-	}
 
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -92,9 +89,21 @@ void icpRenderPassManager::render()
 
 	vkQueuePresentKHR(m_rhi->m_presentQueue, &presentInfo);
 
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_rhi->m_framebufferResized) 
+	{
+		for (const auto renderPass : m_renderPasses)
+		{
+			renderPass->recreateSwapChain();
+		}
+		m_rhi->m_framebufferResized = false;
+	}
+	else if (result != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to present swap chain image!");
+	}
+
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
-
 
 
 INCEPTION_END_NAMESPACE

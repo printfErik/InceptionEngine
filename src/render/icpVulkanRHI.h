@@ -57,7 +57,6 @@ public:
 	void waitForFence(uint32_t _currentFrame);
 	uint32_t acquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result);
 	void resetCommandBuffer(uint32_t _currentFrame);
-	VkResult submitRendering(uint32_t _imageIndex, uint32_t _currentFrame);
 
 	void createSwapChain();
 	void createSwapChainImageViews();

@@ -328,8 +328,6 @@ void icpMainForwardPass::render(uint32_t frameBufferIndex, uint32_t currentFrame
 	submitInfo.pCommandBuffers = &m_rhi->m_graphicsCommandBuffers[currentFrame];
 
 	info = submitInfo;
-
-	//auto result = m_rhi->submitRendering(frameBufferIndex, currentFrame);
 }
 
 void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)

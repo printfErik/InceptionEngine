@@ -37,7 +37,7 @@ public:
 	virtual void setupPipeline() = 0;
 	virtual void cleanup() = 0;
 	virtual void render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) = 0;
-
+	virtual void recreateSwapChain() = 0;
 
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 	VkRenderPass m_renderPassObj{ VK_NULL_HANDLE };

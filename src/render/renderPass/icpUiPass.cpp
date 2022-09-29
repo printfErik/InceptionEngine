@@ -101,9 +101,6 @@ void icpUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResul
 	VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.waitSemaphoreCount = 0;
-	//submitInfo.pWaitSemaphores = &m_rhi->m_imageAvailableForRenderingSemaphores[currentFrame];
-	//submitInfo.pWaitDstStageMask = &wait_stage;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &m_rhi->m_uiCommandBuffers[currentFrame];
 	submitInfo.signalSemaphoreCount = 1;
@@ -186,6 +183,15 @@ void icpUiPass::createRenderPass()
 	if (vkCreateRenderPass(m_rhi->m_device, &renderPassInfo, nullptr, &m_renderPassObj) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create render pass!");
 	}
+}
+
+void icpUiPass::recreateSwapChain()
+{
+	for (auto framebuffer : m_swapChainFramebuffers)
+	{
+		vkDestroyFramebuffer(m_rhi->m_device, framebuffer, nullptr);
+	}
+	createFrameBuffers();
 }
 
 
