@@ -9,7 +9,7 @@ public:
 	icpSceneSystem() = default;
 	~icpSceneSystem() = default;
 
-	void initializeScene();
+	void initializeScene(const std::filesystem::path& mapPath);
 
 };
 
