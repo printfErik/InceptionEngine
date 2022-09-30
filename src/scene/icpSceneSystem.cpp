@@ -2,7 +2,7 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-void icpSceneSystem::initializeScene()
+void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
 {
 	
 }
