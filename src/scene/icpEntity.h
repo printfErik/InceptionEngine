@@ -1,9 +1,8 @@
 #pragma once
 
 #include "../core/icpMacros.h"
-#include "../core/icpGuid.h"
 
-#include "icpComponent.h"
+#include "icpSceneSystem.h"
 
 #include <entt/entt.hpp>
 
@@ -15,19 +14,28 @@ public:
 	icpGameEntity();
 	virtual ~icpGameEntity() = default;
 
-	void initializeEntity(entt::entity entityHandle, const std::string name);
+	void initializeEntity(entt::entity entityHandle, icpSceneSystem* sceneSystem);
 
-	void registerComponent(std::weak_ptr<icpComponentBase> comp);
-	void uninstallComponent(std::weak_ptr<icpComponentBase> comp);
+	template<typename T, typename... Args>
+	T& installComponent(Args&&... args)
+	{
+		assert(!hasComponent<T>());
+		T& component = m_sceneSystem->m_registry.emplace<T>(m_entityHandle, std::forward<Args>(args)...);
+		//m_sceneSystem->OnComponentAdded<T>(*this, component);
+		return component;
+	}
+
+	template<typename T>
+	bool hasComponent()
+	{
+		return m_sceneSystem->m_registry.any_of<T>(m_entityHandle);
+	}
 
 private:
 
-	icpGuid m_guid;
-	std::string m_name;
-
 	entt::entity m_entityHandle;
 
-	std::vector<std::weak_ptr<icpComponentBase>> m_components;
+	icpSceneSystem* m_sceneSystem;
 
 };
 

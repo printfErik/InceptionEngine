@@ -7,14 +7,13 @@ icpGameEntity::icpGameEntity()
 	
 }
 
-void icpGameEntity::initializeEntity(entt::entity entityHandle, const std::string name)
+void icpGameEntity::initializeEntity(entt::entity entityHandle, icpSceneSystem* sceneSystem)
 {
-	m_name = name;
 	m_entityHandle = entityHandle;
-	m_guid = icpGuid();
+	m_sceneSystem = sceneSystem;
 }
 
-
+/*
 void icpGameEntity::registerComponent(std::weak_ptr<icpComponentBase> comp)
 {
 	m_components.push_back(comp);
@@ -27,6 +26,6 @@ void icpGameEntity::uninstallComponent(std::weak_ptr<icpComponentBase> comp)
 		return comp_.lock() == comp.lock();
 	}));
 }
-
+*/
 
 INCEPTION_END_NAMESPACE

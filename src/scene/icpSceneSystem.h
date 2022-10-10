@@ -7,6 +7,8 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
+class icpGameEntity;
+
 class icpSceneSystem
 {
 public:
@@ -15,10 +17,12 @@ public:
 
 	void initializeScene(const std::filesystem::path& mapPath);
 
-	void createEntity(const std::string& name);
+	icpGameEntity createEntity(const std::string& name);
+
+
+	entt::registry m_registry;
 
 private:
-	entt::registry m_registry;
 };
 
 
