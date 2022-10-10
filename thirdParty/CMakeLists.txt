@@ -29,3 +29,8 @@ if (NOT TARGET imgui)
 	include(imgui.cmake)
 	set_target_properties(imgui PROPERTIES FOLDER ${third_party_folder}/imgui)
 endif()
+
+if (NOT TARGET entt)
+	add_subdirectory(entt)
+	set_target_properties(EnTT PROPERTIES FOLDER ${third_party_folder}/entt)
+endif()
