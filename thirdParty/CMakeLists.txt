@@ -34,3 +34,8 @@ if (NOT TARGET entt)
 	add_subdirectory(entt)
 	set_target_properties(EnTT PROPERTIES FOLDER ${third_party_folder}/entt)
 endif()
+
+if (NOT TARGET FlatBuffers)
+	add_subdirectory(Flatbuffers)
+	set_target_properties(FlatBuffers PROPERTIES FOLDER ${third_party_folder}/flatbuffers)
+endif()

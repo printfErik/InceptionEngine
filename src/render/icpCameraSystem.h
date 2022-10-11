@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../core/icpMacros.h"
+#include "../scene/icpComponent.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -11,7 +12,7 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-class icpCameraComponent
+class icpCameraComponent : public icpComponentBase
 {
 public:
 	glm::vec3 m_clearColor;

@@ -1,0 +1,35 @@
+namespace inception.fb;
+
+table icpGuid
+{
+    m_guid: ulong;
+}
+
+table Vector3
+{
+    x:float;
+    y:float;
+    z:float;
+}
+
+table Quaternion
+{
+  	x:float;
+    y:float;
+    z:float;
+    w:float;
+}
+
+table icpEntityDataComponent
+{
+    m_name: string;
+    m_guid: icpGuid;
+}
+
+table icpXFromComponent
+{
+    m_translation: Vector3;
+    m_rotation: Vector3;
+    m_quternionRot: Quaternion;
+    m_scale: Vector3;
+}

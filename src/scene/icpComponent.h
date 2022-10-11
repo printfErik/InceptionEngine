@@ -8,7 +8,7 @@ class icpComponentBase
 {
 public:
 	icpComponentBase();
-	virtual ~icpComponentBase() = 0;
+	virtual ~icpComponentBase();
 
 
 

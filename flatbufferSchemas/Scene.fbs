@@ -1,0 +1,19 @@
+include "component.fbs"
+namespace inception.fb;
+
+table flatbufferEntity
+{
+    m_components:[icpComponents];
+}
+
+table flatbufferTreeNode
+{
+    m_entity: flatbufferEntity;
+    m_children: [flatbufferEntity];
+}
+
+table flatbufferScene
+{
+    m_name: stirng;
+    m_sceneRoot: flatbufferTreeNode;
+}
