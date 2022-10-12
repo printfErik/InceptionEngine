@@ -36,6 +36,7 @@ if (NOT TARGET entt)
 endif()
 
 if (NOT TARGET FlatBuffers)
+	option(FLATBUFFERS_BUILD_TESTS "" OFF)
 	add_subdirectory(Flatbuffers)
 	set_target_properties(FlatBuffers PROPERTIES FOLDER ${third_party_folder}/flatbuffers)
 endif()

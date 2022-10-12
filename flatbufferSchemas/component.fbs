@@ -12,6 +12,13 @@ table Vector3
     z:float;
 }
 
+table Matrix
+{
+    x:float;
+    y:float;
+    z:float;
+}
+
 table Quaternion
 {
   	x:float;
@@ -32,4 +39,17 @@ table icpXFromComponent
     m_rotation: Vector3;
     m_quternionRot: Quaternion;
     m_scale: Vector3;
+}
+
+table icpCameraComponent
+{
+    m_clearColor: Vector3;
+    m_fov: float;
+    m_aspectRatio: float;
+    m_near: float;
+    m_far: float;
+    m_position: Vector3;
+    m_rotation: Quaternion;
+    m_viewMatrix: Matrix;
+    m_cameraSpeed: float;
 }
