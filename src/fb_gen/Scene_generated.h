@@ -8,7 +8,7 @@
 
 #include "component_generated.h"
 
-namespace inception {
+namespace Inception {
 namespace fb {
 
 struct flatbufferEntity;
@@ -38,11 +38,7 @@ inline const flatbuffers::TypeTable *flatbufferSceneTypeTable();
 
 struct flatbufferEntityT {
   typedef flatbufferEntity TableType;
-  std::vector<--filename-suffix<inception::fb::icpEntityDataComponentT>> m_components{};
-  flatbufferEntityT() = default;
-  flatbufferEntityT(const flatbufferEntityT &o);
-  flatbufferEntityT(flatbufferEntityT&&) FLATBUFFERS_NOEXCEPT = default;
-  flatbufferEntityT &operator=(flatbufferEntityT o) FLATBUFFERS_NOEXCEPT;
+  std::vector<Inception::fb::icpComponentBaseUnion> m_components{};
 };
 
 struct flatbufferEntity FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -52,16 +48,22 @@ struct flatbufferEntity FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     return flatbufferEntityTypeTable();
   }
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_M_COMPONENTS = 4
+    VT_M_COMPONENTS_TYPE = 4,
+    VT_M_COMPONENTS = 6
   };
-  const flatbuffers::Vector<flatbuffers::Offset<inception::fb::icpEntityDataComponent>> *m_components() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<inception::fb::icpEntityDataComponent>> *>(VT_M_COMPONENTS);
+  const flatbuffers::Vector<uint8_t> *m_components_type() const {
+    return GetPointer<const flatbuffers::Vector<uint8_t> *>(VT_M_COMPONENTS_TYPE);
+  }
+  const flatbuffers::Vector<flatbuffers::Offset<void>> *m_components() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<void>> *>(VT_M_COMPONENTS);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_M_COMPONENTS_TYPE) &&
+           verifier.VerifyVector(m_components_type()) &&
            VerifyOffset(verifier, VT_M_COMPONENTS) &&
            verifier.VerifyVector(m_components()) &&
-           verifier.VerifyVectorOfTables(m_components()) &&
+           VerifyicpComponentBaseVector(verifier, m_components(), m_components_type()) &&
            verifier.EndTable();
   }
   flatbufferEntityT *UnPack(const flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -73,7 +75,10 @@ struct flatbufferEntityBuilder {
   typedef flatbufferEntity Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_m_components(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<inception::fb::icpEntityDataComponent>>> m_components) {
+  void add_m_components_type(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> m_components_type) {
+    fbb_.AddOffset(flatbufferEntity::VT_M_COMPONENTS_TYPE, m_components_type);
+  }
+  void add_m_components(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<void>>> m_components) {
     fbb_.AddOffset(flatbufferEntity::VT_M_COMPONENTS, m_components);
   }
   explicit flatbufferEntityBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -89,18 +94,23 @@ struct flatbufferEntityBuilder {
 
 inline flatbuffers::Offset<flatbufferEntity> CreateflatbufferEntity(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<inception::fb::icpEntityDataComponent>>> m_components = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> m_components_type = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<void>>> m_components = 0) {
   flatbufferEntityBuilder builder_(_fbb);
   builder_.add_m_components(m_components);
+  builder_.add_m_components_type(m_components_type);
   return builder_.Finish();
 }
 
 inline flatbuffers::Offset<flatbufferEntity> CreateflatbufferEntityDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<flatbuffers::Offset<inception::fb::icpEntityDataComponent>> *m_components = nullptr) {
-  auto m_components__ = m_components ? _fbb.CreateVector<flatbuffers::Offset<inception::fb::icpEntityDataComponent>>(*m_components) : 0;
-  return inception::fb::CreateflatbufferEntity(
+    const std::vector<uint8_t> *m_components_type = nullptr,
+    const std::vector<flatbuffers::Offset<void>> *m_components = nullptr) {
+  auto m_components_type__ = m_components_type ? _fbb.CreateVector<uint8_t>(*m_components_type) : 0;
+  auto m_components__ = m_components ? _fbb.CreateVector<flatbuffers::Offset<void>>(*m_components) : 0;
+  return Inception::fb::CreateflatbufferEntity(
       _fbb,
+      m_components_type__,
       m_components__);
 }
 
@@ -108,8 +118,8 @@ flatbuffers::Offset<flatbufferEntity> PackflatbufferEntity(flatbuffers::FlatBuff
 
 struct flatbufferTreeNodeT {
   typedef flatbufferTreeNode TableType;
-  --filename-suffix<inception::fb::flatbufferEntityT> m_entity{};
-  std::vector<--filename-suffix<inception::fb::flatbufferEntityT>> m_children{};
+  --filename-suffix<Inception::fb::flatbufferEntityT> m_entity{};
+  std::vector<--filename-suffix<Inception::fb::flatbufferEntityT>> m_children{};
   flatbufferTreeNodeT() = default;
   flatbufferTreeNodeT(const flatbufferTreeNodeT &o);
   flatbufferTreeNodeT(flatbufferTreeNodeT&&) FLATBUFFERS_NOEXCEPT = default;
@@ -126,11 +136,11 @@ struct flatbufferTreeNode FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_M_ENTITY = 4,
     VT_M_CHILDREN = 6
   };
-  const inception::fb::flatbufferEntity *m_entity() const {
-    return GetPointer<const inception::fb::flatbufferEntity *>(VT_M_ENTITY);
+  const Inception::fb::flatbufferEntity *m_entity() const {
+    return GetPointer<const Inception::fb::flatbufferEntity *>(VT_M_ENTITY);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<inception::fb::flatbufferEntity>> *m_children() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<inception::fb::flatbufferEntity>> *>(VT_M_CHILDREN);
+  const flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferEntity>> *m_children() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferEntity>> *>(VT_M_CHILDREN);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -150,10 +160,10 @@ struct flatbufferTreeNodeBuilder {
   typedef flatbufferTreeNode Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_m_entity(flatbuffers::Offset<inception::fb::flatbufferEntity> m_entity) {
+  void add_m_entity(flatbuffers::Offset<Inception::fb::flatbufferEntity> m_entity) {
     fbb_.AddOffset(flatbufferTreeNode::VT_M_ENTITY, m_entity);
   }
-  void add_m_children(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<inception::fb::flatbufferEntity>>> m_children) {
+  void add_m_children(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferEntity>>> m_children) {
     fbb_.AddOffset(flatbufferTreeNode::VT_M_CHILDREN, m_children);
   }
   explicit flatbufferTreeNodeBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -169,8 +179,8 @@ struct flatbufferTreeNodeBuilder {
 
 inline flatbuffers::Offset<flatbufferTreeNode> CreateflatbufferTreeNode(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<inception::fb::flatbufferEntity> m_entity = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<inception::fb::flatbufferEntity>>> m_children = 0) {
+    flatbuffers::Offset<Inception::fb::flatbufferEntity> m_entity = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferEntity>>> m_children = 0) {
   flatbufferTreeNodeBuilder builder_(_fbb);
   builder_.add_m_children(m_children);
   builder_.add_m_entity(m_entity);
@@ -179,10 +189,10 @@ inline flatbuffers::Offset<flatbufferTreeNode> CreateflatbufferTreeNode(
 
 inline flatbuffers::Offset<flatbufferTreeNode> CreateflatbufferTreeNodeDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<inception::fb::flatbufferEntity> m_entity = 0,
-    const std::vector<flatbuffers::Offset<inception::fb::flatbufferEntity>> *m_children = nullptr) {
-  auto m_children__ = m_children ? _fbb.CreateVector<flatbuffers::Offset<inception::fb::flatbufferEntity>>(*m_children) : 0;
-  return inception::fb::CreateflatbufferTreeNode(
+    flatbuffers::Offset<Inception::fb::flatbufferEntity> m_entity = 0,
+    const std::vector<flatbuffers::Offset<Inception::fb::flatbufferEntity>> *m_children = nullptr) {
+  auto m_children__ = m_children ? _fbb.CreateVector<flatbuffers::Offset<Inception::fb::flatbufferEntity>>(*m_children) : 0;
+  return Inception::fb::CreateflatbufferTreeNode(
       _fbb,
       m_entity,
       m_children__);
@@ -193,7 +203,7 @@ flatbuffers::Offset<flatbufferTreeNode> PackflatbufferTreeNode(flatbuffers::Flat
 struct flatbufferSceneT {
   typedef flatbufferScene TableType;
   std::string m_name{};
-  --filename-suffix<inception::fb::flatbufferTreeNodeT> m_sceneRoot{};
+  --filename-suffix<Inception::fb::flatbufferTreeNodeT> m_sceneRoot{};
   flatbufferSceneT() = default;
   flatbufferSceneT(const flatbufferSceneT &o);
   flatbufferSceneT(flatbufferSceneT&&) FLATBUFFERS_NOEXCEPT = default;
@@ -213,8 +223,8 @@ struct flatbufferScene FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *m_name() const {
     return GetPointer<const flatbuffers::String *>(VT_M_NAME);
   }
-  const inception::fb::flatbufferTreeNode *m_sceneRoot() const {
-    return GetPointer<const inception::fb::flatbufferTreeNode *>(VT_M_SCENEROOT);
+  const Inception::fb::flatbufferTreeNode *m_sceneRoot() const {
+    return GetPointer<const Inception::fb::flatbufferTreeNode *>(VT_M_SCENEROOT);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -236,7 +246,7 @@ struct flatbufferSceneBuilder {
   void add_m_name(flatbuffers::Offset<flatbuffers::String> m_name) {
     fbb_.AddOffset(flatbufferScene::VT_M_NAME, m_name);
   }
-  void add_m_sceneRoot(flatbuffers::Offset<inception::fb::flatbufferTreeNode> m_sceneRoot) {
+  void add_m_sceneRoot(flatbuffers::Offset<Inception::fb::flatbufferTreeNode> m_sceneRoot) {
     fbb_.AddOffset(flatbufferScene::VT_M_SCENEROOT, m_sceneRoot);
   }
   explicit flatbufferSceneBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -253,7 +263,7 @@ struct flatbufferSceneBuilder {
 inline flatbuffers::Offset<flatbufferScene> CreateflatbufferScene(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::String> m_name = 0,
-    flatbuffers::Offset<inception::fb::flatbufferTreeNode> m_sceneRoot = 0) {
+    flatbuffers::Offset<Inception::fb::flatbufferTreeNode> m_sceneRoot = 0) {
   flatbufferSceneBuilder builder_(_fbb);
   builder_.add_m_sceneRoot(m_sceneRoot);
   builder_.add_m_name(m_name);
@@ -263,9 +273,9 @@ inline flatbuffers::Offset<flatbufferScene> CreateflatbufferScene(
 inline flatbuffers::Offset<flatbufferScene> CreateflatbufferSceneDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const char *m_name = nullptr,
-    flatbuffers::Offset<inception::fb::flatbufferTreeNode> m_sceneRoot = 0) {
+    flatbuffers::Offset<Inception::fb::flatbufferTreeNode> m_sceneRoot = 0) {
   auto m_name__ = m_name ? _fbb.CreateString(m_name) : 0;
-  return inception::fb::CreateflatbufferScene(
+  return Inception::fb::CreateflatbufferScene(
       _fbb,
       m_name__,
       m_sceneRoot);
@@ -284,16 +294,6 @@ inline bool operator!=(const flatbufferEntityT &lhs, const flatbufferEntityT &rh
 }
 
 
-inline flatbufferEntityT::flatbufferEntityT(const flatbufferEntityT &o) {
-  m_components.reserve(o.m_components.size());
-  for (const auto &v : o.m_components) { m_components.emplace_back((v) ? new inception::fb::icpEntityDataComponentT(*v) : nullptr); }
-}
-
-inline flatbufferEntityT &flatbufferEntityT::operator=(flatbufferEntityT o) FLATBUFFERS_NOEXCEPT {
-  std::swap(m_components, o.m_components);
-  return *this;
-}
-
 inline flatbufferEntityT *flatbufferEntity::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
   auto _o = std::unique_ptr<flatbufferEntityT>(new flatbufferEntityT());
   UnPackTo(_o.get(), _resolver);
@@ -303,7 +303,8 @@ inline flatbufferEntityT *flatbufferEntity::UnPack(const flatbuffers::resolver_f
 inline void flatbufferEntity::UnPackTo(flatbufferEntityT *_o, const flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = m_components(); if (_e) { _o->m_components.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->m_components[_i]) { _e->Get(_i)->UnPackTo(_o->m_components[_i].get(), _resolver); } else { _o->m_components[_i] = --filename-suffix<inception::fb::icpEntityDataComponentT>(_e->Get(_i)->UnPack(_resolver)); }; } } }
+  { auto _e = m_components_type(); if (_e) { _o->m_components.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->m_components[_i].type = static_cast<Inception::fb::icpComponentBase>(_e->Get(_i)); } } }
+  { auto _e = m_components(); if (_e) { _o->m_components.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->m_components[_i].value = Inception::fb::icpComponentBaseUnion::UnPack(_e->Get(_i), m_components_type()->GetEnum<icpComponentBase>(_i), _resolver); } } }
 }
 
 inline flatbuffers::Offset<flatbufferEntity> flatbufferEntity::Pack(flatbuffers::FlatBufferBuilder &_fbb, const flatbufferEntityT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -314,9 +315,11 @@ inline flatbuffers::Offset<flatbufferEntity> PackflatbufferEntity(flatbuffers::F
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const flatbufferEntityT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _m_components = _o->m_components.size() ? _fbb.CreateVector<flatbuffers::Offset<inception::fb::icpEntityDataComponent>> (_o->m_components.size(), [](size_t i, _VectorArgs *__va) { return PackicpEntityDataComponent(*__va->__fbb, __va->__o->m_components[i].get(), __va->__rehasher); }, &_va ) : 0;
-  return inception::fb::CreateflatbufferEntity(
+  auto _m_components_type = _o->m_components.size() ? _fbb.CreateVector<uint8_t>(_o->m_components.size(), [](size_t i, _VectorArgs *__va) { return static_cast<uint8_t>(__va->__o->m_components[i].type); }, &_va) : 0;
+  auto _m_components = _o->m_components.size() ? _fbb.CreateVector<flatbuffers::Offset<void>>(_o->m_components.size(), [](size_t i, _VectorArgs *__va) { return __va->__o->m_components[i].Pack(*__va->__fbb, __va->__rehasher); }, &_va) : 0;
+  return Inception::fb::CreateflatbufferEntity(
       _fbb,
+      _m_components_type,
       _m_components);
 }
 
@@ -333,9 +336,9 @@ inline bool operator!=(const flatbufferTreeNodeT &lhs, const flatbufferTreeNodeT
 
 
 inline flatbufferTreeNodeT::flatbufferTreeNodeT(const flatbufferTreeNodeT &o)
-      : m_entity((o.m_entity) ? new inception::fb::flatbufferEntityT(*o.m_entity) : nullptr) {
+      : m_entity((o.m_entity) ? new Inception::fb::flatbufferEntityT(*o.m_entity) : nullptr) {
   m_children.reserve(o.m_children.size());
-  for (const auto &v : o.m_children) { m_children.emplace_back((v) ? new inception::fb::flatbufferEntityT(*v) : nullptr); }
+  for (const auto &v : o.m_children) { m_children.emplace_back((v) ? new Inception::fb::flatbufferEntityT(*v) : nullptr); }
 }
 
 inline flatbufferTreeNodeT &flatbufferTreeNodeT::operator=(flatbufferTreeNodeT o) FLATBUFFERS_NOEXCEPT {
@@ -353,8 +356,8 @@ inline flatbufferTreeNodeT *flatbufferTreeNode::UnPack(const flatbuffers::resolv
 inline void flatbufferTreeNode::UnPackTo(flatbufferTreeNodeT *_o, const flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = m_entity(); if (_e) { if(_o->m_entity) { _e->UnPackTo(_o->m_entity.get(), _resolver); } else { _o->m_entity = --filename-suffix<inception::fb::flatbufferEntityT>(_e->UnPack(_resolver)); } } }
-  { auto _e = m_children(); if (_e) { _o->m_children.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->m_children[_i]) { _e->Get(_i)->UnPackTo(_o->m_children[_i].get(), _resolver); } else { _o->m_children[_i] = --filename-suffix<inception::fb::flatbufferEntityT>(_e->Get(_i)->UnPack(_resolver)); }; } } }
+  { auto _e = m_entity(); if (_e) { if(_o->m_entity) { _e->UnPackTo(_o->m_entity.get(), _resolver); } else { _o->m_entity = --filename-suffix<Inception::fb::flatbufferEntityT>(_e->UnPack(_resolver)); } } }
+  { auto _e = m_children(); if (_e) { _o->m_children.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->m_children[_i]) { _e->Get(_i)->UnPackTo(_o->m_children[_i].get(), _resolver); } else { _o->m_children[_i] = --filename-suffix<Inception::fb::flatbufferEntityT>(_e->Get(_i)->UnPack(_resolver)); }; } } }
 }
 
 inline flatbuffers::Offset<flatbufferTreeNode> flatbufferTreeNode::Pack(flatbuffers::FlatBufferBuilder &_fbb, const flatbufferTreeNodeT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -366,8 +369,8 @@ inline flatbuffers::Offset<flatbufferTreeNode> PackflatbufferTreeNode(flatbuffer
   (void)_o;
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const flatbufferTreeNodeT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _m_entity = _o->m_entity ? PackflatbufferEntity(_fbb, _o->m_entity.get(), _rehasher) : 0;
-  auto _m_children = _o->m_children.size() ? _fbb.CreateVector<flatbuffers::Offset<inception::fb::flatbufferEntity>> (_o->m_children.size(), [](size_t i, _VectorArgs *__va) { return PackflatbufferEntity(*__va->__fbb, __va->__o->m_children[i].get(), __va->__rehasher); }, &_va ) : 0;
-  return inception::fb::CreateflatbufferTreeNode(
+  auto _m_children = _o->m_children.size() ? _fbb.CreateVector<flatbuffers::Offset<Inception::fb::flatbufferEntity>> (_o->m_children.size(), [](size_t i, _VectorArgs *__va) { return PackflatbufferEntity(*__va->__fbb, __va->__o->m_children[i].get(), __va->__rehasher); }, &_va ) : 0;
+  return Inception::fb::CreateflatbufferTreeNode(
       _fbb,
       _m_entity,
       _m_children);
@@ -387,7 +390,7 @@ inline bool operator!=(const flatbufferSceneT &lhs, const flatbufferSceneT &rhs)
 
 inline flatbufferSceneT::flatbufferSceneT(const flatbufferSceneT &o)
       : m_name(o.m_name),
-        m_sceneRoot((o.m_sceneRoot) ? new inception::fb::flatbufferTreeNodeT(*o.m_sceneRoot) : nullptr) {
+        m_sceneRoot((o.m_sceneRoot) ? new Inception::fb::flatbufferTreeNodeT(*o.m_sceneRoot) : nullptr) {
 }
 
 inline flatbufferSceneT &flatbufferSceneT::operator=(flatbufferSceneT o) FLATBUFFERS_NOEXCEPT {
@@ -406,7 +409,7 @@ inline void flatbufferScene::UnPackTo(flatbufferSceneT *_o, const flatbuffers::r
   (void)_o;
   (void)_resolver;
   { auto _e = m_name(); if (_e) _o->m_name = _e->str(); }
-  { auto _e = m_sceneRoot(); if (_e) { if(_o->m_sceneRoot) { _e->UnPackTo(_o->m_sceneRoot.get(), _resolver); } else { _o->m_sceneRoot = --filename-suffix<inception::fb::flatbufferTreeNodeT>(_e->UnPack(_resolver)); } } }
+  { auto _e = m_sceneRoot(); if (_e) { if(_o->m_sceneRoot) { _e->UnPackTo(_o->m_sceneRoot.get(), _resolver); } else { _o->m_sceneRoot = --filename-suffix<Inception::fb::flatbufferTreeNodeT>(_e->UnPack(_resolver)); } } }
 }
 
 inline flatbuffers::Offset<flatbufferScene> flatbufferScene::Pack(flatbuffers::FlatBufferBuilder &_fbb, const flatbufferSceneT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -419,7 +422,7 @@ inline flatbuffers::Offset<flatbufferScene> PackflatbufferScene(flatbuffers::Fla
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const flatbufferSceneT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _m_name = _o->m_name.empty() ? 0 : _fbb.CreateString(_o->m_name);
   auto _m_sceneRoot = _o->m_sceneRoot ? PackflatbufferTreeNode(_fbb, _o->m_sceneRoot.get(), _rehasher) : 0;
-  return inception::fb::CreateflatbufferScene(
+  return Inception::fb::CreateflatbufferScene(
       _fbb,
       _m_name,
       _m_sceneRoot);
@@ -427,16 +430,18 @@ inline flatbuffers::Offset<flatbufferScene> PackflatbufferScene(flatbuffers::Fla
 
 inline const flatbuffers::TypeTable *flatbufferEntityTypeTable() {
   static const flatbuffers::TypeCode type_codes[] = {
+    { flatbuffers::ET_UTYPE, 1, 0 },
     { flatbuffers::ET_SEQUENCE, 1, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    inception::fb::icpEntityDataComponentTypeTable
+    Inception::fb::icpComponentBaseTypeTable
   };
   static const char * const names[] = {
+    "m_components_type",
     "m_components"
   };
   static const flatbuffers::TypeTable tt = {
-    flatbuffers::ST_TABLE, 1, type_codes, type_refs, nullptr, nullptr, names
+    flatbuffers::ST_TABLE, 2, type_codes, type_refs, nullptr, nullptr, names
   };
   return &tt;
 }
@@ -447,7 +452,7 @@ inline const flatbuffers::TypeTable *flatbufferTreeNodeTypeTable() {
     { flatbuffers::ET_SEQUENCE, 1, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    inception::fb::flatbufferEntityTypeTable
+    Inception::fb::flatbufferEntityTypeTable
   };
   static const char * const names[] = {
     "m_entity",
@@ -465,7 +470,7 @@ inline const flatbuffers::TypeTable *flatbufferSceneTypeTable() {
     { flatbuffers::ET_SEQUENCE, 0, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    inception::fb::flatbufferTreeNodeTypeTable
+    Inception::fb::flatbufferTreeNodeTypeTable
   };
   static const char * const names[] = {
     "m_name",
@@ -478,6 +483,6 @@ inline const flatbuffers::TypeTable *flatbufferSceneTypeTable() {
 }
 
 }  // namespace fb
-}  // namespace inception
+}  // namespace Inception
 
 #endif  // FLATBUFFERS_GENERATED_SCENE_INCEPTION_FB_H_

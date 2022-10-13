@@ -1,4 +1,4 @@
-namespace inception.fb;
+namespace Inception.fb;
 
 table icpGuid
 {
@@ -12,19 +12,39 @@ table Vector3
     z:float;
 }
 
-table Matrix
-{
-    x:float;
-    y:float;
-    z:float;
-}
-
 table Quaternion
 {
   	x:float;
     y:float;
     z:float;
     w:float;
+}
+
+table Matrix4x4
+{
+    m_data0:float;
+    m_data1:float;
+    m_data2:float;
+    m_data3:float;
+    m_data4:float;
+    m_data5:float;
+    m_data6:float;
+    m_data7:float;
+    m_data8:float;
+    m_data9:float;
+    m_data10:float;
+    m_data11:float;
+    m_data12:float;
+    m_data13:float;
+    m_data14:float;
+    m_data15:float;
+}
+
+union icpComponentBase
+{
+    icpEntityDataComponent = 1,
+    icpXFromComponent = 2,
+    icpCameraComponent = 3,
 }
 
 table icpEntityDataComponent
@@ -50,6 +70,9 @@ table icpCameraComponent
     m_far: float;
     m_position: Vector3;
     m_rotation: Quaternion;
-    m_viewMatrix: Matrix;
+    m_viewMatrix: Matrix4x4;
     m_cameraSpeed: float;
+    m_cameraRotationSpeed: float;
+    m_viewDir: Vector3;
+    m_upDir: Vector3;
 }

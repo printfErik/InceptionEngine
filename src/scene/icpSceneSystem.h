@@ -19,6 +19,7 @@ public:
 
 	icpGameEntity createEntity(const std::string& name);
 
+	void saveScene(const std::filesystem::path& outPath);
 
 	entt::registry m_registry;
 

@@ -1,9 +1,9 @@
 include "component.fbs";
-namespace inception.fb;
+namespace Inception.fb;
 
 table flatbufferEntity
 {
-    m_components:[icpEntityDataComponent];
+    m_components:[icpComponentBase];
 }
 
 table flatbufferTreeNode
