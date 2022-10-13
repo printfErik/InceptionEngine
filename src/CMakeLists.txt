@@ -1,5 +1,6 @@
-set(FLATBUFFER_CPP_OPTIONS "--reflect-names" "--gen-compare" "--gen-object-api" "--cpp-ptr-type")
+set(FLATBUFFER_CPP_OPTIONS "--reflect-names" "--gen-compare")
 set(FB_GEN_ROOT ${ENGINE_SOURCE_CODE_DIR}/fb_gen)
+message(status "${FB_GEN_ROOT}")
 set(FB_GEN_SUFFIX "_generated")
 set(FB_GEN_EXT "h")
 
@@ -7,12 +8,14 @@ FILE(GLOB_RECURSE INCEPTION_SCHEMAS "${FLATBUFFER_SCHEMAS_DIR}/*.fbs")
 
 foreach(schema ${INCEPTION_SCHEMAS})
 	message(STATUS "schema is : ${schema}")
-	get_filename_component(SCHEMA_FILE_NAME ${schema} NAME_WE)
-	set(CPP_GEN_FILE "${SCHEMA_FILE_NAME}${FB_GEN_SUFFIX}.${FB_GEN_EXT}")
-	message(STATUS "${CPP_GEN_FILE}")
 	execute_process(
 		COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE} --cpp -o ${FB_GEN_ROOT} ${schema} ${FLATBUFFER_CPP_OPTIONS} --filename-suffix ${FB_GEN_SUFFIX} --filename-ext ${FB_GEN_EXT}
+		RESULT_VARIABLE _result
     )
+
+	if(_result)
+		message(FATAL_ERROR "schema ${schema} compile error, result code: ${_result}")
+	endif()
 
 endforeach()
 

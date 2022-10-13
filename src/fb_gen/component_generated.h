@@ -11,46 +11,24 @@ namespace fb {
 
 struct icpGuid;
 struct icpGuidBuilder;
-struct icpGuidT;
 
 struct Vector3;
 struct Vector3Builder;
-struct Vector3T;
 
 struct Quaternion;
 struct QuaternionBuilder;
-struct QuaternionT;
 
 struct Matrix4x4;
 struct Matrix4x4Builder;
-struct Matrix4x4T;
 
 struct icpEntityDataComponent;
 struct icpEntityDataComponentBuilder;
-struct icpEntityDataComponentT;
 
 struct icpXFromComponent;
 struct icpXFromComponentBuilder;
-struct icpXFromComponentT;
 
 struct icpCameraComponent;
 struct icpCameraComponentBuilder;
-struct icpCameraComponentT;
-
-bool operator==(const icpGuidT &lhs, const icpGuidT &rhs);
-bool operator!=(const icpGuidT &lhs, const icpGuidT &rhs);
-bool operator==(const Vector3T &lhs, const Vector3T &rhs);
-bool operator!=(const Vector3T &lhs, const Vector3T &rhs);
-bool operator==(const QuaternionT &lhs, const QuaternionT &rhs);
-bool operator!=(const QuaternionT &lhs, const QuaternionT &rhs);
-bool operator==(const Matrix4x4T &lhs, const Matrix4x4T &rhs);
-bool operator!=(const Matrix4x4T &lhs, const Matrix4x4T &rhs);
-bool operator==(const icpEntityDataComponentT &lhs, const icpEntityDataComponentT &rhs);
-bool operator!=(const icpEntityDataComponentT &lhs, const icpEntityDataComponentT &rhs);
-bool operator==(const icpXFromComponentT &lhs, const icpXFromComponentT &rhs);
-bool operator!=(const icpXFromComponentT &lhs, const icpXFromComponentT &rhs);
-bool operator==(const icpCameraComponentT &lhs, const icpCameraComponentT &rhs);
-bool operator!=(const icpCameraComponentT &lhs, const icpCameraComponentT &rhs);
 
 inline const flatbuffers::TypeTable *icpGuidTypeTable();
 
@@ -118,117 +96,10 @@ template<> struct icpComponentBaseTraits<Inception::fb::icpCameraComponent> {
   static const icpComponentBase enum_value = icpComponentBase_icpCameraComponent;
 };
 
-template<typename T> struct icpComponentBaseUnionTraits {
-  static const icpComponentBase enum_value = icpComponentBase_NONE;
-};
-
-template<> struct icpComponentBaseUnionTraits<Inception::fb::icpEntityDataComponentT> {
-  static const icpComponentBase enum_value = icpComponentBase_icpEntityDataComponent;
-};
-
-template<> struct icpComponentBaseUnionTraits<Inception::fb::icpXFromComponentT> {
-  static const icpComponentBase enum_value = icpComponentBase_icpXFromComponent;
-};
-
-template<> struct icpComponentBaseUnionTraits<Inception::fb::icpCameraComponentT> {
-  static const icpComponentBase enum_value = icpComponentBase_icpCameraComponent;
-};
-
-struct icpComponentBaseUnion {
-  icpComponentBase type;
-  void *value;
-
-  icpComponentBaseUnion() : type(icpComponentBase_NONE), value(nullptr) {}
-  icpComponentBaseUnion(icpComponentBaseUnion&& u) FLATBUFFERS_NOEXCEPT :
-    type(icpComponentBase_NONE), value(nullptr)
-    { std::swap(type, u.type); std::swap(value, u.value); }
-  icpComponentBaseUnion(const icpComponentBaseUnion &);
-  icpComponentBaseUnion &operator=(const icpComponentBaseUnion &u)
-    { icpComponentBaseUnion t(u); std::swap(type, t.type); std::swap(value, t.value); return *this; }
-  icpComponentBaseUnion &operator=(icpComponentBaseUnion &&u) FLATBUFFERS_NOEXCEPT
-    { std::swap(type, u.type); std::swap(value, u.value); return *this; }
-  ~icpComponentBaseUnion() { Reset(); }
-
-  void Reset();
-
-  template <typename T>
-  void Set(T&& val) {
-    typedef typename std::remove_reference<T>::type RT;
-    Reset();
-    type = icpComponentBaseUnionTraits<RT>::enum_value;
-    if (type != icpComponentBase_NONE) {
-      value = new RT(std::forward<T>(val));
-    }
-  }
-
-  static void *UnPack(const void *obj, icpComponentBase type, const flatbuffers::resolver_function_t *resolver);
-  flatbuffers::Offset<void> Pack(flatbuffers::FlatBufferBuilder &_fbb, const flatbuffers::rehasher_function_t *_rehasher = nullptr) const;
-
-  Inception::fb::icpEntityDataComponentT *AsicpEntityDataComponent() {
-    return type == icpComponentBase_icpEntityDataComponent ?
-      reinterpret_cast<Inception::fb::icpEntityDataComponentT *>(value) : nullptr;
-  }
-  const Inception::fb::icpEntityDataComponentT *AsicpEntityDataComponent() const {
-    return type == icpComponentBase_icpEntityDataComponent ?
-      reinterpret_cast<const Inception::fb::icpEntityDataComponentT *>(value) : nullptr;
-  }
-  Inception::fb::icpXFromComponentT *AsicpXFromComponent() {
-    return type == icpComponentBase_icpXFromComponent ?
-      reinterpret_cast<Inception::fb::icpXFromComponentT *>(value) : nullptr;
-  }
-  const Inception::fb::icpXFromComponentT *AsicpXFromComponent() const {
-    return type == icpComponentBase_icpXFromComponent ?
-      reinterpret_cast<const Inception::fb::icpXFromComponentT *>(value) : nullptr;
-  }
-  Inception::fb::icpCameraComponentT *AsicpCameraComponent() {
-    return type == icpComponentBase_icpCameraComponent ?
-      reinterpret_cast<Inception::fb::icpCameraComponentT *>(value) : nullptr;
-  }
-  const Inception::fb::icpCameraComponentT *AsicpCameraComponent() const {
-    return type == icpComponentBase_icpCameraComponent ?
-      reinterpret_cast<const Inception::fb::icpCameraComponentT *>(value) : nullptr;
-  }
-};
-
-
-inline bool operator==(const icpComponentBaseUnion &lhs, const icpComponentBaseUnion &rhs) {
-  if (lhs.type != rhs.type) return false;
-  switch (lhs.type) {
-    case icpComponentBase_NONE: {
-      return true;
-    }
-    case icpComponentBase_icpEntityDataComponent: {
-      return *(reinterpret_cast<const Inception::fb::icpEntityDataComponentT *>(lhs.value)) ==
-             *(reinterpret_cast<const Inception::fb::icpEntityDataComponentT *>(rhs.value));
-    }
-    case icpComponentBase_icpXFromComponent: {
-      return *(reinterpret_cast<const Inception::fb::icpXFromComponentT *>(lhs.value)) ==
-             *(reinterpret_cast<const Inception::fb::icpXFromComponentT *>(rhs.value));
-    }
-    case icpComponentBase_icpCameraComponent: {
-      return *(reinterpret_cast<const Inception::fb::icpCameraComponentT *>(lhs.value)) ==
-             *(reinterpret_cast<const Inception::fb::icpCameraComponentT *>(rhs.value));
-    }
-    default: {
-      return false;
-    }
-  }
-}
-
-inline bool operator!=(const icpComponentBaseUnion &lhs, const icpComponentBaseUnion &rhs) {
-    return !(lhs == rhs);
-}
-
 bool VerifyicpComponentBase(flatbuffers::Verifier &verifier, const void *obj, icpComponentBase type);
 bool VerifyicpComponentBaseVector(flatbuffers::Verifier &verifier, const flatbuffers::Vector<flatbuffers::Offset<void>> *values, const flatbuffers::Vector<uint8_t> *types);
 
-struct icpGuidT {
-  typedef icpGuid TableType;
-  uint64_t m_guid = 0;
-};
-
 struct icpGuid FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  typedef icpGuidT NativeTableType;
   typedef icpGuidBuilder Builder;
   static const flatbuffers::TypeTable *MiniReflectTypeTable() {
     return icpGuidTypeTable();
@@ -244,9 +115,6 @@ struct icpGuid FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyField<uint64_t>(verifier, VT_M_GUID, 8) &&
            verifier.EndTable();
   }
-  icpGuidT *UnPack(const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  void UnPackTo(icpGuidT *_o, const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  static flatbuffers::Offset<icpGuid> Pack(flatbuffers::FlatBufferBuilder &_fbb, const icpGuidT* _o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct icpGuidBuilder {
@@ -275,17 +143,7 @@ inline flatbuffers::Offset<icpGuid> CreateicpGuid(
   return builder_.Finish();
 }
 
-flatbuffers::Offset<icpGuid> PackicpGuid(flatbuffers::FlatBufferBuilder &_fbb, const icpGuidT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
-
-struct Vector3T {
-  typedef Vector3 TableType;
-  float x = 0.0f;
-  float y = 0.0f;
-  float z = 0.0f;
-};
-
 struct Vector3 FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  typedef Vector3T NativeTableType;
   typedef Vector3Builder Builder;
   static const flatbuffers::TypeTable *MiniReflectTypeTable() {
     return Vector3TypeTable();
@@ -311,9 +169,6 @@ struct Vector3 FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyField<float>(verifier, VT_Z, 4) &&
            verifier.EndTable();
   }
-  Vector3T *UnPack(const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  void UnPackTo(Vector3T *_o, const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  static flatbuffers::Offset<Vector3> Pack(flatbuffers::FlatBufferBuilder &_fbb, const Vector3T* _o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct Vector3Builder {
@@ -352,18 +207,7 @@ inline flatbuffers::Offset<Vector3> CreateVector3(
   return builder_.Finish();
 }
 
-flatbuffers::Offset<Vector3> PackVector3(flatbuffers::FlatBufferBuilder &_fbb, const Vector3T *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
-
-struct QuaternionT {
-  typedef Quaternion TableType;
-  float x = 0.0f;
-  float y = 0.0f;
-  float z = 0.0f;
-  float w = 0.0f;
-};
-
 struct Quaternion FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  typedef QuaternionT NativeTableType;
   typedef QuaternionBuilder Builder;
   static const flatbuffers::TypeTable *MiniReflectTypeTable() {
     return QuaternionTypeTable();
@@ -394,9 +238,6 @@ struct Quaternion FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyField<float>(verifier, VT_W, 4) &&
            verifier.EndTable();
   }
-  QuaternionT *UnPack(const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  void UnPackTo(QuaternionT *_o, const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  static flatbuffers::Offset<Quaternion> Pack(flatbuffers::FlatBufferBuilder &_fbb, const QuaternionT* _o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct QuaternionBuilder {
@@ -440,30 +281,7 @@ inline flatbuffers::Offset<Quaternion> CreateQuaternion(
   return builder_.Finish();
 }
 
-flatbuffers::Offset<Quaternion> PackQuaternion(flatbuffers::FlatBufferBuilder &_fbb, const QuaternionT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
-
-struct Matrix4x4T {
-  typedef Matrix4x4 TableType;
-  float m_data0 = 0.0f;
-  float m_data1 = 0.0f;
-  float m_data2 = 0.0f;
-  float m_data3 = 0.0f;
-  float m_data4 = 0.0f;
-  float m_data5 = 0.0f;
-  float m_data6 = 0.0f;
-  float m_data7 = 0.0f;
-  float m_data8 = 0.0f;
-  float m_data9 = 0.0f;
-  float m_data10 = 0.0f;
-  float m_data11 = 0.0f;
-  float m_data12 = 0.0f;
-  float m_data13 = 0.0f;
-  float m_data14 = 0.0f;
-  float m_data15 = 0.0f;
-};
-
 struct Matrix4x4 FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  typedef Matrix4x4T NativeTableType;
   typedef Matrix4x4Builder Builder;
   static const flatbuffers::TypeTable *MiniReflectTypeTable() {
     return Matrix4x4TypeTable();
@@ -554,9 +372,6 @@ struct Matrix4x4 FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyField<float>(verifier, VT_M_DATA15, 4) &&
            verifier.EndTable();
   }
-  Matrix4x4T *UnPack(const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  void UnPackTo(Matrix4x4T *_o, const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  static flatbuffers::Offset<Matrix4x4> Pack(flatbuffers::FlatBufferBuilder &_fbb, const Matrix4x4T* _o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct Matrix4x4Builder {
@@ -660,20 +475,7 @@ inline flatbuffers::Offset<Matrix4x4> CreateMatrix4x4(
   return builder_.Finish();
 }
 
-flatbuffers::Offset<Matrix4x4> PackMatrix4x4(flatbuffers::FlatBufferBuilder &_fbb, const Matrix4x4T *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
-
-struct icpEntityDataComponentT {
-  typedef icpEntityDataComponent TableType;
-  std::string m_name{};
-  --filename-suffix<Inception::fb::icpGuidT> m_guid{};
-  icpEntityDataComponentT() = default;
-  icpEntityDataComponentT(const icpEntityDataComponentT &o);
-  icpEntityDataComponentT(icpEntityDataComponentT&&) FLATBUFFERS_NOEXCEPT = default;
-  icpEntityDataComponentT &operator=(icpEntityDataComponentT o) FLATBUFFERS_NOEXCEPT;
-};
-
 struct icpEntityDataComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  typedef icpEntityDataComponentT NativeTableType;
   typedef icpEntityDataComponentBuilder Builder;
   static const flatbuffers::TypeTable *MiniReflectTypeTable() {
     return icpEntityDataComponentTypeTable();
@@ -696,9 +498,6 @@ struct icpEntityDataComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tab
            verifier.VerifyTable(m_guid()) &&
            verifier.EndTable();
   }
-  icpEntityDataComponentT *UnPack(const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  void UnPackTo(icpEntityDataComponentT *_o, const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  static flatbuffers::Offset<icpEntityDataComponent> Pack(flatbuffers::FlatBufferBuilder &_fbb, const icpEntityDataComponentT* _o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct icpEntityDataComponentBuilder {
@@ -743,22 +542,7 @@ inline flatbuffers::Offset<icpEntityDataComponent> CreateicpEntityDataComponentD
       m_guid);
 }
 
-flatbuffers::Offset<icpEntityDataComponent> PackicpEntityDataComponent(flatbuffers::FlatBufferBuilder &_fbb, const icpEntityDataComponentT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
-
-struct icpXFromComponentT {
-  typedef icpXFromComponent TableType;
-  --filename-suffix<Inception::fb::Vector3T> m_translation{};
-  --filename-suffix<Inception::fb::Vector3T> m_rotation{};
-  --filename-suffix<Inception::fb::QuaternionT> m_quternionRot{};
-  --filename-suffix<Inception::fb::Vector3T> m_scale{};
-  icpXFromComponentT() = default;
-  icpXFromComponentT(const icpXFromComponentT &o);
-  icpXFromComponentT(icpXFromComponentT&&) FLATBUFFERS_NOEXCEPT = default;
-  icpXFromComponentT &operator=(icpXFromComponentT o) FLATBUFFERS_NOEXCEPT;
-};
-
 struct icpXFromComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  typedef icpXFromComponentT NativeTableType;
   typedef icpXFromComponentBuilder Builder;
   static const flatbuffers::TypeTable *MiniReflectTypeTable() {
     return icpXFromComponentTypeTable();
@@ -793,9 +577,6 @@ struct icpXFromComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.VerifyTable(m_scale()) &&
            verifier.EndTable();
   }
-  icpXFromComponentT *UnPack(const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  void UnPackTo(icpXFromComponentT *_o, const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  static flatbuffers::Offset<icpXFromComponent> Pack(flatbuffers::FlatBufferBuilder &_fbb, const icpXFromComponentT* _o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct icpXFromComponentBuilder {
@@ -839,30 +620,7 @@ inline flatbuffers::Offset<icpXFromComponent> CreateicpXFromComponent(
   return builder_.Finish();
 }
 
-flatbuffers::Offset<icpXFromComponent> PackicpXFromComponent(flatbuffers::FlatBufferBuilder &_fbb, const icpXFromComponentT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
-
-struct icpCameraComponentT {
-  typedef icpCameraComponent TableType;
-  --filename-suffix<Inception::fb::Vector3T> m_clearColor{};
-  float m_fov = 0.0f;
-  float m_aspectRatio = 0.0f;
-  float m_near = 0.0f;
-  float m_far = 0.0f;
-  --filename-suffix<Inception::fb::Vector3T> m_position{};
-  --filename-suffix<Inception::fb::QuaternionT> m_rotation{};
-  --filename-suffix<Inception::fb::Matrix4x4T> m_viewMatrix{};
-  float m_cameraSpeed = 0.0f;
-  float m_cameraRotationSpeed = 0.0f;
-  --filename-suffix<Inception::fb::Vector3T> m_viewDir{};
-  --filename-suffix<Inception::fb::Vector3T> m_upDir{};
-  icpCameraComponentT() = default;
-  icpCameraComponentT(const icpCameraComponentT &o);
-  icpCameraComponentT(icpCameraComponentT&&) FLATBUFFERS_NOEXCEPT = default;
-  icpCameraComponentT &operator=(icpCameraComponentT o) FLATBUFFERS_NOEXCEPT;
-};
-
 struct icpCameraComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  typedef icpCameraComponentT NativeTableType;
   typedef icpCameraComponentBuilder Builder;
   static const flatbuffers::TypeTable *MiniReflectTypeTable() {
     return icpCameraComponentTypeTable();
@@ -939,9 +697,6 @@ struct icpCameraComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.VerifyTable(m_upDir()) &&
            verifier.EndTable();
   }
-  icpCameraComponentT *UnPack(const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  void UnPackTo(icpCameraComponentT *_o, const flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  static flatbuffers::Offset<icpCameraComponent> Pack(flatbuffers::FlatBufferBuilder &_fbb, const icpCameraComponentT* _o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
 struct icpCameraComponentBuilder {
@@ -1025,464 +780,6 @@ inline flatbuffers::Offset<icpCameraComponent> CreateicpCameraComponent(
   return builder_.Finish();
 }
 
-flatbuffers::Offset<icpCameraComponent> PackicpCameraComponent(flatbuffers::FlatBufferBuilder &_fbb, const icpCameraComponentT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
-
-
-inline bool operator==(const icpGuidT &lhs, const icpGuidT &rhs) {
-  return
-      (lhs.m_guid == rhs.m_guid);
-}
-
-inline bool operator!=(const icpGuidT &lhs, const icpGuidT &rhs) {
-    return !(lhs == rhs);
-}
-
-
-inline icpGuidT *icpGuid::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  auto _o = std::unique_ptr<icpGuidT>(new icpGuidT());
-  UnPackTo(_o.get(), _resolver);
-  return _o.release();
-}
-
-inline void icpGuid::UnPackTo(icpGuidT *_o, const flatbuffers::resolver_function_t *_resolver) const {
-  (void)_o;
-  (void)_resolver;
-  { auto _e = m_guid(); _o->m_guid = _e; }
-}
-
-inline flatbuffers::Offset<icpGuid> icpGuid::Pack(flatbuffers::FlatBufferBuilder &_fbb, const icpGuidT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
-  return PackicpGuid(_fbb, _o, _rehasher);
-}
-
-inline flatbuffers::Offset<icpGuid> PackicpGuid(flatbuffers::FlatBufferBuilder &_fbb, const icpGuidT *_o, const flatbuffers::rehasher_function_t *_rehasher) {
-  (void)_rehasher;
-  (void)_o;
-  struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const icpGuidT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _m_guid = _o->m_guid;
-  return Inception::fb::CreateicpGuid(
-      _fbb,
-      _m_guid);
-}
-
-
-inline bool operator==(const Vector3T &lhs, const Vector3T &rhs) {
-  return
-      (lhs.x == rhs.x) &&
-      (lhs.y == rhs.y) &&
-      (lhs.z == rhs.z);
-}
-
-inline bool operator!=(const Vector3T &lhs, const Vector3T &rhs) {
-    return !(lhs == rhs);
-}
-
-
-inline Vector3T *Vector3::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  auto _o = std::unique_ptr<Vector3T>(new Vector3T());
-  UnPackTo(_o.get(), _resolver);
-  return _o.release();
-}
-
-inline void Vector3::UnPackTo(Vector3T *_o, const flatbuffers::resolver_function_t *_resolver) const {
-  (void)_o;
-  (void)_resolver;
-  { auto _e = x(); _o->x = _e; }
-  { auto _e = y(); _o->y = _e; }
-  { auto _e = z(); _o->z = _e; }
-}
-
-inline flatbuffers::Offset<Vector3> Vector3::Pack(flatbuffers::FlatBufferBuilder &_fbb, const Vector3T* _o, const flatbuffers::rehasher_function_t *_rehasher) {
-  return PackVector3(_fbb, _o, _rehasher);
-}
-
-inline flatbuffers::Offset<Vector3> PackVector3(flatbuffers::FlatBufferBuilder &_fbb, const Vector3T *_o, const flatbuffers::rehasher_function_t *_rehasher) {
-  (void)_rehasher;
-  (void)_o;
-  struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const Vector3T* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _x = _o->x;
-  auto _y = _o->y;
-  auto _z = _o->z;
-  return Inception::fb::CreateVector3(
-      _fbb,
-      _x,
-      _y,
-      _z);
-}
-
-
-inline bool operator==(const QuaternionT &lhs, const QuaternionT &rhs) {
-  return
-      (lhs.x == rhs.x) &&
-      (lhs.y == rhs.y) &&
-      (lhs.z == rhs.z) &&
-      (lhs.w == rhs.w);
-}
-
-inline bool operator!=(const QuaternionT &lhs, const QuaternionT &rhs) {
-    return !(lhs == rhs);
-}
-
-
-inline QuaternionT *Quaternion::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  auto _o = std::unique_ptr<QuaternionT>(new QuaternionT());
-  UnPackTo(_o.get(), _resolver);
-  return _o.release();
-}
-
-inline void Quaternion::UnPackTo(QuaternionT *_o, const flatbuffers::resolver_function_t *_resolver) const {
-  (void)_o;
-  (void)_resolver;
-  { auto _e = x(); _o->x = _e; }
-  { auto _e = y(); _o->y = _e; }
-  { auto _e = z(); _o->z = _e; }
-  { auto _e = w(); _o->w = _e; }
-}
-
-inline flatbuffers::Offset<Quaternion> Quaternion::Pack(flatbuffers::FlatBufferBuilder &_fbb, const QuaternionT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
-  return PackQuaternion(_fbb, _o, _rehasher);
-}
-
-inline flatbuffers::Offset<Quaternion> PackQuaternion(flatbuffers::FlatBufferBuilder &_fbb, const QuaternionT *_o, const flatbuffers::rehasher_function_t *_rehasher) {
-  (void)_rehasher;
-  (void)_o;
-  struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const QuaternionT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _x = _o->x;
-  auto _y = _o->y;
-  auto _z = _o->z;
-  auto _w = _o->w;
-  return Inception::fb::CreateQuaternion(
-      _fbb,
-      _x,
-      _y,
-      _z,
-      _w);
-}
-
-
-inline bool operator==(const Matrix4x4T &lhs, const Matrix4x4T &rhs) {
-  return
-      (lhs.m_data0 == rhs.m_data0) &&
-      (lhs.m_data1 == rhs.m_data1) &&
-      (lhs.m_data2 == rhs.m_data2) &&
-      (lhs.m_data3 == rhs.m_data3) &&
-      (lhs.m_data4 == rhs.m_data4) &&
-      (lhs.m_data5 == rhs.m_data5) &&
-      (lhs.m_data6 == rhs.m_data6) &&
-      (lhs.m_data7 == rhs.m_data7) &&
-      (lhs.m_data8 == rhs.m_data8) &&
-      (lhs.m_data9 == rhs.m_data9) &&
-      (lhs.m_data10 == rhs.m_data10) &&
-      (lhs.m_data11 == rhs.m_data11) &&
-      (lhs.m_data12 == rhs.m_data12) &&
-      (lhs.m_data13 == rhs.m_data13) &&
-      (lhs.m_data14 == rhs.m_data14) &&
-      (lhs.m_data15 == rhs.m_data15);
-}
-
-inline bool operator!=(const Matrix4x4T &lhs, const Matrix4x4T &rhs) {
-    return !(lhs == rhs);
-}
-
-
-inline Matrix4x4T *Matrix4x4::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  auto _o = std::unique_ptr<Matrix4x4T>(new Matrix4x4T());
-  UnPackTo(_o.get(), _resolver);
-  return _o.release();
-}
-
-inline void Matrix4x4::UnPackTo(Matrix4x4T *_o, const flatbuffers::resolver_function_t *_resolver) const {
-  (void)_o;
-  (void)_resolver;
-  { auto _e = m_data0(); _o->m_data0 = _e; }
-  { auto _e = m_data1(); _o->m_data1 = _e; }
-  { auto _e = m_data2(); _o->m_data2 = _e; }
-  { auto _e = m_data3(); _o->m_data3 = _e; }
-  { auto _e = m_data4(); _o->m_data4 = _e; }
-  { auto _e = m_data5(); _o->m_data5 = _e; }
-  { auto _e = m_data6(); _o->m_data6 = _e; }
-  { auto _e = m_data7(); _o->m_data7 = _e; }
-  { auto _e = m_data8(); _o->m_data8 = _e; }
-  { auto _e = m_data9(); _o->m_data9 = _e; }
-  { auto _e = m_data10(); _o->m_data10 = _e; }
-  { auto _e = m_data11(); _o->m_data11 = _e; }
-  { auto _e = m_data12(); _o->m_data12 = _e; }
-  { auto _e = m_data13(); _o->m_data13 = _e; }
-  { auto _e = m_data14(); _o->m_data14 = _e; }
-  { auto _e = m_data15(); _o->m_data15 = _e; }
-}
-
-inline flatbuffers::Offset<Matrix4x4> Matrix4x4::Pack(flatbuffers::FlatBufferBuilder &_fbb, const Matrix4x4T* _o, const flatbuffers::rehasher_function_t *_rehasher) {
-  return PackMatrix4x4(_fbb, _o, _rehasher);
-}
-
-inline flatbuffers::Offset<Matrix4x4> PackMatrix4x4(flatbuffers::FlatBufferBuilder &_fbb, const Matrix4x4T *_o, const flatbuffers::rehasher_function_t *_rehasher) {
-  (void)_rehasher;
-  (void)_o;
-  struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const Matrix4x4T* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _m_data0 = _o->m_data0;
-  auto _m_data1 = _o->m_data1;
-  auto _m_data2 = _o->m_data2;
-  auto _m_data3 = _o->m_data3;
-  auto _m_data4 = _o->m_data4;
-  auto _m_data5 = _o->m_data5;
-  auto _m_data6 = _o->m_data6;
-  auto _m_data7 = _o->m_data7;
-  auto _m_data8 = _o->m_data8;
-  auto _m_data9 = _o->m_data9;
-  auto _m_data10 = _o->m_data10;
-  auto _m_data11 = _o->m_data11;
-  auto _m_data12 = _o->m_data12;
-  auto _m_data13 = _o->m_data13;
-  auto _m_data14 = _o->m_data14;
-  auto _m_data15 = _o->m_data15;
-  return Inception::fb::CreateMatrix4x4(
-      _fbb,
-      _m_data0,
-      _m_data1,
-      _m_data2,
-      _m_data3,
-      _m_data4,
-      _m_data5,
-      _m_data6,
-      _m_data7,
-      _m_data8,
-      _m_data9,
-      _m_data10,
-      _m_data11,
-      _m_data12,
-      _m_data13,
-      _m_data14,
-      _m_data15);
-}
-
-
-inline bool operator==(const icpEntityDataComponentT &lhs, const icpEntityDataComponentT &rhs) {
-  return
-      (lhs.m_name == rhs.m_name) &&
-      ((lhs.m_guid == rhs.m_guid) || (lhs.m_guid && rhs.m_guid && *lhs.m_guid == *rhs.m_guid));
-}
-
-inline bool operator!=(const icpEntityDataComponentT &lhs, const icpEntityDataComponentT &rhs) {
-    return !(lhs == rhs);
-}
-
-
-inline icpEntityDataComponentT::icpEntityDataComponentT(const icpEntityDataComponentT &o)
-      : m_name(o.m_name),
-        m_guid((o.m_guid) ? new Inception::fb::icpGuidT(*o.m_guid) : nullptr) {
-}
-
-inline icpEntityDataComponentT &icpEntityDataComponentT::operator=(icpEntityDataComponentT o) FLATBUFFERS_NOEXCEPT {
-  std::swap(m_name, o.m_name);
-  std::swap(m_guid, o.m_guid);
-  return *this;
-}
-
-inline icpEntityDataComponentT *icpEntityDataComponent::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  auto _o = std::unique_ptr<icpEntityDataComponentT>(new icpEntityDataComponentT());
-  UnPackTo(_o.get(), _resolver);
-  return _o.release();
-}
-
-inline void icpEntityDataComponent::UnPackTo(icpEntityDataComponentT *_o, const flatbuffers::resolver_function_t *_resolver) const {
-  (void)_o;
-  (void)_resolver;
-  { auto _e = m_name(); if (_e) _o->m_name = _e->str(); }
-  { auto _e = m_guid(); if (_e) { if(_o->m_guid) { _e->UnPackTo(_o->m_guid.get(), _resolver); } else { _o->m_guid = --filename-suffix<Inception::fb::icpGuidT>(_e->UnPack(_resolver)); } } }
-}
-
-inline flatbuffers::Offset<icpEntityDataComponent> icpEntityDataComponent::Pack(flatbuffers::FlatBufferBuilder &_fbb, const icpEntityDataComponentT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
-  return PackicpEntityDataComponent(_fbb, _o, _rehasher);
-}
-
-inline flatbuffers::Offset<icpEntityDataComponent> PackicpEntityDataComponent(flatbuffers::FlatBufferBuilder &_fbb, const icpEntityDataComponentT *_o, const flatbuffers::rehasher_function_t *_rehasher) {
-  (void)_rehasher;
-  (void)_o;
-  struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const icpEntityDataComponentT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _m_name = _o->m_name.empty() ? 0 : _fbb.CreateString(_o->m_name);
-  auto _m_guid = _o->m_guid ? PackicpGuid(_fbb, _o->m_guid.get(), _rehasher) : 0;
-  return Inception::fb::CreateicpEntityDataComponent(
-      _fbb,
-      _m_name,
-      _m_guid);
-}
-
-
-inline bool operator==(const icpXFromComponentT &lhs, const icpXFromComponentT &rhs) {
-  return
-      ((lhs.m_translation == rhs.m_translation) || (lhs.m_translation && rhs.m_translation && *lhs.m_translation == *rhs.m_translation)) &&
-      ((lhs.m_rotation == rhs.m_rotation) || (lhs.m_rotation && rhs.m_rotation && *lhs.m_rotation == *rhs.m_rotation)) &&
-      ((lhs.m_quternionRot == rhs.m_quternionRot) || (lhs.m_quternionRot && rhs.m_quternionRot && *lhs.m_quternionRot == *rhs.m_quternionRot)) &&
-      ((lhs.m_scale == rhs.m_scale) || (lhs.m_scale && rhs.m_scale && *lhs.m_scale == *rhs.m_scale));
-}
-
-inline bool operator!=(const icpXFromComponentT &lhs, const icpXFromComponentT &rhs) {
-    return !(lhs == rhs);
-}
-
-
-inline icpXFromComponentT::icpXFromComponentT(const icpXFromComponentT &o)
-      : m_translation((o.m_translation) ? new Inception::fb::Vector3T(*o.m_translation) : nullptr),
-        m_rotation((o.m_rotation) ? new Inception::fb::Vector3T(*o.m_rotation) : nullptr),
-        m_quternionRot((o.m_quternionRot) ? new Inception::fb::QuaternionT(*o.m_quternionRot) : nullptr),
-        m_scale((o.m_scale) ? new Inception::fb::Vector3T(*o.m_scale) : nullptr) {
-}
-
-inline icpXFromComponentT &icpXFromComponentT::operator=(icpXFromComponentT o) FLATBUFFERS_NOEXCEPT {
-  std::swap(m_translation, o.m_translation);
-  std::swap(m_rotation, o.m_rotation);
-  std::swap(m_quternionRot, o.m_quternionRot);
-  std::swap(m_scale, o.m_scale);
-  return *this;
-}
-
-inline icpXFromComponentT *icpXFromComponent::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  auto _o = std::unique_ptr<icpXFromComponentT>(new icpXFromComponentT());
-  UnPackTo(_o.get(), _resolver);
-  return _o.release();
-}
-
-inline void icpXFromComponent::UnPackTo(icpXFromComponentT *_o, const flatbuffers::resolver_function_t *_resolver) const {
-  (void)_o;
-  (void)_resolver;
-  { auto _e = m_translation(); if (_e) { if(_o->m_translation) { _e->UnPackTo(_o->m_translation.get(), _resolver); } else { _o->m_translation = --filename-suffix<Inception::fb::Vector3T>(_e->UnPack(_resolver)); } } }
-  { auto _e = m_rotation(); if (_e) { if(_o->m_rotation) { _e->UnPackTo(_o->m_rotation.get(), _resolver); } else { _o->m_rotation = --filename-suffix<Inception::fb::Vector3T>(_e->UnPack(_resolver)); } } }
-  { auto _e = m_quternionRot(); if (_e) { if(_o->m_quternionRot) { _e->UnPackTo(_o->m_quternionRot.get(), _resolver); } else { _o->m_quternionRot = --filename-suffix<Inception::fb::QuaternionT>(_e->UnPack(_resolver)); } } }
-  { auto _e = m_scale(); if (_e) { if(_o->m_scale) { _e->UnPackTo(_o->m_scale.get(), _resolver); } else { _o->m_scale = --filename-suffix<Inception::fb::Vector3T>(_e->UnPack(_resolver)); } } }
-}
-
-inline flatbuffers::Offset<icpXFromComponent> icpXFromComponent::Pack(flatbuffers::FlatBufferBuilder &_fbb, const icpXFromComponentT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
-  return PackicpXFromComponent(_fbb, _o, _rehasher);
-}
-
-inline flatbuffers::Offset<icpXFromComponent> PackicpXFromComponent(flatbuffers::FlatBufferBuilder &_fbb, const icpXFromComponentT *_o, const flatbuffers::rehasher_function_t *_rehasher) {
-  (void)_rehasher;
-  (void)_o;
-  struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const icpXFromComponentT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _m_translation = _o->m_translation ? PackVector3(_fbb, _o->m_translation.get(), _rehasher) : 0;
-  auto _m_rotation = _o->m_rotation ? PackVector3(_fbb, _o->m_rotation.get(), _rehasher) : 0;
-  auto _m_quternionRot = _o->m_quternionRot ? PackQuaternion(_fbb, _o->m_quternionRot.get(), _rehasher) : 0;
-  auto _m_scale = _o->m_scale ? PackVector3(_fbb, _o->m_scale.get(), _rehasher) : 0;
-  return Inception::fb::CreateicpXFromComponent(
-      _fbb,
-      _m_translation,
-      _m_rotation,
-      _m_quternionRot,
-      _m_scale);
-}
-
-
-inline bool operator==(const icpCameraComponentT &lhs, const icpCameraComponentT &rhs) {
-  return
-      ((lhs.m_clearColor == rhs.m_clearColor) || (lhs.m_clearColor && rhs.m_clearColor && *lhs.m_clearColor == *rhs.m_clearColor)) &&
-      (lhs.m_fov == rhs.m_fov) &&
-      (lhs.m_aspectRatio == rhs.m_aspectRatio) &&
-      (lhs.m_near == rhs.m_near) &&
-      (lhs.m_far == rhs.m_far) &&
-      ((lhs.m_position == rhs.m_position) || (lhs.m_position && rhs.m_position && *lhs.m_position == *rhs.m_position)) &&
-      ((lhs.m_rotation == rhs.m_rotation) || (lhs.m_rotation && rhs.m_rotation && *lhs.m_rotation == *rhs.m_rotation)) &&
-      ((lhs.m_viewMatrix == rhs.m_viewMatrix) || (lhs.m_viewMatrix && rhs.m_viewMatrix && *lhs.m_viewMatrix == *rhs.m_viewMatrix)) &&
-      (lhs.m_cameraSpeed == rhs.m_cameraSpeed) &&
-      (lhs.m_cameraRotationSpeed == rhs.m_cameraRotationSpeed) &&
-      ((lhs.m_viewDir == rhs.m_viewDir) || (lhs.m_viewDir && rhs.m_viewDir && *lhs.m_viewDir == *rhs.m_viewDir)) &&
-      ((lhs.m_upDir == rhs.m_upDir) || (lhs.m_upDir && rhs.m_upDir && *lhs.m_upDir == *rhs.m_upDir));
-}
-
-inline bool operator!=(const icpCameraComponentT &lhs, const icpCameraComponentT &rhs) {
-    return !(lhs == rhs);
-}
-
-
-inline icpCameraComponentT::icpCameraComponentT(const icpCameraComponentT &o)
-      : m_clearColor((o.m_clearColor) ? new Inception::fb::Vector3T(*o.m_clearColor) : nullptr),
-        m_fov(o.m_fov),
-        m_aspectRatio(o.m_aspectRatio),
-        m_near(o.m_near),
-        m_far(o.m_far),
-        m_position((o.m_position) ? new Inception::fb::Vector3T(*o.m_position) : nullptr),
-        m_rotation((o.m_rotation) ? new Inception::fb::QuaternionT(*o.m_rotation) : nullptr),
-        m_viewMatrix((o.m_viewMatrix) ? new Inception::fb::Matrix4x4T(*o.m_viewMatrix) : nullptr),
-        m_cameraSpeed(o.m_cameraSpeed),
-        m_cameraRotationSpeed(o.m_cameraRotationSpeed),
-        m_viewDir((o.m_viewDir) ? new Inception::fb::Vector3T(*o.m_viewDir) : nullptr),
-        m_upDir((o.m_upDir) ? new Inception::fb::Vector3T(*o.m_upDir) : nullptr) {
-}
-
-inline icpCameraComponentT &icpCameraComponentT::operator=(icpCameraComponentT o) FLATBUFFERS_NOEXCEPT {
-  std::swap(m_clearColor, o.m_clearColor);
-  std::swap(m_fov, o.m_fov);
-  std::swap(m_aspectRatio, o.m_aspectRatio);
-  std::swap(m_near, o.m_near);
-  std::swap(m_far, o.m_far);
-  std::swap(m_position, o.m_position);
-  std::swap(m_rotation, o.m_rotation);
-  std::swap(m_viewMatrix, o.m_viewMatrix);
-  std::swap(m_cameraSpeed, o.m_cameraSpeed);
-  std::swap(m_cameraRotationSpeed, o.m_cameraRotationSpeed);
-  std::swap(m_viewDir, o.m_viewDir);
-  std::swap(m_upDir, o.m_upDir);
-  return *this;
-}
-
-inline icpCameraComponentT *icpCameraComponent::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  auto _o = std::unique_ptr<icpCameraComponentT>(new icpCameraComponentT());
-  UnPackTo(_o.get(), _resolver);
-  return _o.release();
-}
-
-inline void icpCameraComponent::UnPackTo(icpCameraComponentT *_o, const flatbuffers::resolver_function_t *_resolver) const {
-  (void)_o;
-  (void)_resolver;
-  { auto _e = m_clearColor(); if (_e) { if(_o->m_clearColor) { _e->UnPackTo(_o->m_clearColor.get(), _resolver); } else { _o->m_clearColor = --filename-suffix<Inception::fb::Vector3T>(_e->UnPack(_resolver)); } } }
-  { auto _e = m_fov(); _o->m_fov = _e; }
-  { auto _e = m_aspectRatio(); _o->m_aspectRatio = _e; }
-  { auto _e = m_near(); _o->m_near = _e; }
-  { auto _e = m_far(); _o->m_far = _e; }
-  { auto _e = m_position(); if (_e) { if(_o->m_position) { _e->UnPackTo(_o->m_position.get(), _resolver); } else { _o->m_position = --filename-suffix<Inception::fb::Vector3T>(_e->UnPack(_resolver)); } } }
-  { auto _e = m_rotation(); if (_e) { if(_o->m_rotation) { _e->UnPackTo(_o->m_rotation.get(), _resolver); } else { _o->m_rotation = --filename-suffix<Inception::fb::QuaternionT>(_e->UnPack(_resolver)); } } }
-  { auto _e = m_viewMatrix(); if (_e) { if(_o->m_viewMatrix) { _e->UnPackTo(_o->m_viewMatrix.get(), _resolver); } else { _o->m_viewMatrix = --filename-suffix<Inception::fb::Matrix4x4T>(_e->UnPack(_resolver)); } } }
-  { auto _e = m_cameraSpeed(); _o->m_cameraSpeed = _e; }
-  { auto _e = m_cameraRotationSpeed(); _o->m_cameraRotationSpeed = _e; }
-  { auto _e = m_viewDir(); if (_e) { if(_o->m_viewDir) { _e->UnPackTo(_o->m_viewDir.get(), _resolver); } else { _o->m_viewDir = --filename-suffix<Inception::fb::Vector3T>(_e->UnPack(_resolver)); } } }
-  { auto _e = m_upDir(); if (_e) { if(_o->m_upDir) { _e->UnPackTo(_o->m_upDir.get(), _resolver); } else { _o->m_upDir = --filename-suffix<Inception::fb::Vector3T>(_e->UnPack(_resolver)); } } }
-}
-
-inline flatbuffers::Offset<icpCameraComponent> icpCameraComponent::Pack(flatbuffers::FlatBufferBuilder &_fbb, const icpCameraComponentT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
-  return PackicpCameraComponent(_fbb, _o, _rehasher);
-}
-
-inline flatbuffers::Offset<icpCameraComponent> PackicpCameraComponent(flatbuffers::FlatBufferBuilder &_fbb, const icpCameraComponentT *_o, const flatbuffers::rehasher_function_t *_rehasher) {
-  (void)_rehasher;
-  (void)_o;
-  struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const icpCameraComponentT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _m_clearColor = _o->m_clearColor ? PackVector3(_fbb, _o->m_clearColor.get(), _rehasher) : 0;
-  auto _m_fov = _o->m_fov;
-  auto _m_aspectRatio = _o->m_aspectRatio;
-  auto _m_near = _o->m_near;
-  auto _m_far = _o->m_far;
-  auto _m_position = _o->m_position ? PackVector3(_fbb, _o->m_position.get(), _rehasher) : 0;
-  auto _m_rotation = _o->m_rotation ? PackQuaternion(_fbb, _o->m_rotation.get(), _rehasher) : 0;
-  auto _m_viewMatrix = _o->m_viewMatrix ? PackMatrix4x4(_fbb, _o->m_viewMatrix.get(), _rehasher) : 0;
-  auto _m_cameraSpeed = _o->m_cameraSpeed;
-  auto _m_cameraRotationSpeed = _o->m_cameraRotationSpeed;
-  auto _m_viewDir = _o->m_viewDir ? PackVector3(_fbb, _o->m_viewDir.get(), _rehasher) : 0;
-  auto _m_upDir = _o->m_upDir ? PackVector3(_fbb, _o->m_upDir.get(), _rehasher) : 0;
-  return Inception::fb::CreateicpCameraComponent(
-      _fbb,
-      _m_clearColor,
-      _m_fov,
-      _m_aspectRatio,
-      _m_near,
-      _m_far,
-      _m_position,
-      _m_rotation,
-      _m_viewMatrix,
-      _m_cameraSpeed,
-      _m_cameraRotationSpeed,
-      _m_viewDir,
-      _m_upDir);
-}
-
 inline bool VerifyicpComponentBase(flatbuffers::Verifier &verifier, const void *obj, icpComponentBase type) {
   switch (type) {
     case icpComponentBase_NONE: {
@@ -1514,86 +811,6 @@ inline bool VerifyicpComponentBaseVector(flatbuffers::Verifier &verifier, const 
     }
   }
   return true;
-}
-
-inline void *icpComponentBaseUnion::UnPack(const void *obj, icpComponentBase type, const flatbuffers::resolver_function_t *resolver) {
-  (void)resolver;
-  switch (type) {
-    case icpComponentBase_icpEntityDataComponent: {
-      auto ptr = reinterpret_cast<const Inception::fb::icpEntityDataComponent *>(obj);
-      return ptr->UnPack(resolver);
-    }
-    case icpComponentBase_icpXFromComponent: {
-      auto ptr = reinterpret_cast<const Inception::fb::icpXFromComponent *>(obj);
-      return ptr->UnPack(resolver);
-    }
-    case icpComponentBase_icpCameraComponent: {
-      auto ptr = reinterpret_cast<const Inception::fb::icpCameraComponent *>(obj);
-      return ptr->UnPack(resolver);
-    }
-    default: return nullptr;
-  }
-}
-
-inline flatbuffers::Offset<void> icpComponentBaseUnion::Pack(flatbuffers::FlatBufferBuilder &_fbb, const flatbuffers::rehasher_function_t *_rehasher) const {
-  (void)_rehasher;
-  switch (type) {
-    case icpComponentBase_icpEntityDataComponent: {
-      auto ptr = reinterpret_cast<const Inception::fb::icpEntityDataComponentT *>(value);
-      return PackicpEntityDataComponent(_fbb, ptr, _rehasher).Union();
-    }
-    case icpComponentBase_icpXFromComponent: {
-      auto ptr = reinterpret_cast<const Inception::fb::icpXFromComponentT *>(value);
-      return PackicpXFromComponent(_fbb, ptr, _rehasher).Union();
-    }
-    case icpComponentBase_icpCameraComponent: {
-      auto ptr = reinterpret_cast<const Inception::fb::icpCameraComponentT *>(value);
-      return PackicpCameraComponent(_fbb, ptr, _rehasher).Union();
-    }
-    default: return 0;
-  }
-}
-
-inline icpComponentBaseUnion::icpComponentBaseUnion(const icpComponentBaseUnion &u) : type(u.type), value(nullptr) {
-  switch (type) {
-    case icpComponentBase_icpEntityDataComponent: {
-      value = new Inception::fb::icpEntityDataComponentT(*reinterpret_cast<Inception::fb::icpEntityDataComponentT *>(u.value));
-      break;
-    }
-    case icpComponentBase_icpXFromComponent: {
-      value = new Inception::fb::icpXFromComponentT(*reinterpret_cast<Inception::fb::icpXFromComponentT *>(u.value));
-      break;
-    }
-    case icpComponentBase_icpCameraComponent: {
-      value = new Inception::fb::icpCameraComponentT(*reinterpret_cast<Inception::fb::icpCameraComponentT *>(u.value));
-      break;
-    }
-    default:
-      break;
-  }
-}
-
-inline void icpComponentBaseUnion::Reset() {
-  switch (type) {
-    case icpComponentBase_icpEntityDataComponent: {
-      auto ptr = reinterpret_cast<Inception::fb::icpEntityDataComponentT *>(value);
-      delete ptr;
-      break;
-    }
-    case icpComponentBase_icpXFromComponent: {
-      auto ptr = reinterpret_cast<Inception::fb::icpXFromComponentT *>(value);
-      delete ptr;
-      break;
-    }
-    case icpComponentBase_icpCameraComponent: {
-      auto ptr = reinterpret_cast<Inception::fb::icpCameraComponentT *>(value);
-      delete ptr;
-      break;
-    }
-    default: break;
-  }
-  value = nullptr;
-  type = icpComponentBase_NONE;
 }
 
 inline const flatbuffers::TypeTable *icpComponentBaseTypeTable() {
