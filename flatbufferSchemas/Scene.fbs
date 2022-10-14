@@ -15,5 +15,7 @@ table flatbufferTreeNode
 table flatbufferScene
 {
     m_name: string;
-    m_sceneRoot: flatbufferTreeNode;
+    m_sceneRoot: [flatbufferTreeNode];
 }
+
+root_type flatbufferScene;

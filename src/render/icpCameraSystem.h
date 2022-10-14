@@ -17,7 +17,6 @@ class icpCameraComponent : public icpComponentBase
 public:
 	glm::vec3 m_clearColor;
 	float m_fov = 0.f;
-	float m_aspectRatio = 0.f;
 	float m_near = 0.f;
 	float m_far = 0.f;
 	glm::vec3 m_position;

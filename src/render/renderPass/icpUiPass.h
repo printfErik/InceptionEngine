@@ -21,6 +21,7 @@ public:
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex);
 	void createFrameBuffers();
 
+	void showDebugUI();
 };
 
 INCEPTION_END_NAMESPACE

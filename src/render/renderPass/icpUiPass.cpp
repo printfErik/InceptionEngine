@@ -88,7 +88,10 @@ void icpUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResul
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
+
+	showDebugUI();
+
 	ImGui::Render();
 
 	vkResetCommandBuffer(m_rhi->m_uiCommandBuffers[currentFrame], 0);
@@ -193,6 +196,15 @@ void icpUiPass::recreateSwapChain()
 	}
 	createFrameBuffers();
 }
+
+void icpUiPass::showDebugUI()
+{
+	IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Refer to examples app!");
+
+
+
+}
+
 
 
 INCEPTION_END_NAMESPACE

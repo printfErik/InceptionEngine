@@ -175,15 +175,16 @@ struct flatbufferScene FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *m_name() const {
     return GetPointer<const flatbuffers::String *>(VT_M_NAME);
   }
-  const Inception::fb::flatbufferTreeNode *m_sceneRoot() const {
-    return GetPointer<const Inception::fb::flatbufferTreeNode *>(VT_M_SCENEROOT);
+  const flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferTreeNode>> *m_sceneRoot() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferTreeNode>> *>(VT_M_SCENEROOT);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_M_NAME) &&
            verifier.VerifyString(m_name()) &&
            VerifyOffset(verifier, VT_M_SCENEROOT) &&
-           verifier.VerifyTable(m_sceneRoot()) &&
+           verifier.VerifyVector(m_sceneRoot()) &&
+           verifier.VerifyVectorOfTables(m_sceneRoot()) &&
            verifier.EndTable();
   }
 };
@@ -195,7 +196,7 @@ struct flatbufferSceneBuilder {
   void add_m_name(flatbuffers::Offset<flatbuffers::String> m_name) {
     fbb_.AddOffset(flatbufferScene::VT_M_NAME, m_name);
   }
-  void add_m_sceneRoot(flatbuffers::Offset<Inception::fb::flatbufferTreeNode> m_sceneRoot) {
+  void add_m_sceneRoot(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferTreeNode>>> m_sceneRoot) {
     fbb_.AddOffset(flatbufferScene::VT_M_SCENEROOT, m_sceneRoot);
   }
   explicit flatbufferSceneBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -212,7 +213,7 @@ struct flatbufferSceneBuilder {
 inline flatbuffers::Offset<flatbufferScene> CreateflatbufferScene(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::String> m_name = 0,
-    flatbuffers::Offset<Inception::fb::flatbufferTreeNode> m_sceneRoot = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferTreeNode>>> m_sceneRoot = 0) {
   flatbufferSceneBuilder builder_(_fbb);
   builder_.add_m_sceneRoot(m_sceneRoot);
   builder_.add_m_name(m_name);
@@ -222,12 +223,13 @@ inline flatbuffers::Offset<flatbufferScene> CreateflatbufferScene(
 inline flatbuffers::Offset<flatbufferScene> CreateflatbufferSceneDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const char *m_name = nullptr,
-    flatbuffers::Offset<Inception::fb::flatbufferTreeNode> m_sceneRoot = 0) {
+    const std::vector<flatbuffers::Offset<Inception::fb::flatbufferTreeNode>> *m_sceneRoot = nullptr) {
   auto m_name__ = m_name ? _fbb.CreateString(m_name) : 0;
+  auto m_sceneRoot__ = m_sceneRoot ? _fbb.CreateVector<flatbuffers::Offset<Inception::fb::flatbufferTreeNode>>(*m_sceneRoot) : 0;
   return Inception::fb::CreateflatbufferScene(
       _fbb,
       m_name__,
-      m_sceneRoot);
+      m_sceneRoot__);
 }
 
 inline const flatbuffers::TypeTable *flatbufferEntityTypeTable() {
@@ -269,7 +271,7 @@ inline const flatbuffers::TypeTable *flatbufferTreeNodeTypeTable() {
 inline const flatbuffers::TypeTable *flatbufferSceneTypeTable() {
   static const flatbuffers::TypeCode type_codes[] = {
     { flatbuffers::ET_STRING, 0, -1 },
-    { flatbuffers::ET_SEQUENCE, 0, 0 }
+    { flatbuffers::ET_SEQUENCE, 1, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
     Inception::fb::flatbufferTreeNodeTypeTable
@@ -282,6 +284,36 @@ inline const flatbuffers::TypeTable *flatbufferSceneTypeTable() {
     flatbuffers::ST_TABLE, 2, type_codes, type_refs, nullptr, nullptr, names
   };
   return &tt;
+}
+
+inline const Inception::fb::flatbufferScene *GetflatbufferScene(const void *buf) {
+  return flatbuffers::GetRoot<Inception::fb::flatbufferScene>(buf);
+}
+
+inline const Inception::fb::flatbufferScene *GetSizePrefixedflatbufferScene(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<Inception::fb::flatbufferScene>(buf);
+}
+
+inline bool VerifyflatbufferSceneBuffer(
+    flatbuffers::Verifier &verifier) {
+  return verifier.VerifyBuffer<Inception::fb::flatbufferScene>(nullptr);
+}
+
+inline bool VerifySizePrefixedflatbufferSceneBuffer(
+    flatbuffers::Verifier &verifier) {
+  return verifier.VerifySizePrefixedBuffer<Inception::fb::flatbufferScene>(nullptr);
+}
+
+inline void FinishflatbufferSceneBuffer(
+    flatbuffers::FlatBufferBuilder &fbb,
+    flatbuffers::Offset<Inception::fb::flatbufferScene> root) {
+  fbb.Finish(root);
+}
+
+inline void FinishSizePrefixedflatbufferSceneBuffer(
+    flatbuffers::FlatBufferBuilder &fbb,
+    flatbuffers::Offset<Inception::fb::flatbufferScene> root) {
+  fbb.FinishSizePrefixed(root);
 }
 
 }  // namespace fb

@@ -45,6 +45,7 @@ union icpComponentBase
     icpEntityDataComponent = 1,
     icpXFromComponent = 2,
     icpCameraComponent = 3,
+	icpMeshRendererComponent = 4,
 }
 
 table icpEntityDataComponent
@@ -65,14 +66,15 @@ table icpCameraComponent
 {
     m_clearColor: Vector3;
     m_fov: float;
-    m_aspectRatio: float;
     m_near: float;
     m_far: float;
-    m_position: Vector3;
-    m_rotation: Quaternion;
-    m_viewMatrix: Matrix4x4;
     m_cameraSpeed: float;
     m_cameraRotationSpeed: float;
     m_viewDir: Vector3;
     m_upDir: Vector3;
+}
+
+table icpMeshRendererComponent
+{
+	m_resId: string;
 }

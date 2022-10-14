@@ -30,6 +30,9 @@ struct icpXFromComponentBuilder;
 struct icpCameraComponent;
 struct icpCameraComponentBuilder;
 
+struct icpMeshRendererComponent;
+struct icpMeshRendererComponentBuilder;
+
 inline const flatbuffers::TypeTable *icpGuidTypeTable();
 
 inline const flatbuffers::TypeTable *Vector3TypeTable();
@@ -44,38 +47,43 @@ inline const flatbuffers::TypeTable *icpXFromComponentTypeTable();
 
 inline const flatbuffers::TypeTable *icpCameraComponentTypeTable();
 
+inline const flatbuffers::TypeTable *icpMeshRendererComponentTypeTable();
+
 enum icpComponentBase : uint8_t {
   icpComponentBase_NONE = 0,
   icpComponentBase_icpEntityDataComponent = 1,
   icpComponentBase_icpXFromComponent = 2,
   icpComponentBase_icpCameraComponent = 3,
+  icpComponentBase_icpMeshRendererComponent = 4,
   icpComponentBase_MIN = icpComponentBase_NONE,
-  icpComponentBase_MAX = icpComponentBase_icpCameraComponent
+  icpComponentBase_MAX = icpComponentBase_icpMeshRendererComponent
 };
 
-inline const icpComponentBase (&EnumValuesicpComponentBase())[4] {
+inline const icpComponentBase (&EnumValuesicpComponentBase())[5] {
   static const icpComponentBase values[] = {
     icpComponentBase_NONE,
     icpComponentBase_icpEntityDataComponent,
     icpComponentBase_icpXFromComponent,
-    icpComponentBase_icpCameraComponent
+    icpComponentBase_icpCameraComponent,
+    icpComponentBase_icpMeshRendererComponent
   };
   return values;
 }
 
 inline const char * const *EnumNamesicpComponentBase() {
-  static const char * const names[5] = {
+  static const char * const names[6] = {
     "NONE",
     "icpEntityDataComponent",
     "icpXFromComponent",
     "icpCameraComponent",
+    "icpMeshRendererComponent",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameicpComponentBase(icpComponentBase e) {
-  if (flatbuffers::IsOutRange(e, icpComponentBase_NONE, icpComponentBase_icpCameraComponent)) return "";
+  if (flatbuffers::IsOutRange(e, icpComponentBase_NONE, icpComponentBase_icpMeshRendererComponent)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesicpComponentBase()[index];
 }
@@ -94,6 +102,10 @@ template<> struct icpComponentBaseTraits<Inception::fb::icpXFromComponent> {
 
 template<> struct icpComponentBaseTraits<Inception::fb::icpCameraComponent> {
   static const icpComponentBase enum_value = icpComponentBase_icpCameraComponent;
+};
+
+template<> struct icpComponentBaseTraits<Inception::fb::icpMeshRendererComponent> {
+  static const icpComponentBase enum_value = icpComponentBase_icpMeshRendererComponent;
 };
 
 bool VerifyicpComponentBase(flatbuffers::Verifier &verifier, const void *obj, icpComponentBase type);
@@ -628,16 +640,12 @@ struct icpCameraComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_M_CLEARCOLOR = 4,
     VT_M_FOV = 6,
-    VT_M_ASPECTRATIO = 8,
-    VT_M_NEAR = 10,
-    VT_M_FAR = 12,
-    VT_M_POSITION = 14,
-    VT_M_ROTATION = 16,
-    VT_M_VIEWMATRIX = 18,
-    VT_M_CAMERASPEED = 20,
-    VT_M_CAMERAROTATIONSPEED = 22,
-    VT_M_VIEWDIR = 24,
-    VT_M_UPDIR = 26
+    VT_M_NEAR = 8,
+    VT_M_FAR = 10,
+    VT_M_CAMERASPEED = 12,
+    VT_M_CAMERAROTATIONSPEED = 14,
+    VT_M_VIEWDIR = 16,
+    VT_M_UPDIR = 18
   };
   const Inception::fb::Vector3 *m_clearColor() const {
     return GetPointer<const Inception::fb::Vector3 *>(VT_M_CLEARCOLOR);
@@ -645,23 +653,11 @@ struct icpCameraComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   float m_fov() const {
     return GetField<float>(VT_M_FOV, 0.0f);
   }
-  float m_aspectRatio() const {
-    return GetField<float>(VT_M_ASPECTRATIO, 0.0f);
-  }
   float m_near() const {
     return GetField<float>(VT_M_NEAR, 0.0f);
   }
   float m_far() const {
     return GetField<float>(VT_M_FAR, 0.0f);
-  }
-  const Inception::fb::Vector3 *m_position() const {
-    return GetPointer<const Inception::fb::Vector3 *>(VT_M_POSITION);
-  }
-  const Inception::fb::Quaternion *m_rotation() const {
-    return GetPointer<const Inception::fb::Quaternion *>(VT_M_ROTATION);
-  }
-  const Inception::fb::Matrix4x4 *m_viewMatrix() const {
-    return GetPointer<const Inception::fb::Matrix4x4 *>(VT_M_VIEWMATRIX);
   }
   float m_cameraSpeed() const {
     return GetField<float>(VT_M_CAMERASPEED, 0.0f);
@@ -680,15 +676,8 @@ struct icpCameraComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_M_CLEARCOLOR) &&
            verifier.VerifyTable(m_clearColor()) &&
            VerifyField<float>(verifier, VT_M_FOV, 4) &&
-           VerifyField<float>(verifier, VT_M_ASPECTRATIO, 4) &&
            VerifyField<float>(verifier, VT_M_NEAR, 4) &&
            VerifyField<float>(verifier, VT_M_FAR, 4) &&
-           VerifyOffset(verifier, VT_M_POSITION) &&
-           verifier.VerifyTable(m_position()) &&
-           VerifyOffset(verifier, VT_M_ROTATION) &&
-           verifier.VerifyTable(m_rotation()) &&
-           VerifyOffset(verifier, VT_M_VIEWMATRIX) &&
-           verifier.VerifyTable(m_viewMatrix()) &&
            VerifyField<float>(verifier, VT_M_CAMERASPEED, 4) &&
            VerifyField<float>(verifier, VT_M_CAMERAROTATIONSPEED, 4) &&
            VerifyOffset(verifier, VT_M_VIEWDIR) &&
@@ -709,23 +698,11 @@ struct icpCameraComponentBuilder {
   void add_m_fov(float m_fov) {
     fbb_.AddElement<float>(icpCameraComponent::VT_M_FOV, m_fov, 0.0f);
   }
-  void add_m_aspectRatio(float m_aspectRatio) {
-    fbb_.AddElement<float>(icpCameraComponent::VT_M_ASPECTRATIO, m_aspectRatio, 0.0f);
-  }
   void add_m_near(float m_near) {
     fbb_.AddElement<float>(icpCameraComponent::VT_M_NEAR, m_near, 0.0f);
   }
   void add_m_far(float m_far) {
     fbb_.AddElement<float>(icpCameraComponent::VT_M_FAR, m_far, 0.0f);
-  }
-  void add_m_position(flatbuffers::Offset<Inception::fb::Vector3> m_position) {
-    fbb_.AddOffset(icpCameraComponent::VT_M_POSITION, m_position);
-  }
-  void add_m_rotation(flatbuffers::Offset<Inception::fb::Quaternion> m_rotation) {
-    fbb_.AddOffset(icpCameraComponent::VT_M_ROTATION, m_rotation);
-  }
-  void add_m_viewMatrix(flatbuffers::Offset<Inception::fb::Matrix4x4> m_viewMatrix) {
-    fbb_.AddOffset(icpCameraComponent::VT_M_VIEWMATRIX, m_viewMatrix);
   }
   void add_m_cameraSpeed(float m_cameraSpeed) {
     fbb_.AddElement<float>(icpCameraComponent::VT_M_CAMERASPEED, m_cameraSpeed, 0.0f);
@@ -754,12 +731,8 @@ inline flatbuffers::Offset<icpCameraComponent> CreateicpCameraComponent(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<Inception::fb::Vector3> m_clearColor = 0,
     float m_fov = 0.0f,
-    float m_aspectRatio = 0.0f,
     float m_near = 0.0f,
     float m_far = 0.0f,
-    flatbuffers::Offset<Inception::fb::Vector3> m_position = 0,
-    flatbuffers::Offset<Inception::fb::Quaternion> m_rotation = 0,
-    flatbuffers::Offset<Inception::fb::Matrix4x4> m_viewMatrix = 0,
     float m_cameraSpeed = 0.0f,
     float m_cameraRotationSpeed = 0.0f,
     flatbuffers::Offset<Inception::fb::Vector3> m_viewDir = 0,
@@ -769,15 +742,65 @@ inline flatbuffers::Offset<icpCameraComponent> CreateicpCameraComponent(
   builder_.add_m_viewDir(m_viewDir);
   builder_.add_m_cameraRotationSpeed(m_cameraRotationSpeed);
   builder_.add_m_cameraSpeed(m_cameraSpeed);
-  builder_.add_m_viewMatrix(m_viewMatrix);
-  builder_.add_m_rotation(m_rotation);
-  builder_.add_m_position(m_position);
   builder_.add_m_far(m_far);
   builder_.add_m_near(m_near);
-  builder_.add_m_aspectRatio(m_aspectRatio);
   builder_.add_m_fov(m_fov);
   builder_.add_m_clearColor(m_clearColor);
   return builder_.Finish();
+}
+
+struct icpMeshRendererComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef icpMeshRendererComponentBuilder Builder;
+  static const flatbuffers::TypeTable *MiniReflectTypeTable() {
+    return icpMeshRendererComponentTypeTable();
+  }
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_M_RESID = 4
+  };
+  const flatbuffers::String *m_resId() const {
+    return GetPointer<const flatbuffers::String *>(VT_M_RESID);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_M_RESID) &&
+           verifier.VerifyString(m_resId()) &&
+           verifier.EndTable();
+  }
+};
+
+struct icpMeshRendererComponentBuilder {
+  typedef icpMeshRendererComponent Table;
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_m_resId(flatbuffers::Offset<flatbuffers::String> m_resId) {
+    fbb_.AddOffset(icpMeshRendererComponent::VT_M_RESID, m_resId);
+  }
+  explicit icpMeshRendererComponentBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  flatbuffers::Offset<icpMeshRendererComponent> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<icpMeshRendererComponent>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<icpMeshRendererComponent> CreateicpMeshRendererComponent(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::String> m_resId = 0) {
+  icpMeshRendererComponentBuilder builder_(_fbb);
+  builder_.add_m_resId(m_resId);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<icpMeshRendererComponent> CreateicpMeshRendererComponentDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const char *m_resId = nullptr) {
+  auto m_resId__ = m_resId ? _fbb.CreateString(m_resId) : 0;
+  return Inception::fb::CreateicpMeshRendererComponent(
+      _fbb,
+      m_resId__);
 }
 
 inline bool VerifyicpComponentBase(flatbuffers::Verifier &verifier, const void *obj, icpComponentBase type) {
@@ -795,6 +818,10 @@ inline bool VerifyicpComponentBase(flatbuffers::Verifier &verifier, const void *
     }
     case icpComponentBase_icpCameraComponent: {
       auto ptr = reinterpret_cast<const Inception::fb::icpCameraComponent *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case icpComponentBase_icpMeshRendererComponent: {
+      auto ptr = reinterpret_cast<const Inception::fb::icpMeshRendererComponent *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return true;
@@ -818,21 +845,24 @@ inline const flatbuffers::TypeTable *icpComponentBaseTypeTable() {
     { flatbuffers::ET_SEQUENCE, 0, -1 },
     { flatbuffers::ET_SEQUENCE, 0, 0 },
     { flatbuffers::ET_SEQUENCE, 0, 1 },
-    { flatbuffers::ET_SEQUENCE, 0, 2 }
+    { flatbuffers::ET_SEQUENCE, 0, 2 },
+    { flatbuffers::ET_SEQUENCE, 0, 3 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
     Inception::fb::icpEntityDataComponentTypeTable,
     Inception::fb::icpXFromComponentTypeTable,
-    Inception::fb::icpCameraComponentTypeTable
+    Inception::fb::icpCameraComponentTypeTable,
+    Inception::fb::icpMeshRendererComponentTypeTable
   };
   static const char * const names[] = {
     "NONE",
     "icpEntityDataComponent",
     "icpXFromComponent",
-    "icpCameraComponent"
+    "icpCameraComponent",
+    "icpMeshRendererComponent"
   };
   static const flatbuffers::TypeTable tt = {
-    flatbuffers::ST_UNION, 4, type_codes, type_refs, nullptr, nullptr, names
+    flatbuffers::ST_UNION, 5, type_codes, type_refs, nullptr, nullptr, names
   };
   return &tt;
 }
@@ -977,35 +1007,38 @@ inline const flatbuffers::TypeTable *icpCameraComponentTypeTable() {
     { flatbuffers::ET_FLOAT, 0, -1 },
     { flatbuffers::ET_FLOAT, 0, -1 },
     { flatbuffers::ET_FLOAT, 0, -1 },
-    { flatbuffers::ET_SEQUENCE, 0, 0 },
-    { flatbuffers::ET_SEQUENCE, 0, 1 },
-    { flatbuffers::ET_SEQUENCE, 0, 2 },
-    { flatbuffers::ET_FLOAT, 0, -1 },
     { flatbuffers::ET_FLOAT, 0, -1 },
     { flatbuffers::ET_SEQUENCE, 0, 0 },
     { flatbuffers::ET_SEQUENCE, 0, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    Inception::fb::Vector3TypeTable,
-    Inception::fb::QuaternionTypeTable,
-    Inception::fb::Matrix4x4TypeTable
+    Inception::fb::Vector3TypeTable
   };
   static const char * const names[] = {
     "m_clearColor",
     "m_fov",
-    "m_aspectRatio",
     "m_near",
     "m_far",
-    "m_position",
-    "m_rotation",
-    "m_viewMatrix",
     "m_cameraSpeed",
     "m_cameraRotationSpeed",
     "m_viewDir",
     "m_upDir"
   };
   static const flatbuffers::TypeTable tt = {
-    flatbuffers::ST_TABLE, 12, type_codes, type_refs, nullptr, nullptr, names
+    flatbuffers::ST_TABLE, 8, type_codes, type_refs, nullptr, nullptr, names
+  };
+  return &tt;
+}
+
+inline const flatbuffers::TypeTable *icpMeshRendererComponentTypeTable() {
+  static const flatbuffers::TypeCode type_codes[] = {
+    { flatbuffers::ET_STRING, 0, -1 }
+  };
+  static const char * const names[] = {
+    "m_resId"
+  };
+  static const flatbuffers::TypeTable tt = {
+    flatbuffers::ST_TABLE, 1, type_codes, nullptr, nullptr, nullptr, names
   };
   return &tt;
 }
