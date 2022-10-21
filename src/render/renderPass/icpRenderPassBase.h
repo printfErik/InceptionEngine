@@ -13,6 +13,8 @@ enum class eRenderPass
 	RENDER_PASS_COUNT
 };
 
+class icpEditorUI;
+
 class icpRenderPassBase
 {
 public:
@@ -22,6 +24,7 @@ public:
 		std::shared_ptr<icpVulkanRHI> rhi{ nullptr };
 		eRenderPass passType;
 		std::shared_ptr<icpRenderPassBase> dependency{ nullptr };
+		std::shared_ptr<icpEditorUI> editorUi{ nullptr };
 	};
 
 	struct RenederPipelineInfo

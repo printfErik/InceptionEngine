@@ -22,6 +22,9 @@ public:
 	void createFrameBuffers();
 
 	void showDebugUI();
+
+private:
+	std::shared_ptr<icpEditorUI> m_editorUI;
 };
 
 INCEPTION_END_NAMESPACE

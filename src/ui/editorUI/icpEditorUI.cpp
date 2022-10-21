@@ -14,6 +14,12 @@ icpEditorUI::~icpEditorUI()
 	
 }
 
+// todo
+bool checkFilePath(const std::string path)
+{
+	return true;
+}
+
 void icpEditorUI::showEditorUI()
 {
 	IM_ASSERT(ImGui::GetCurrentContext() != NULL && "Missing dear imgui context. Refer to examples app!");
@@ -25,6 +31,16 @@ void icpEditorUI::showEditorUI()
 			//ShowExampleMenuFile();
 			ImGui::EndMenu();
 		}
+
+		if (ImGui::BeginMenu("Entity"))
+		{
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Component"))
+		{
+			ImGui::EndMenu();
+		}
 		
 		if (ImGui::BeginMenu("Debug Tool"))
 		{
@@ -33,11 +49,18 @@ void icpEditorUI::showEditorUI()
 				static char buf1[64] = "";
 				ImGui::InputText("Out File Path", buf1, 64);
 
-				if (ImGui::Button("Save default scene to File") && std::strlen(buf1) != 0)
+				if (ImGui::Button("Save default scene to File"))
 				{
-					g_system_container.m_sceneSystem->saveScene(buf1);
+					if (std::strlen(buf1) == 0 || checkFilePath(std::string()))
+					{
+						ImGui::SameLine();
+						ImGui::Text("File Path is not Legal!");
+					}
+					else
+					{
+						g_system_container.m_sceneSystem->saveScene(buf1);
+					}
 				}
-
 				ImGui::TreePop();
 			}
 

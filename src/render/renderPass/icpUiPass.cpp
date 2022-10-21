@@ -10,11 +10,10 @@
 #include <backends/imgui_impl_vulkan.h>
 
 #include "../../scene/icpSceneSystem.h"
+#include "../../ui/editorUI/icpEditorUI.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-
-icpUiPass::~icpUiPass()
+	icpUiPass::~icpUiPass()
 {
 	
 }
@@ -23,6 +22,8 @@ icpUiPass::~icpUiPass()
 void icpUiPass::initializeRenderPass(RendePassInitInfo initInfo)
 {
 	m_rhi = initInfo.rhi;
+
+	m_editorUI = initInfo.editorUi;
 
 	createRenderPass();
 
@@ -93,7 +94,7 @@ void icpUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResul
 	ImGui::NewFrame();
 	//ImGui::ShowDemoWindow();
 
-	showDebugUI();
+	m_editorUI->showEditorUI();
 
 	ImGui::Render();
 
@@ -200,10 +201,6 @@ void icpUiPass::recreateSwapChain()
 	createFrameBuffers();
 }
 
-void icpUiPass::showDebugUI()
-{
-	
-}
 
 
 

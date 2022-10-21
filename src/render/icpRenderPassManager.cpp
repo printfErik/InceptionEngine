@@ -6,6 +6,7 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include "../ui/editorUI/icpEditorUI.h"
 #include "renderPass/icpRenderPassBase.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -36,6 +37,7 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 	uiPassInfo.rhi = m_rhi;
 	uiPassInfo.passType = eRenderPass::UI_PASS;
 	uiPassInfo.dependency = m_renderPasses[0];
+	uiPassInfo.editorUi = std::make_shared<icpEditorUI>();
 	std::shared_ptr<icpRenderPassBase> uiPass = std::make_shared<icpUiPass>();
 	uiPass->initializeRenderPass(uiPassInfo);
 
