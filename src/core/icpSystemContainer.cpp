@@ -3,6 +3,8 @@
 #include "../render/icpRenderSystem.h"
 #include "../render/icpCameraSystem.h"
 #include "../resource/icpResourceSystem.h"
+#include "../scene/icpSceneSystem.h"
+
 #include "icpConfigSystem.h"
 #include "../ui/icpUiSystem.h"
 
@@ -20,6 +22,9 @@ void icpSystemContainer::initializeAllSystems(const std::filesystem::path& _conf
 	m_configSystem = std::make_shared<icpConfigSystem>(_configFilePath);
 
 	m_resourceSystem = std::make_shared<icpResourceSystem>();
+
+	m_sceneSystem = std::make_shared<icpSceneSystem>();
+	m_sceneSystem->initializeScene("");
 
 	m_cameraSystem = std::make_shared<icpCameraSystem>();
 	m_cameraSystem->initialize();
