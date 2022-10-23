@@ -51,7 +51,7 @@ void icpEditorUI::showEditorUI()
 
 				if (ImGui::Button("Save default scene to File"))
 				{
-					if (std::strlen(buf1) == 0 || checkFilePath(std::string()))
+					if (std::strlen(buf1) == 0 || !checkFilePath(std::string()))
 					{
 						ImGui::SameLine();
 						ImGui::Text("File Path is not Legal!");
