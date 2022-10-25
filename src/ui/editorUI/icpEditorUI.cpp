@@ -1,6 +1,7 @@
 #include "icpEditorUI.h"
 #include "../../core/icpSystemContainer.h"
 #include "../../scene/icpSceneSystem.h"
+#include "../../resource/icpResourceSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -66,6 +67,41 @@ void icpEditorUI::showEditorUI()
 
 			ImGui::EndMenu();
 		}
+
+		if (ImGui::BeginMenu("Resources"))
+		{
+			static char Path[64] = "";
+			ImGui::InputText("Load Model File Path", Path, 64);
+			if (ImGui::Button("Load Obj Files"))
+			{
+				if (std::strlen(Path) == 0 || !checkFilePath(std::string()))
+				{
+					ImGui::SameLine();
+					ImGui::Text("File Path is not Legal!");
+				}
+				else
+				{
+					g_system_container.m_resourceSystem->loadObjModelResource(Path);
+				}
+			}
+
+			static char ImagePath[64] = "";
+			ImGui::InputText("Load Image File Path", ImagePath, 64);
+			if (ImGui::Button("Load Img Files"))
+			{
+				if (std::strlen(ImagePath) == 0 || !checkFilePath(std::string()))
+				{
+					ImGui::SameLine();
+					ImGui::Text("File Path is not Legal!");
+				}
+				else
+				{
+					g_system_container.m_resourceSystem->loadImageResource(ImagePath);
+				}
+			}
+			ImGui::EndMenu();
+		}
+
 		ImGui::EndMainMenuBar();
 	}
 }
