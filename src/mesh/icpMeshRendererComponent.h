@@ -13,9 +13,8 @@ public:
 	icpMeshRendererComponent() = default;
 	virtual ~icpMeshRendererComponent() = default;
 
-	std::string m_resId;
-
-
+	std::string m_meshResId;
+	std::string m_texResId;
 };
 
 
