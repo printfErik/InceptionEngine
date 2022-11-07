@@ -3,6 +3,7 @@
 #include "icpEntityDataComponent.h"
 #include "icpXFormComponent.h"
 #include "../render/icpCameraSystem.h"
+#include "../mesh/icpMeshRendererComponent.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -209,11 +210,20 @@ void icpSceneSystem::addRootNodeToHierachy(const fb::flatbufferTreeNode* node)
 		{
 			auto cameraFB = static_cast<const fb::icpCameraComponent*>(comp);
 			auto&& camera = entity.installComponent<icpCameraComponent>();
-			
+			camera.m_clearColor = glm::vec3(cameraFB->m_clearColor()->x(), cameraFB->m_clearColor()->y(), cameraFB->m_clearColor()->z());
+			camera.m_fov = cameraFB->m_fov();
+			camera.m_near = cameraFB->m_near();
+			camera.m_far = cameraFB->m_far();
+			camera.m_cameraSpeed = cameraFB->m_cameraSpeed();
+			camera.m_cameraRotationSpeed = cameraFB->m_cameraRotationSpeed();
+			camera.m_viewDir = glm::vec3(cameraFB->m_viewDir()->x(), cameraFB->m_viewDir()->y(), cameraFB->m_viewDir()->z());
+			camera.m_upDir = glm::vec3(cameraFB->m_upDir()->x(), cameraFB->m_upDir()->y(), cameraFB->m_upDir()->z());
 		}
 		else if (compT == fb::icpComponentBase_icpMeshRendererComponent)
 		{
 			auto meshRenderFB = static_cast<const fb::icpMeshRendererComponent*>(comp);
+			auto&& mesh = entity.installComponent<icpMeshRendererComponent>();
+			mesh.m_meshResId = meshRenderFB->m_resId()->str();
 		}
 	}
 
