@@ -24,8 +24,8 @@ struct Matrix4x4Builder;
 struct icpEntityDataComponent;
 struct icpEntityDataComponentBuilder;
 
-struct icpXFromComponent;
-struct icpXFromComponentBuilder;
+struct icpXFormComponent;
+struct icpXFormComponentBuilder;
 
 struct icpCameraComponent;
 struct icpCameraComponentBuilder;
@@ -43,7 +43,7 @@ inline const flatbuffers::TypeTable *Matrix4x4TypeTable();
 
 inline const flatbuffers::TypeTable *icpEntityDataComponentTypeTable();
 
-inline const flatbuffers::TypeTable *icpXFromComponentTypeTable();
+inline const flatbuffers::TypeTable *icpXFormComponentTypeTable();
 
 inline const flatbuffers::TypeTable *icpCameraComponentTypeTable();
 
@@ -52,7 +52,7 @@ inline const flatbuffers::TypeTable *icpMeshRendererComponentTypeTable();
 enum icpComponentBase : uint8_t {
   icpComponentBase_NONE = 0,
   icpComponentBase_icpEntityDataComponent = 1,
-  icpComponentBase_icpXFromComponent = 2,
+  icpComponentBase_icpXFormComponent = 2,
   icpComponentBase_icpCameraComponent = 3,
   icpComponentBase_icpMeshRendererComponent = 4,
   icpComponentBase_MIN = icpComponentBase_NONE,
@@ -63,7 +63,7 @@ inline const icpComponentBase (&EnumValuesicpComponentBase())[5] {
   static const icpComponentBase values[] = {
     icpComponentBase_NONE,
     icpComponentBase_icpEntityDataComponent,
-    icpComponentBase_icpXFromComponent,
+    icpComponentBase_icpXFormComponent,
     icpComponentBase_icpCameraComponent,
     icpComponentBase_icpMeshRendererComponent
   };
@@ -74,7 +74,7 @@ inline const char * const *EnumNamesicpComponentBase() {
   static const char * const names[6] = {
     "NONE",
     "icpEntityDataComponent",
-    "icpXFromComponent",
+    "icpXFormComponent",
     "icpCameraComponent",
     "icpMeshRendererComponent",
     nullptr
@@ -96,8 +96,8 @@ template<> struct icpComponentBaseTraits<Inception::fb::icpEntityDataComponent> 
   static const icpComponentBase enum_value = icpComponentBase_icpEntityDataComponent;
 };
 
-template<> struct icpComponentBaseTraits<Inception::fb::icpXFromComponent> {
-  static const icpComponentBase enum_value = icpComponentBase_icpXFromComponent;
+template<> struct icpComponentBaseTraits<Inception::fb::icpXFormComponent> {
+  static const icpComponentBase enum_value = icpComponentBase_icpXFormComponent;
 };
 
 template<> struct icpComponentBaseTraits<Inception::fb::icpCameraComponent> {
@@ -554,10 +554,10 @@ inline flatbuffers::Offset<icpEntityDataComponent> CreateicpEntityDataComponentD
       m_guid);
 }
 
-struct icpXFromComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  typedef icpXFromComponentBuilder Builder;
+struct icpXFormComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  typedef icpXFormComponentBuilder Builder;
   static const flatbuffers::TypeTable *MiniReflectTypeTable() {
-    return icpXFromComponentTypeTable();
+    return icpXFormComponentTypeTable();
   }
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_M_TRANSLATION = 4,
@@ -591,40 +591,40 @@ struct icpXFromComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
 };
 
-struct icpXFromComponentBuilder {
-  typedef icpXFromComponent Table;
+struct icpXFormComponentBuilder {
+  typedef icpXFormComponent Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_m_translation(flatbuffers::Offset<Inception::fb::Vector3> m_translation) {
-    fbb_.AddOffset(icpXFromComponent::VT_M_TRANSLATION, m_translation);
+    fbb_.AddOffset(icpXFormComponent::VT_M_TRANSLATION, m_translation);
   }
   void add_m_rotation(flatbuffers::Offset<Inception::fb::Vector3> m_rotation) {
-    fbb_.AddOffset(icpXFromComponent::VT_M_ROTATION, m_rotation);
+    fbb_.AddOffset(icpXFormComponent::VT_M_ROTATION, m_rotation);
   }
   void add_m_quternionRot(flatbuffers::Offset<Inception::fb::Quaternion> m_quternionRot) {
-    fbb_.AddOffset(icpXFromComponent::VT_M_QUTERNIONROT, m_quternionRot);
+    fbb_.AddOffset(icpXFormComponent::VT_M_QUTERNIONROT, m_quternionRot);
   }
   void add_m_scale(flatbuffers::Offset<Inception::fb::Vector3> m_scale) {
-    fbb_.AddOffset(icpXFromComponent::VT_M_SCALE, m_scale);
+    fbb_.AddOffset(icpXFormComponent::VT_M_SCALE, m_scale);
   }
-  explicit icpXFromComponentBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit icpXFormComponentBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  flatbuffers::Offset<icpXFromComponent> Finish() {
+  flatbuffers::Offset<icpXFormComponent> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<icpXFromComponent>(end);
+    auto o = flatbuffers::Offset<icpXFormComponent>(end);
     return o;
   }
 };
 
-inline flatbuffers::Offset<icpXFromComponent> CreateicpXFromComponent(
+inline flatbuffers::Offset<icpXFormComponent> CreateicpXFormComponent(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<Inception::fb::Vector3> m_translation = 0,
     flatbuffers::Offset<Inception::fb::Vector3> m_rotation = 0,
     flatbuffers::Offset<Inception::fb::Quaternion> m_quternionRot = 0,
     flatbuffers::Offset<Inception::fb::Vector3> m_scale = 0) {
-  icpXFromComponentBuilder builder_(_fbb);
+  icpXFormComponentBuilder builder_(_fbb);
   builder_.add_m_scale(m_scale);
   builder_.add_m_quternionRot(m_quternionRot);
   builder_.add_m_rotation(m_rotation);
@@ -812,8 +812,8 @@ inline bool VerifyicpComponentBase(flatbuffers::Verifier &verifier, const void *
       auto ptr = reinterpret_cast<const Inception::fb::icpEntityDataComponent *>(obj);
       return verifier.VerifyTable(ptr);
     }
-    case icpComponentBase_icpXFromComponent: {
-      auto ptr = reinterpret_cast<const Inception::fb::icpXFromComponent *>(obj);
+    case icpComponentBase_icpXFormComponent: {
+      auto ptr = reinterpret_cast<const Inception::fb::icpXFormComponent *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case icpComponentBase_icpCameraComponent: {
@@ -850,14 +850,14 @@ inline const flatbuffers::TypeTable *icpComponentBaseTypeTable() {
   };
   static const flatbuffers::TypeFunction type_refs[] = {
     Inception::fb::icpEntityDataComponentTypeTable,
-    Inception::fb::icpXFromComponentTypeTable,
+    Inception::fb::icpXFormComponentTypeTable,
     Inception::fb::icpCameraComponentTypeTable,
     Inception::fb::icpMeshRendererComponentTypeTable
   };
   static const char * const names[] = {
     "NONE",
     "icpEntityDataComponent",
-    "icpXFromComponent",
+    "icpXFormComponent",
     "icpCameraComponent",
     "icpMeshRendererComponent"
   };
@@ -977,7 +977,7 @@ inline const flatbuffers::TypeTable *icpEntityDataComponentTypeTable() {
   return &tt;
 }
 
-inline const flatbuffers::TypeTable *icpXFromComponentTypeTable() {
+inline const flatbuffers::TypeTable *icpXFormComponentTypeTable() {
   static const flatbuffers::TypeCode type_codes[] = {
     { flatbuffers::ET_SEQUENCE, 0, 0 },
     { flatbuffers::ET_SEQUENCE, 0, 0 },

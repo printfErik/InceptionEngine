@@ -2,9 +2,7 @@
 #include "icpEntity.h"
 #include "icpEntityDataComponent.h"
 #include "icpXFormComponent.h"
-
-#include "../fb_gen/Scene_generated.h"
-#include "../fb_gen/component_generated.h"
+#include "../render/icpCameraSystem.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -17,7 +15,8 @@
 #include <iostream>
 
 INCEPTION_BEGIN_NAMESPACE
-	void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
+
+void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
 {
 	loadSceneFromMapPath(mapPath);
 
@@ -54,7 +53,7 @@ void icpSceneSystem::saveScene(const std::filesystem::path& outPath)
 	auto euler = glm::eulerAngles(cameraQua);
 	auto camerarotation = fb::CreateVector3(builder, euler.x, euler.y, euler.z);
 	auto camerascale = fb::CreateVector3(builder, 1.f, 1.f, 1.f);
-	auto cameraXformComp = fb::CreateicpXFromComponent(builder, cameraPosition, camerarotation, cameraQuaFb, camerascale);
+	auto cameraXformComp = fb::CreateicpXFormComponent(builder, cameraPosition, camerarotation, cameraQuaFb, camerascale);
 
 	auto cameraClearColorFb = fb::CreateVector3(builder, 0.f, 0.f, 0.f);
 	float cameraFov = glm::radians(45.f);
@@ -72,7 +71,7 @@ void icpSceneSystem::saveScene(const std::filesystem::path& outPath)
 	componentsType.push_back(fb::icpComponentBase_icpEntityDataComponent);
 	compUnions.push_back(cameraEntityDataComp.Union());
 
-	componentsType.push_back(fb::icpComponentBase_icpXFromComponent);
+	componentsType.push_back(fb::icpComponentBase_icpXFormComponent);
 	compUnions.push_back(cameraXformComp.Union());
 
 	componentsType.push_back(fb::icpComponentBase_icpCameraComponent);
@@ -101,7 +100,7 @@ void icpSceneSystem::saveScene(const std::filesystem::path& outPath)
 
 	auto meshRotation = fb::CreateVector3(builder, meshEuler.x, meshEuler.y, meshEuler.z);
 	auto meshscale = fb::CreateVector3(builder, 1.f, 1.f, 1.f);
-	auto meshXformComp = fb::CreateicpXFromComponent(builder, meshPosition, meshRotation, meshQuaFb, meshscale);
+	auto meshXformComp = fb::CreateicpXFormComponent(builder, meshPosition, meshRotation, meshQuaFb, meshscale);
 
 	auto meshResId = builder.CreateString("viking_room");
 	auto meshRendererCompFb = fb::CreateicpMeshRendererComponent(builder, meshResId);
@@ -112,7 +111,7 @@ void icpSceneSystem::saveScene(const std::filesystem::path& outPath)
 	meshComponentsType.push_back(fb::icpComponentBase_icpEntityDataComponent);
 	meshCompUnions.push_back(meshEntityDataComp.Union());
 
-	meshComponentsType.push_back(fb::icpComponentBase_icpXFromComponent);
+	meshComponentsType.push_back(fb::icpComponentBase_icpXFormComponent);
 	meshCompUnions.push_back(meshXformComp.Union());
 
 	meshComponentsType.push_back(fb::icpComponentBase_icpMeshRendererComponent);
@@ -168,7 +167,59 @@ void icpSceneSystem::loadSceneFromMapPath(const std::filesystem::path& mapPath)
 	auto sceneName = sceneInfo->m_name()->str();
 	auto rootNodes = sceneInfo->m_sceneRoot();
 
+	auto rootSize = rootNodes->size();
+	for (int i = 0; i < rootSize; i++)
+	{
+		auto root = rootNodes->Get(i);
+		addRootNodeToHierachy(root);
+	}
 }
+
+void icpSceneSystem::addRootNodeToHierachy(const fb::flatbufferTreeNode* node)
+{
+	auto entityFB = node->m_entity();
+
+	icpGameEntity entity;
+	entity.initializeEntity(m_registry.create(), this);
+
+	auto compUnionTypes = entityFB->m_components_type();
+	auto comps = entityFB->m_components();
+
+	for (int i = 0; i < compUnionTypes->size(); i++)
+	{
+		auto compT = compUnionTypes->Get(i);
+		auto comp = comps->Get(i);
+		if (compT == fb::icpComponentBase_icpEntityDataComponent)
+		{
+			auto entityDataFB = static_cast<const fb::icpEntityDataComponent*>(comp);
+			auto&& entityData = entity.installComponent<icpEntityDataComponent>();
+			entityData.m_name = entityDataFB->m_name()->str();
+			entityData.m_guid = icpGuid(entityDataFB->m_guid()->m_guid());
+		}
+		else if (compT == fb::icpComponentBase_icpXFormComponent)
+		{
+			auto XformFB = static_cast<const fb::icpXFormComponent*>(comp);
+			auto&& xform = entity.installComponent<icpXFormComponent>();
+			xform.m_translation = glm::vec3(XformFB->m_translation()->x(), XformFB->m_translation()->y(), XformFB->m_translation()->z());
+			xform.m_rotation = glm::vec3(XformFB->m_rotation()->x(), XformFB->m_rotation()->y(), XformFB->m_rotation()->z());
+			xform.m_scale = glm::vec3(XformFB->m_scale()->x(), XformFB->m_scale()->y(), XformFB->m_scale()->z());
+			xform.m_quternionRot = glm::qua<float>(XformFB->m_quternionRot()->w(), XformFB->m_quternionRot()->x(), XformFB->m_scale()->y(), XformFB->m_scale()->z());
+		}
+		else if (compT == fb::icpComponentBase_icpCameraComponent)
+		{
+			auto cameraFB = static_cast<const fb::icpCameraComponent*>(comp);
+			auto&& camera = entity.installComponent<icpCameraComponent>();
+			
+		}
+		else if (compT == fb::icpComponentBase_icpMeshRendererComponent)
+		{
+			auto meshRenderFB = static_cast<const fb::icpMeshRendererComponent*>(comp);
+		}
+	}
+
+	auto children = node->m_children();
+}
+
 
 
 

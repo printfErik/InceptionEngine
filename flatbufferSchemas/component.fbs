@@ -43,7 +43,7 @@ table Matrix4x4
 union icpComponentBase
 {
     icpEntityDataComponent = 1,
-    icpXFromComponent = 2,
+    icpXFormComponent = 2,
     icpCameraComponent = 3,
 	icpMeshRendererComponent = 4,
 }
@@ -54,7 +54,7 @@ table icpEntityDataComponent
     m_guid: icpGuid;
 }
 
-table icpXFromComponent
+table icpXFormComponent
 {
     m_translation: Vector3;
     m_rotation: Vector3;

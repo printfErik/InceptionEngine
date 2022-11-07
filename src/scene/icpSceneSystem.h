@@ -2,8 +2,10 @@
 #include "../core/icpMacros.h"
 #include "../core/icpGuid.h"
 
-#include <entt/entt.hpp>
+#include "../fb_gen/Scene_generated.h"
+#include "../fb_gen/component_generated.h"
 
+#include <entt/entt.hpp>
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -24,9 +26,13 @@ public:
 
 	entt::registry m_registry;
 
+	std::vector<std::shared_ptr<icpGameEntity>> m_sceneRoots;
+
 private:
 
 	void loadSceneFromMapPath(const std::filesystem::path& mapPath);
+	void addRootNodeToHierachy(const fb::flatbufferTreeNode* node);
+
 };
 
 
