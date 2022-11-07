@@ -21,9 +21,12 @@ public:
 
 	void saveScene(const std::filesystem::path& outPath);
 
+
 	entt::registry m_registry;
 
 private:
+
+	void loadSceneFromMapPath(const std::filesystem::path& mapPath);
 };
 
 

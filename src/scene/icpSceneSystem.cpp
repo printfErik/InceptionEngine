@@ -14,12 +14,13 @@
 #include <glm/gtx/euler_angles.hpp>
 
 #include <fstream>
+#include <iostream>
 
 INCEPTION_BEGIN_NAMESPACE
-
-void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
+	void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
 {
-	
+	loadSceneFromMapPath(mapPath);
+
 }
 
 icpGameEntity icpSceneSystem::createEntity(const std::string& name)
@@ -147,6 +148,27 @@ void icpSceneSystem::saveScene(const std::filesystem::path& outPath)
 	outFile.close();
 }
 
+void icpSceneSystem::loadSceneFromMapPath(const std::filesystem::path& mapPath)
+{
+	std::ifstream inFile(mapPath, std::ios::in | std::ios::binary);
+	if (!inFile)
+	{
+		std::cout << "read map error" << std::endl;
+		return;
+	}
+
+	auto fileSize = std::filesystem::file_size(mapPath);
+
+	const std::vector<uint8_t> fileContent(fileSize, '\0');
+
+	inFile.read((char*)fileContent.data(), fileSize);
+
+	auto sceneInfo = fb::GetflatbufferScene(fileContent.data());
+
+	auto sceneName = sceneInfo->m_name()->str();
+	auto rootNodes = sceneInfo->m_sceneRoot();
+
+}
 
 
 
