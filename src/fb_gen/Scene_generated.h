@@ -107,8 +107,8 @@ struct flatbufferTreeNode FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const Inception::fb::flatbufferEntity *m_entity() const {
     return GetPointer<const Inception::fb::flatbufferEntity *>(VT_M_ENTITY);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferEntity>> *m_children() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferEntity>> *>(VT_M_CHILDREN);
+  const flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferTreeNode>> *m_children() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferTreeNode>> *>(VT_M_CHILDREN);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -128,7 +128,7 @@ struct flatbufferTreeNodeBuilder {
   void add_m_entity(flatbuffers::Offset<Inception::fb::flatbufferEntity> m_entity) {
     fbb_.AddOffset(flatbufferTreeNode::VT_M_ENTITY, m_entity);
   }
-  void add_m_children(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferEntity>>> m_children) {
+  void add_m_children(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferTreeNode>>> m_children) {
     fbb_.AddOffset(flatbufferTreeNode::VT_M_CHILDREN, m_children);
   }
   explicit flatbufferTreeNodeBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -145,7 +145,7 @@ struct flatbufferTreeNodeBuilder {
 inline flatbuffers::Offset<flatbufferTreeNode> CreateflatbufferTreeNode(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<Inception::fb::flatbufferEntity> m_entity = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferEntity>>> m_children = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Inception::fb::flatbufferTreeNode>>> m_children = 0) {
   flatbufferTreeNodeBuilder builder_(_fbb);
   builder_.add_m_children(m_children);
   builder_.add_m_entity(m_entity);
@@ -155,8 +155,8 @@ inline flatbuffers::Offset<flatbufferTreeNode> CreateflatbufferTreeNode(
 inline flatbuffers::Offset<flatbufferTreeNode> CreateflatbufferTreeNodeDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<Inception::fb::flatbufferEntity> m_entity = 0,
-    const std::vector<flatbuffers::Offset<Inception::fb::flatbufferEntity>> *m_children = nullptr) {
-  auto m_children__ = m_children ? _fbb.CreateVector<flatbuffers::Offset<Inception::fb::flatbufferEntity>>(*m_children) : 0;
+    const std::vector<flatbuffers::Offset<Inception::fb::flatbufferTreeNode>> *m_children = nullptr) {
+  auto m_children__ = m_children ? _fbb.CreateVector<flatbuffers::Offset<Inception::fb::flatbufferTreeNode>>(*m_children) : 0;
   return Inception::fb::CreateflatbufferTreeNode(
       _fbb,
       m_entity,
@@ -253,10 +253,11 @@ inline const flatbuffers::TypeTable *flatbufferEntityTypeTable() {
 inline const flatbuffers::TypeTable *flatbufferTreeNodeTypeTable() {
   static const flatbuffers::TypeCode type_codes[] = {
     { flatbuffers::ET_SEQUENCE, 0, 0 },
-    { flatbuffers::ET_SEQUENCE, 1, 0 }
+    { flatbuffers::ET_SEQUENCE, 1, 1 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    Inception::fb::flatbufferEntityTypeTable
+    Inception::fb::flatbufferEntityTypeTable,
+    Inception::fb::flatbufferTreeNodeTypeTable
   };
   static const char * const names[] = {
     "m_entity",

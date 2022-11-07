@@ -172,11 +172,32 @@ void icpSceneSystem::loadSceneFromMapPath(const std::filesystem::path& mapPath)
 	for (int i = 0; i < rootSize; i++)
 	{
 		auto root = rootNodes->Get(i);
-		addRootNodeToHierachy(root);
+		addRootNodeToHierarchy(root);
 	}
 }
 
-void icpSceneSystem::addRootNodeToHierachy(const fb::flatbufferTreeNode* node)
+void icpSceneSystem::addRootNodeToHierarchy(const fb::flatbufferTreeNode* node)
+{
+	auto entity = createEntityFromMap(node);
+	m_sceneRoots.push_back(std::make_shared<icpGameEntity>(entity));
+
+	auto children = node->m_children();
+
+	for (int j = 0; j < children->size(); j++)
+	{
+		auto node = children->Get(j);
+		recursiveAddNodeToHierarchy(node);
+	}
+}
+
+
+void icpSceneSystem::recursiveAddNodeToHierarchy(const fb::flatbufferTreeNode* node)
+{
+	
+}
+
+
+icpGameEntity icpSceneSystem::createEntityFromMap(const fb::flatbufferTreeNode* node)
 {
 	auto entityFB = node->m_entity();
 
@@ -227,10 +248,8 @@ void icpSceneSystem::addRootNodeToHierachy(const fb::flatbufferTreeNode* node)
 		}
 	}
 
-	auto children = node->m_children();
+	return entity;
 }
-
-
 
 
 INCEPTION_END_NAMESPACE

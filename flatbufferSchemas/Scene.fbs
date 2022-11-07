@@ -9,7 +9,7 @@ table flatbufferEntity
 table flatbufferTreeNode
 {
     m_entity: flatbufferEntity;
-    m_children: [flatbufferEntity];
+    m_children: [flatbufferTreeNode];
 }
 
 table flatbufferScene

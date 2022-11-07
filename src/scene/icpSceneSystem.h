@@ -31,8 +31,10 @@ public:
 private:
 
 	void loadSceneFromMapPath(const std::filesystem::path& mapPath);
-	void addRootNodeToHierachy(const fb::flatbufferTreeNode* node);
+	void addRootNodeToHierarchy(const fb::flatbufferTreeNode* node);
+	void recursiveAddNodeToHierarchy(const fb::flatbufferTreeNode* node);
 
+	icpGameEntity createEntityFromMap(const fb::flatbufferTreeNode* node);
 };
 
 
