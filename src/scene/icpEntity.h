@@ -31,6 +31,13 @@ public:
 		return m_sceneSystem->m_registry.any_of<T>(m_entityHandle);
 	}
 
+	template<typename T>
+	T& accessComponent()
+	{
+		assert(!hasComponent<T>());
+		return m_sceneSystem->m_registry.get<T>(m_entityHandle);
+	}
+
 private:
 
 	entt::entity m_entityHandle;

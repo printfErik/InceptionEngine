@@ -179,21 +179,36 @@ void icpSceneSystem::loadSceneFromMapPath(const std::filesystem::path& mapPath)
 void icpSceneSystem::addRootNodeToHierarchy(const fb::flatbufferTreeNode* node)
 {
 	auto entity = createEntityFromMap(node);
-	m_sceneRoots.push_back(std::make_shared<icpGameEntity>(entity));
+	auto entityP = std::make_shared<icpGameEntity>(entity);
+	m_sceneRoots.push_back(entityP);
 
 	auto children = node->m_children();
 
 	for (int j = 0; j < children->size(); j++)
 	{
-		auto node = children->Get(j);
-		recursiveAddNodeToHierarchy(node);
+		auto childNode = children->Get(j);
+		recursiveAddNodeToHierarchy(childNode, entityP);
 	}
 }
 
 
-void icpSceneSystem::recursiveAddNodeToHierarchy(const fb::flatbufferTreeNode* node)
+void icpSceneSystem::recursiveAddNodeToHierarchy(const fb::flatbufferTreeNode* node, std::shared_ptr<icpGameEntity> parent)
 {
-	
+	auto entity = createEntityFromMap(node);
+	auto entityP = std::make_shared<icpGameEntity>(entity);
+
+	auto&& xform = entity.accessComponent<icpXFormComponent>();
+
+	xform.m_parent = std::make_shared<icpXFormComponent>(parent->accessComponent<icpXFormComponent>());
+	parent->accessComponent<icpXFormComponent>().m_children.push_back(std::make_shared<icpXFormComponent>(xform));
+
+	auto children = node->m_children();
+	for (int j = 0; j < children->size(); j++)
+	{
+		auto childNode = children->Get(j);
+		recursiveAddNodeToHierarchy(childNode, entityP);
+
+	}
 }
 
 
