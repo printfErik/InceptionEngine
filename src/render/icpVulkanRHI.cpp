@@ -848,7 +848,7 @@ void icpVulkanRHI::createTextureImages()
 	auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / "viking_room.png";
 	g_system_container.m_resourceSystem->loadImageResource(imgPath);
 
-	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["viking_room"]);
+	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["viking_room_img"]);
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMem;
@@ -924,7 +924,7 @@ void icpVulkanRHI::createTextureSampler()
 	sampler.compareEnable = VK_FALSE;
 	sampler.compareOp = VK_COMPARE_OP_ALWAYS;
 
-	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["viking_room"]);
+	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["viking_room_img"]);
 	sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	sampler.mipLodBias = 0.0f;
 	sampler.minLod = 0.0f;

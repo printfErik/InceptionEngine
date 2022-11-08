@@ -76,5 +76,6 @@ table icpCameraComponent
 
 table icpMeshRendererComponent
 {
-	m_resId: string;
+	m_meshResID: string;
+	m_textureResID: string;
 }

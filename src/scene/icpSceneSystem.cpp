@@ -83,7 +83,7 @@ void icpSceneSystem::saveScene(const std::filesystem::path& outPath)
 
 	auto CameraEntityfb = fb::CreateflatbufferEntity(builder, typefb, unionfb);
 
-	std::vector<flatbuffers::Offset<fb::flatbufferEntity>> cameraChildren;
+	std::vector<flatbuffers::Offset<fb::flatbufferTreeNode>> cameraChildren;
 	auto cameraChildrenFb = builder.CreateVector(cameraChildren);
 
 	auto CameraTreeNode = fb::CreateflatbufferTreeNode(builder, CameraEntityfb, cameraChildrenFb);
@@ -104,7 +104,8 @@ void icpSceneSystem::saveScene(const std::filesystem::path& outPath)
 	auto meshXformComp = fb::CreateicpXFormComponent(builder, meshPosition, meshRotation, meshQuaFb, meshscale);
 
 	auto meshResId = builder.CreateString("viking_room");
-	auto meshRendererCompFb = fb::CreateicpMeshRendererComponent(builder, meshResId);
+	auto textureResId = builder.CreateString("viking_room_img");
+	auto meshRendererCompFb = fb::CreateicpMeshRendererComponent(builder, meshResId, textureResId);
 
 	std::vector<uint8_t> meshComponentsType;
 	std::vector<flatbuffers::Offset<void>> meshCompUnions;
@@ -123,7 +124,7 @@ void icpSceneSystem::saveScene(const std::filesystem::path& outPath)
 
 	auto meshEntityfb = fb::CreateflatbufferEntity(builder, meshTypefb, meshUnionfb);
 
-	std::vector<flatbuffers::Offset<fb::flatbufferEntity>> meshChildren;
+	std::vector<flatbuffers::Offset<fb::flatbufferTreeNode>> meshChildren;
 	auto meshChildrenFb = builder.CreateVector(meshChildren);
 
 	auto meshTreeNode = fb::CreateflatbufferTreeNode(builder, meshEntityfb, meshChildrenFb);
@@ -207,7 +208,6 @@ void icpSceneSystem::recursiveAddNodeToHierarchy(const fb::flatbufferTreeNode* n
 	{
 		auto childNode = children->Get(j);
 		recursiveAddNodeToHierarchy(childNode, entityP);
-
 	}
 }
 
@@ -259,7 +259,8 @@ icpGameEntity icpSceneSystem::createEntityFromMap(const fb::flatbufferTreeNode* 
 		{
 			auto meshRenderFB = static_cast<const fb::icpMeshRendererComponent*>(comp);
 			auto&& mesh = entity.installComponent<icpMeshRendererComponent>();
-			mesh.m_meshResId = meshRenderFB->m_resId()->str();
+			mesh.m_meshResId = meshRenderFB->m_meshResID()->str();
+			mesh.m_texResId = meshRenderFB->m_textureResID()->str();
 		}
 	}
 

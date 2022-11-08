@@ -755,15 +755,21 @@ struct icpMeshRendererComponent FLATBUFFERS_FINAL_CLASS : private flatbuffers::T
     return icpMeshRendererComponentTypeTable();
   }
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_M_RESID = 4
+    VT_M_MESHRESID = 4,
+    VT_M_TEXTURERESID = 6
   };
-  const flatbuffers::String *m_resId() const {
-    return GetPointer<const flatbuffers::String *>(VT_M_RESID);
+  const flatbuffers::String *m_meshResID() const {
+    return GetPointer<const flatbuffers::String *>(VT_M_MESHRESID);
+  }
+  const flatbuffers::String *m_textureResID() const {
+    return GetPointer<const flatbuffers::String *>(VT_M_TEXTURERESID);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_M_RESID) &&
-           verifier.VerifyString(m_resId()) &&
+           VerifyOffset(verifier, VT_M_MESHRESID) &&
+           verifier.VerifyString(m_meshResID()) &&
+           VerifyOffset(verifier, VT_M_TEXTURERESID) &&
+           verifier.VerifyString(m_textureResID()) &&
            verifier.EndTable();
   }
 };
@@ -772,8 +778,11 @@ struct icpMeshRendererComponentBuilder {
   typedef icpMeshRendererComponent Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_m_resId(flatbuffers::Offset<flatbuffers::String> m_resId) {
-    fbb_.AddOffset(icpMeshRendererComponent::VT_M_RESID, m_resId);
+  void add_m_meshResID(flatbuffers::Offset<flatbuffers::String> m_meshResID) {
+    fbb_.AddOffset(icpMeshRendererComponent::VT_M_MESHRESID, m_meshResID);
+  }
+  void add_m_textureResID(flatbuffers::Offset<flatbuffers::String> m_textureResID) {
+    fbb_.AddOffset(icpMeshRendererComponent::VT_M_TEXTURERESID, m_textureResID);
   }
   explicit icpMeshRendererComponentBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -788,19 +797,24 @@ struct icpMeshRendererComponentBuilder {
 
 inline flatbuffers::Offset<icpMeshRendererComponent> CreateicpMeshRendererComponent(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::String> m_resId = 0) {
+    flatbuffers::Offset<flatbuffers::String> m_meshResID = 0,
+    flatbuffers::Offset<flatbuffers::String> m_textureResID = 0) {
   icpMeshRendererComponentBuilder builder_(_fbb);
-  builder_.add_m_resId(m_resId);
+  builder_.add_m_textureResID(m_textureResID);
+  builder_.add_m_meshResID(m_meshResID);
   return builder_.Finish();
 }
 
 inline flatbuffers::Offset<icpMeshRendererComponent> CreateicpMeshRendererComponentDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    const char *m_resId = nullptr) {
-  auto m_resId__ = m_resId ? _fbb.CreateString(m_resId) : 0;
+    const char *m_meshResID = nullptr,
+    const char *m_textureResID = nullptr) {
+  auto m_meshResID__ = m_meshResID ? _fbb.CreateString(m_meshResID) : 0;
+  auto m_textureResID__ = m_textureResID ? _fbb.CreateString(m_textureResID) : 0;
   return Inception::fb::CreateicpMeshRendererComponent(
       _fbb,
-      m_resId__);
+      m_meshResID__,
+      m_textureResID__);
 }
 
 inline bool VerifyicpComponentBase(flatbuffers::Verifier &verifier, const void *obj, icpComponentBase type) {
@@ -1032,13 +1046,15 @@ inline const flatbuffers::TypeTable *icpCameraComponentTypeTable() {
 
 inline const flatbuffers::TypeTable *icpMeshRendererComponentTypeTable() {
   static const flatbuffers::TypeCode type_codes[] = {
+    { flatbuffers::ET_STRING, 0, -1 },
     { flatbuffers::ET_STRING, 0, -1 }
   };
   static const char * const names[] = {
-    "m_resId"
+    "m_meshResID",
+    "m_textureResID"
   };
   static const flatbuffers::TypeTable tt = {
-    flatbuffers::ST_TABLE, 1, type_codes, nullptr, nullptr, nullptr, names
+    flatbuffers::ST_TABLE, 2, type_codes, nullptr, nullptr, nullptr, names
   };
   return &tt;
 }

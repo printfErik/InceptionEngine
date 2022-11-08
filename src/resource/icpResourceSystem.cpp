@@ -63,6 +63,7 @@ void icpResourceSystem::loadImageResource(const std::filesystem::path& imgPath)
 	imgRes->m_mipmapLevel = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
 	auto resName = imgPath.stem().string();
+	resName = resName + "_img";
 	m_resources.m_allResources[resName] = imgRes;
 
 	stbi_image_free(img);
