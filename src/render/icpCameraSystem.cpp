@@ -1,4 +1,6 @@
 #include "icpCameraSystem.h"
+#include "../scene/icpSceneSystem.h"
+#include "../core/icpSystemContainer.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -28,9 +30,20 @@ icpCameraSystem::~icpCameraSystem()
 
 void icpCameraSystem::initialize()
 {
-	std::shared_ptr<icpCameraComponent> firstCamera = std::make_shared<icpCameraComponent>();
-	firstCamera->initializeCamera();
-	m_cameras.push_back(firstCamera);
+	auto cameraView = g_system_container.m_sceneSystem->m_registry.view<icpCameraComponent>();
+	if (cameraView.empty())
+	{
+		std::shared_ptr<icpCameraComponent> firstCamera = std::make_shared<icpCameraComponent>();
+		firstCamera->initializeCamera();
+		m_cameras.push_back(firstCamera);
+		return;
+	}
+
+	for (auto entity: cameraView)
+	{
+		auto& editorCamera = cameraView.get<icpCameraComponent>(entity);
+		m_cameras.push_back(std::make_shared<icpCameraComponent>(editorCamera));
+	}
 }
 
 std::shared_ptr<icpCameraComponent> icpCameraSystem::getCurrentCamera()

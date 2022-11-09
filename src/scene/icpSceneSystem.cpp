@@ -19,7 +19,7 @@ INCEPTION_BEGIN_NAMESPACE
 
 void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
 {
-	loadSceneFromMapPath(mapPath);
+	loadSceneFromMapPath("D:\\InceptionEngine\\test\\testflat");
 
 }
 

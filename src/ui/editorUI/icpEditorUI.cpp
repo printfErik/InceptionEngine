@@ -104,6 +104,15 @@ void icpEditorUI::showEditorUI()
 
 		ImGui::EndMainMenuBar();
 	}
+
+	showEntityHierarchy();
+}
+
+void icpEditorUI::showEntityHierarchy()
+{
+	//ImGui::begin
+
+
 }
 
 

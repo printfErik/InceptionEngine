@@ -16,6 +16,8 @@ public:
 	void showEditorUI();
 
 private:
+
+	void showEntityHierarchy();
 };
 
 INCEPTION_END_NAMESPACE

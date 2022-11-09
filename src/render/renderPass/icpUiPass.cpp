@@ -92,9 +92,9 @@ void icpUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResul
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	//ImGui::ShowDemoWindow();
+	ImGui::ShowDemoWindow();
 
-	m_editorUI->showEditorUI();
+	//m_editorUI->showEditorUI();
 
 	ImGui::Render();
 
