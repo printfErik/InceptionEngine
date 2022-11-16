@@ -38,6 +38,12 @@ public:
 		return m_sceneSystem->m_registry.get<T>(m_entityHandle);
 	}
 
+	template<typename T>
+	void uninstallComponent()
+	{
+		m_sceneSystem->m_registry.remove<T>(m_entityHandle);
+	}
+
 private:
 
 	entt::entity m_entityHandle;
