@@ -211,6 +211,10 @@ void icpWindowSystem::handleKeyEvent()
 		g_system_container.m_cameraSystem->moveCamera(camera, cameraOffset);
 }
 
+void icpWindowSystem::closeWindow() const
+{
+	glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+}
 
 
 INCEPTION_END_NAMESPACE

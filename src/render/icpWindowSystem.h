@@ -34,6 +34,7 @@ public:
 	GLFWwindow* getWindow() const;
 	bool shouldClose() const;
 	void pollEvent() const;
+	void closeWindow() const;
 
 	static void onKeyCallBack(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void onMouseButtonCallBack(GLFWwindow* window, int button, int action, int mods);
