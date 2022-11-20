@@ -28,7 +28,7 @@ void icpEditorUI::showEditorUI()
 	static bool dockingSpaceOpen = true;
 	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 	// because it would be confusing to have two docking targets within each others.
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	static ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
 
 	const ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -137,10 +137,15 @@ void icpEditorUI::showEditorUI()
 
 			ImGui::EndMenu();
 		}
+
 		ImGui::EndMainMenuBar();
+
+		ImGui::ShowDebugLogWindow();
 	}
 
-	ImGui::End();
+	
+
+	//ImGui::End();
 
 	showEntityHierarchy();
 }
