@@ -23,8 +23,14 @@ public:
 
 	void showDebugUI();
 
+	void createViewPortImage();
+
 private:
 	std::shared_ptr<icpEditorUI> m_editorUI;
+
+	std::vector<VkImage> m_viewPortImages;
+	std::vector<VkDeviceMemory> m_viewPortImageDeviceMemory;
+	std::vector<VkImageView> m_viewPortImageViews;
 };
 
 INCEPTION_END_NAMESPACE

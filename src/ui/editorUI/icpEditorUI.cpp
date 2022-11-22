@@ -143,8 +143,6 @@ void icpEditorUI::showEditorUI()
 		ImGui::ShowDebugLogWindow();
 	}
 
-	
-
 	//ImGui::End();
 
 	showEntityHierarchy();
