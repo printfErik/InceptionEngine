@@ -10,6 +10,7 @@ enum class eRenderPass
 {
 	MAIN_FORWARD_PASS = 0,
 	UI_PASS,
+	EDITOR_UI_PASS,
 	RENDER_PASS_COUNT
 };
 

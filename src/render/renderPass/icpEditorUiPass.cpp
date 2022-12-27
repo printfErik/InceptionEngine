@@ -7,6 +7,10 @@ void icpEditorUiPass::initializeRenderPass(RendePassInitInfo initInfo)
 {
 	m_rhi = initInfo.rhi;
 
+	m_editorUI = initInfo.editorUi;
+
+	createViewPortImage();
+
 	createRenderPass();
 	setupPipeline();
 	createFrameBuffers();
@@ -129,6 +133,42 @@ void icpEditorUiPass::createRenderPass()
 }
 
 void icpEditorUiPass::setupPipeline()
+{
+	
+}
+
+void icpEditorUiPass::cleanup()
+{
+	
+}
+
+void icpEditorUiPass::cleanupSwapChain()
+{
+	
+}
+
+icpEditorUiPass::~icpEditorUiPass()
+{
+	
+}
+
+void icpEditorUiPass::createFrameBuffers()
+{
+	
+}
+
+void icpEditorUiPass::recreateSwapChain()
+{
+	
+}
+
+
+void icpEditorUiPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
+{
+	
+}
+
+void icpEditorUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info)
 {
 	
 }

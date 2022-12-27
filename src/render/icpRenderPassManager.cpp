@@ -3,6 +3,7 @@
 #include "icpVulkanUtility.h"
 #include "renderPass/icpMainForwardPass.h"
 #include "renderPass/icpUiPass.h"
+#include "renderPass/icpEditorUiPass.h"
 
 #include <vulkan/vulkan.hpp>
 
@@ -37,11 +38,19 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 	uiPassInfo.rhi = m_rhi;
 	uiPassInfo.passType = eRenderPass::UI_PASS;
 	uiPassInfo.dependency = m_renderPasses[0];
-	uiPassInfo.editorUi = std::make_shared<icpEditorUI>();
 	std::shared_ptr<icpRenderPassBase> uiPass = std::make_shared<icpUiPass>();
 	uiPass->initializeRenderPass(uiPassInfo);
 
 	m_renderPasses.push_back(uiPass);
+
+	icpRenderPassBase::RendePassInitInfo editorUIInfo;
+	editorUIInfo.rhi = m_rhi;
+	editorUIInfo.passType = eRenderPass::EDITOR_UI_PASS;
+	editorUIInfo.editorUi = std::make_shared<icpEditorUI>();
+	std::shared_ptr<icpRenderPassBase> editorUIPass = std::make_shared<icpEditorUiPass>();
+	editorUIPass->initializeRenderPass(editorUIInfo);
+
+	m_renderPasses.push_back(editorUIPass);
 
 	return true;
 }
