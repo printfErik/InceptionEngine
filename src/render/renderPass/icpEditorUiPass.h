@@ -27,6 +27,8 @@ public:
 	VkSemaphore m_waitSemaphores[1];
 	VkPipelineStageFlags m_waitStages[1];
 
+	std::vector<VkFramebuffer> m_viewPortFramebuffers;
+
 private:
 	std::shared_ptr<icpEditorUI> m_editorUI;
 

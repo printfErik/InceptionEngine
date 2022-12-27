@@ -34,6 +34,7 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 
 	m_renderPasses.push_back(mainForwordPass);
 
+	/*
 	icpRenderPassBase::RendePassInitInfo uiPassInfo;
 	uiPassInfo.rhi = m_rhi;
 	uiPassInfo.passType = eRenderPass::UI_PASS;
@@ -42,6 +43,7 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 	uiPass->initializeRenderPass(uiPassInfo);
 
 	m_renderPasses.push_back(uiPass);
+	*/
 
 	icpRenderPassBase::RendePassInitInfo editorUIInfo;
 	editorUIInfo.rhi = m_rhi;
