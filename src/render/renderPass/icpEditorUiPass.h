@@ -29,6 +29,8 @@ public:
 
 	std::vector<VkFramebuffer> m_viewPortFramebuffers;
 
+	std::vector<VkDescriptorSet> m_Dset;
+
 private:
 	std::shared_ptr<icpEditorUI> m_editorUI;
 

@@ -3,10 +3,13 @@
 #include "../../mesh/icpMeshData.h"
 #include "../../core/icpSystemContainer.h"
 #include "../../core/icpConfigSystem.h"
+#include "../../mesh/icpMeshResource.h"
+#include "../../resource/icpResourceSystem.h"
+
+#include "backends/imgui_impl_vulkan.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-void icpEditorUiPass::initializeRenderPass(RendePassInitInfo initInfo)
+	void icpEditorUiPass::initializeRenderPass(RendePassInitInfo initInfo)
 {
 	m_rhi = initInfo.rhi;
 
@@ -17,6 +20,12 @@ void icpEditorUiPass::initializeRenderPass(RendePassInitInfo initInfo)
 	createRenderPass();
 	setupPipeline();
 	createFrameBuffers();
+
+	m_Dset.resize(m_viewPortImageViews.size());
+	for (uint32_t i = 0; i < m_viewPortImageViews.size(); i++)
+	{
+		m_Dset[i] = ImGui_ImplVulkan_AddTexture(m_rhi->m_textureSampler, m_viewPortImageViews[i], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	}
 }
 
 
@@ -359,7 +368,68 @@ void icpEditorUiPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_
 
 void icpEditorUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info)
 {
-	
+	vkResetCommandBuffer(m_rhi->m_viewportCommandBuffers[currentFrame], 0);
+
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+	if (vkBeginCommandBuffer(m_rhi->m_viewportCommandBuffers[currentFrame], &beginInfo) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to begin recording command buffer!");
+	}
+
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = m_renderPassObj;
+	renderPassInfo.framebuffer = m_viewPortFramebuffers[frameBufferIndex];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = m_rhi->m_swapChainExtent;
+
+	std::array<VkClearValue, 2> clearValues{};
+	clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+	clearValues[1].depthStencil = { 1.0f, 0 };
+
+	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+	renderPassInfo.pClearValues = clearValues.data();
+
+	vkCmdBeginRenderPass(m_rhi->m_viewportCommandBuffers[currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdBindPipeline(m_rhi->m_viewportCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
+
+	VkBuffer vertexBuffers[] = { m_rhi->m_vertexBuffer };
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(m_rhi->m_viewportCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+
+	vkCmdBindIndexBuffer(m_rhi->m_viewportCommandBuffers[currentFrame], m_rhi->m_indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindDescriptorSets(m_rhi->m_viewportCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &m_rhi->m_descriptorSets[currentFrame], 0, nullptr);
+
+	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["viking_room"]);
+	vkCmdDrawIndexed(m_rhi->m_viewportCommandBuffers[currentFrame], static_cast<uint32_t>(meshP->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
+
+	vkCmdEndRenderPass(m_rhi->m_viewportCommandBuffers[currentFrame]);
+
+	if (vkEndCommandBuffer(m_rhi->m_viewportCommandBuffers[currentFrame]) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to record command buffer!");
+	}
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &m_rhi->m_viewportCommandBuffers[currentFrame];
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &m_rhi->m_renderFinishedForPresentationSemaphores[currentFrame];
+
+	vkEndCommandBuffer(m_rhi->m_viewportCommandBuffers[currentFrame]);
+
+	info = submitInfo;
+
+	ImGui::Begin("Viewport");
+
+	ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+	ImGui::Image(m_Dset[currentFrame], ImVec2{ viewportPanelSize.x, viewportPanelSize.y });
+
+	ImGui::End();
 }
 
 

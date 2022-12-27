@@ -148,6 +148,7 @@ public:
 	std::vector<VkCommandBuffer> m_graphicsCommandBuffers;
 	std::vector<VkCommandBuffer> m_transferCommandBuffers;
 	std::vector<VkCommandBuffer> m_uiCommandBuffers;
+	std::vector<VkCommandBuffer> m_viewportCommandBuffers;
 
 	VkBuffer m_vertexBuffer;
 	VkBuffer m_indexBuffer;

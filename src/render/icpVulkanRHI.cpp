@@ -1162,6 +1162,18 @@ void icpVulkanRHI::allocateCommandBuffers()
 		throw std::runtime_error("failed to allocate ui command buffer!");
 	}
 
+	m_viewportCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	VkCommandBufferAllocateInfo viewportAllocInfo{};
+	viewportAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	viewportAllocInfo.commandPool = m_transferCommandPool;
+	viewportAllocInfo.commandBufferCount = (uint32_t)m_viewportCommandBuffers.size();
+	viewportAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	if (vkAllocateCommandBuffers(m_device, &viewportAllocInfo, m_viewportCommandBuffers.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate viewport command buffer!");
+	}
+
 }
 
 void icpVulkanRHI::createDescriptorSetLayout()
