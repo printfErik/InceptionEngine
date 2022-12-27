@@ -6,20 +6,49 @@
 #include "../../mesh/icpMeshResource.h"
 #include "../../resource/icpResourceSystem.h"
 
-#include "backends/imgui_impl_vulkan.h"
+#include <backends/imgui_impl_vulkan.h>
+#include <backends/imgui_impl_glfw.h>
 
 INCEPTION_BEGIN_NAMESPACE
-	void icpEditorUiPass::initializeRenderPass(RendePassInitInfo initInfo)
+
+void icpEditorUiPass::initializeRenderPass(RendePassInitInfo initInfo)
 {
 	m_rhi = initInfo.rhi;
 
 	m_editorUI = initInfo.editorUi;
 
+	m_rhi = initInfo.rhi;
 	createViewPortImage();
 
 	createRenderPass();
+
+	ImGui::CreateContext();
+
+	auto io = ImGui::GetIO();
+
+	auto window = g_system_container.m_windowSystem->getWindow();
+
+	ImGui_ImplGlfw_InitForVulkan(window, true);
+
+	ImGui_ImplVulkan_InitInfo info{};
+	info.Device = m_rhi->m_device;
+	info.DescriptorPool = m_rhi->m_descriptorPool;
+	info.ImageCount = 3;
+	info.Instance = m_rhi->m_instance;
+	info.MinImageCount = 3;
+	info.PhysicalDevice = m_rhi->m_physicalDevice;
+	info.Queue = m_rhi->m_graphicsQueue;
+	info.QueueFamily = m_rhi->m_queueIndices.m_graphicsFamily.value();
+	info.Subpass = 0;
+
+	ImGui_ImplVulkan_Init(&info, m_renderPassObj);
+
 	setupPipeline();
 	createFrameBuffers();
+
+	VkCommandBuffer command_buffer = icpVulkanUtility::beginSingleTimeCommands(m_rhi->m_uiCommandPool, m_rhi->m_device);
+	ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
+	icpVulkanUtility::endSingleTimeCommandsAndSubmit(command_buffer, m_rhi->m_graphicsQueue, m_rhi->m_uiCommandPool, m_rhi->m_device);
 
 	m_Dset.resize(m_viewPortImageViews.size());
 	for (uint32_t i = 0; i < m_viewPortImageViews.size(); i++)
@@ -419,8 +448,6 @@ void icpEditorUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, V
 	submitInfo.pCommandBuffers = &m_rhi->m_viewportCommandBuffers[currentFrame];
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &m_rhi->m_renderFinishedForPresentationSemaphores[currentFrame];
-
-	vkEndCommandBuffer(m_rhi->m_viewportCommandBuffers[currentFrame]);
 
 	info = submitInfo;
 
