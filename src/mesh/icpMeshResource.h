@@ -9,6 +9,8 @@ class icpMeshResource : public icpResourceBase
 {
 public:
 	icpMeshData m_meshData;
+
+	void prepareRenderResourceForMesh();
 };
 
 

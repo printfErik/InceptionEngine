@@ -37,15 +37,15 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createCommandPools();
 	createDepthResources();
 
-	createTextureImages();
-	createTextureSampler();
-	createObjModels();
-	createVertexBuffers();
-	createIndexBuffers();
-	createUniformBuffers();
+	//createTextureImages();
+	//createTextureSampler();
+	//createObjModels();
+	//createVertexBuffers();
+	//createIndexBuffers();
+	//createUniformBuffers();
 
 	createDescriptorPools();
-	allocateDescriptorSets();
+	//allocateDescriptorSets();
 	allocateCommandBuffers();
 
 	createSyncObjects();
@@ -1274,10 +1274,12 @@ void icpVulkanRHI::updateUniformBuffers(uint32_t _curImage)
 	ubo.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
 	ubo.projection[1][1] *= -1;
 
+	/*
 	void* data;
 	vkMapMemory(m_device, m_uniformBufferMem[_curImage], 0, sizeof(ubo), 0, &data);
 	memcpy(data, &ubo, sizeof(ubo));
 	vkUnmapMemory(m_device, m_uniformBufferMem[_curImage]);
+	*/
 }
 
 

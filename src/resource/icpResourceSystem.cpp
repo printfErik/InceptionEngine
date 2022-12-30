@@ -46,7 +46,7 @@ icpResourceSystem::~icpResourceSystem()
 
 }
 
-void icpResourceSystem::loadImageResource(const std::filesystem::path& imgPath)
+std::shared_ptr<icpResourceBase> icpResourceSystem::loadImageResource(const std::filesystem::path& imgPath)
 {
 	int width, height, channel;
 	stbi_uc* img = stbi_load(imgPath.string().data(),
@@ -61,15 +61,18 @@ void icpResourceSystem::loadImageResource(const std::filesystem::path& imgPath)
 	imgRes->setImageBuffer(img, width * height * STBI_rgb_alpha, width, height, STBI_rgb_alpha);
 
 	imgRes->m_mipmapLevel = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+	imgRes->m_resType = icpResourceType::TEXTURE;
 
 	auto resName = imgPath.stem().string();
 	resName = resName + "_img";
 	m_resources.m_allResources[icpResourceType::TEXTURE][resName] = imgRes;
 
+
 	stbi_image_free(img);
+	return imgRes;
 }
 
-void icpResourceSystem::loadObjModelResource(const std::filesystem::path& objPath)
+std::shared_ptr<icpResourceBase> icpResourceSystem::loadObjModelResource(const std::filesystem::path& objPath, bool ifLoadRelatedImgRes)
 {
 	auto objName = objPath.stem().string();
 	tinyobj::ObjReader reader;
@@ -121,11 +124,22 @@ void icpResourceSystem::loadObjModelResource(const std::filesystem::path& objPat
 			mesh.m_vertexIndices.push_back(uniqueVexticesMap[v]);
 		}
 	}
-	std::shared_ptr<icpResourceBase> simpleTri = std::make_shared<icpMeshResource>();
-	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(simpleTri);
-	meshP->m_meshData = mesh;
+	std::shared_ptr<icpResourceBase> modelRes = std::make_shared<icpMeshResource>();
+	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(modelRes);
 
-	m_resources.m_allResources[icpResourceType::MESH][objName] = simpleTri;
+	meshP->m_meshData = mesh;
+	meshP->m_resType = icpResourceType::MESH;
+
+	m_resources.m_allResources[icpResourceType::MESH][objName] = modelRes;
+
+	if (ifLoadRelatedImgRes)
+	{
+		auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / (objName + ".png");
+		auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->loadImageResource(imgPath));
+		mesh.m_imgRes = imgP;
+	}
+
+	return modelRes;
 }
 
 

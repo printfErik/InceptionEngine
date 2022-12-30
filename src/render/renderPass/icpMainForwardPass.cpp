@@ -5,10 +5,12 @@
 #include "../../resource/icpResourceSystem.h"
 #include "../../resource/icpResourceBase.h"
 #include "../../mesh/icpMeshResource.h"
+#include "../../mesh/icpMeshRendererComponent.h"
+#include "../../scene/icpEntity.h"
+#include "../../scene/icpSceneSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-icpMainForwardPass::~icpMainForwardPass()
+	icpMainForwardPass::~icpMainForwardPass()
 {
 	
 }
@@ -372,15 +374,31 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 	scissor.extent = m_rhi->m_swapChainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	std::vector<VkBuffer> vertexBuffers{ m_rhi->m_vertexBuffer };
 	std::vector<VkDeviceSize> offsets{ 0 };
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
 
-	vkCmdBindIndexBuffer(commandBuffer, m_rhi->m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+	std::vector<std::shared_ptr<icpGameEntity>> rootList;
+	g_system_container.m_sceneSystem->getRootEntityList(rootList);
 
-	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &m_rhi->m_descriptorSets[curFrame], 0, nullptr);
-	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH]["viking_room"]);
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshP->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
+	for (auto entity: rootList)
+	{
+		if (entity->hasComponent<icpMeshRendererComponent>())
+		{
+			auto meshResId = entity->accessComponent<icpMeshRendererComponent>().m_meshResId;
+			auto res = g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH][meshResId];
+			auto meshRes = dynamic_pointer_cast<icpMeshResource>(res);
+
+			auto vertBuf = meshRes->m_meshData.m_vertexBuffer;
+
+			auto descriptorSets = meshRes->m_meshData.m_descriptorSets;
+			std::vector<VkBuffer>vertexBuffers{ vertBuf };
+
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
+			vkCmdBindIndexBuffer(commandBuffer, m_rhi->m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshRes->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
+		}
+	}
 
 	vkCmdEndRenderPass(commandBuffer);
 

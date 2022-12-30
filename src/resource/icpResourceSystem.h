@@ -19,8 +19,8 @@ public:
 
 	~icpResourceSystem();
 
-	void loadImageResource(const std::filesystem::path& imgPath);
-	void loadObjModelResource(const std::filesystem::path& objPath);
+	std::shared_ptr<icpResourceBase> loadImageResource(const std::filesystem::path& imgPath);
+	std::shared_ptr<icpResourceBase> loadObjModelResource(const std::filesystem::path& objPath, bool ifLoadRelatedImgRes = false);
 
 	icpResourceContainer m_resources;
 

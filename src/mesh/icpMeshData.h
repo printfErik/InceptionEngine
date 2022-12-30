@@ -13,7 +13,9 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-struct icpVertex
+class icpImageResource;
+
+	struct icpVertex
 {
 	glm::vec3 position;
 	glm::vec3 color;
@@ -66,6 +68,41 @@ class icpMeshData
 public:
 	std::vector<icpVertex> m_vertices;
 	std::vector<uint32_t> m_vertexIndices;
+
+	std::vector<VkDescriptorSet> m_descriptorSets;
+
+	std::vector<VkBuffer> m_uniformBuffers;
+	std::vector<VkDeviceMemory> m_uniformBufferMem;
+
+	VkBuffer m_vertexBuffer;
+	VkBuffer m_indexBuffer;
+	VkDeviceMemory m_vertexBufferMem;
+	VkDeviceMemory m_indexBufferMem;
+
+	VkImage m_textureImage;
+	VkDeviceMemory m_textureBufferMem;
+	VkImageView m_textureImageView;
+	VkSampler m_textureSampler;
+
+	std::string m_meshName;
+
+	std::shared_ptr<icpImageResource> m_imgRes = nullptr;
+
+	void createVertexBuffers();
+	void createIndexBuffers();
+	void createUniformBuffers();
+
+
+	void allocateDescriptorSets();
+
+	void createTextureImages();
+	void createTextureImageViews(size_t mipmaplevel);
+	void createTextureSampler();
+
+	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipmapLevel);
+	void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t width, int32_t height, uint32_t mipmapLevels);
+	void copyBuffer2Image(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height);
+
 };
 
 INCEPTION_END_NAMESPACE
