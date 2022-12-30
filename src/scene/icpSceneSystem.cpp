@@ -19,7 +19,7 @@ INCEPTION_BEGIN_NAMESPACE
 
 void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
 {
-	loadSceneFromMapPath("D:\\InceptionEngine\\test\\testflat");
+	loadSceneFromMapPath("D:\\Softwares\\InceptionEngine\\test\\testflat");
 
 }
 
@@ -267,5 +267,10 @@ icpGameEntity icpSceneSystem::createEntityFromMap(const fb::flatbufferTreeNode* 
 	return entity;
 }
 
+
+void icpSceneSystem::getRootEntityList(std::vector<std::shared_ptr<icpGameEntity>>& list)
+{
+	list = m_sceneRoots;
+}
 
 INCEPTION_END_NAMESPACE

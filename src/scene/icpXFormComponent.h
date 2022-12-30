@@ -18,6 +18,7 @@ public:
 
 	std::vector<std::shared_ptr<icpXFormComponent>> m_children;
 
+	std::weak_ptr<icpGameEntity> m_entity;
 
 	glm::vec3 m_translation{ 0.f, 0.f, 0.f };
 	glm::vec3 m_rotation{ 0.f, 0.f, 0.f };

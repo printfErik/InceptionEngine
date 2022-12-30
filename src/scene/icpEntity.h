@@ -34,13 +34,14 @@ public:
 	template<typename T>
 	T& accessComponent()
 	{
-		assert(!hasComponent<T>());
+		assert(hasComponent<T>());
 		return m_sceneSystem->m_registry.get<T>(m_entityHandle);
 	}
 
 	template<typename T>
 	void uninstallComponent()
 	{
+		assert(hasComponent<T>());
 		m_sceneSystem->m_registry.remove<T>(m_entityHandle);
 	}
 

@@ -7,7 +7,7 @@ INCEPTION_BEGIN_NAMESPACE
 
 struct icpResourceContainer
 {
-	std::map<std::string, std::shared_ptr<icpResourceBase>> m_allResources;
+	std::map<icpResourceType, std::map<std::string, std::shared_ptr<icpResourceBase>>> m_allResources;
 };
 
 

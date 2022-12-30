@@ -64,7 +64,7 @@ void icpResourceSystem::loadImageResource(const std::filesystem::path& imgPath)
 
 	auto resName = imgPath.stem().string();
 	resName = resName + "_img";
-	m_resources.m_allResources[resName] = imgRes;
+	m_resources.m_allResources[icpResourceType::TEXTURE][resName] = imgRes;
 
 	stbi_image_free(img);
 }
@@ -125,7 +125,7 @@ void icpResourceSystem::loadObjModelResource(const std::filesystem::path& objPat
 	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(simpleTri);
 	meshP->m_meshData = mesh;
 
-	m_resources.m_allResources[objName] = simpleTri;
+	m_resources.m_allResources[icpResourceType::MESH][objName] = simpleTri;
 }
 
 

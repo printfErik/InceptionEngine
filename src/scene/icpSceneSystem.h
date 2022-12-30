@@ -23,6 +23,7 @@ public:
 
 	void saveScene(const std::filesystem::path& outPath);
 
+	void getRootEntityList(std::vector<std::shared_ptr<icpGameEntity>>& list);
 
 	entt::registry m_registry;
 
@@ -35,6 +36,8 @@ private:
 	void recursiveAddNodeToHierarchy(const fb::flatbufferTreeNode* node, std::shared_ptr<icpGameEntity> parent);
 
 	icpGameEntity createEntityFromMap(const fb::flatbufferTreeNode* node);
+
+
 };
 
 

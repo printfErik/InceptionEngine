@@ -7,6 +7,8 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
+class icpGameEntity;
+
 class icpEditorUI
 {
 public:
@@ -14,6 +16,8 @@ public:
 	~icpEditorUI();
 
 	void showEditorUI();
+	void showEditorDockingSpaceUI();
+	void recursiveAddEntityToHierarchy(std::shared_ptr<icpGameEntity> entity);
 
 private:
 

@@ -3,6 +3,9 @@
 #include "../../render/icpWindowSystem.h"
 #include "../../scene/icpSceneSystem.h"
 #include "../../resource/icpResourceSystem.h"
+#include "../../scene/icpEntity.h"
+#include "../../scene/icpEntityDataComponent.h"
+#include "../../scene/icpXFormComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -22,7 +25,7 @@ bool checkFilePath(const std::string path)
 	return true;
 }
 
-void icpEditorUI::showEditorUI()
+void icpEditorUI::showEditorDockingSpaceUI()
 {
 	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 	static bool dockingSpaceOpen = true;
@@ -143,17 +146,131 @@ void icpEditorUI::showEditorUI()
 		ImGui::ShowDebugLogWindow();
 	}
 
-	//ImGui::End();
-
 	showEntityHierarchy();
 }
 
 void icpEditorUI::showEntityHierarchy()
 {
-	//ImGui::begin
+	ImGuiTabBarFlags hierarchyTabBarFlags = ImGuiTabBarFlags_Reorderable;
+	if (ImGui::BeginTabBar("TabBar", hierarchyTabBarFlags))
+	{
+		if (ImGui::BeginTabItem("Entity Hierarchy"))
+		{
+			std::vector<std::shared_ptr<icpGameEntity>> rootList;
+			g_system_container.m_sceneSystem->getRootEntityList(rootList);
 
-
+			for (auto& entity : rootList)
+			{
+				recursiveAddEntityToHierarchy(entity);
+			}
+			ImGui::EndTabItem();
+		}
+		ImGui::EndTabBar();
+	}
 }
+
+void icpEditorUI::recursiveAddEntityToHierarchy(std::shared_ptr<icpGameEntity> entity)
+{
+	auto&& entityData = entity->accessComponent<icpEntityDataComponent>();
+	if (ImGui::TreeNode(entityData.m_name.c_str()))
+	{
+		auto children = entity->accessComponent<icpXFormComponent>().m_children;
+		for (auto& child: children)
+		{
+			recursiveAddEntityToHierarchy(child->m_entity.lock());
+		}
+		ImGui::TreePop();
+	}
+}
+
+void icpEditorUI::showEditorUI()
+{
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("Close"))
+			{
+				g_system_container.m_windowSystem->closeWindow();
+			}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Entity"))
+		{
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Component"))
+		{
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Resources"))
+		{
+			static char Path[64] = "";
+			ImGui::InputText("Load Model File Path", Path, 64);
+			if (ImGui::Button("Load Obj Files"))
+			{
+				if (std::strlen(Path) == 0 || !checkFilePath(std::string()))
+				{
+					ImGui::SameLine();
+					ImGui::Text("File Path is not Legal!");
+				}
+				else
+				{
+					g_system_container.m_resourceSystem->loadObjModelResource(Path);
+				}
+			}
+
+			static char ImagePath[64] = "";
+			ImGui::InputText("Load Image File Path", ImagePath, 64);
+			if (ImGui::Button("Load Img Files"))
+			{
+				if (std::strlen(ImagePath) == 0 || !checkFilePath(std::string()))
+				{
+					ImGui::SameLine();
+					ImGui::Text("File Path is not Legal!");
+				}
+				else
+				{
+					g_system_container.m_resourceSystem->loadImageResource(ImagePath);
+				}
+			}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Debug Tool"))
+		{
+			if (ImGui::TreeNode("Save files"))
+			{
+				static char buf1[64] = "";
+				ImGui::InputText("Out File Path", buf1, 64);
+
+				if (ImGui::Button("Save default scene to File"))
+				{
+					if (std::strlen(buf1) == 0 || !checkFilePath(std::string()))
+					{
+						ImGui::SameLine();
+						ImGui::Text("File Path is not Legal!");
+					}
+					else
+					{
+						g_system_container.m_sceneSystem->saveScene(buf1);
+					}
+				}
+				ImGui::TreePop();
+			}
+
+			ImGui::EndMenu();
+		}
+
+		ImGui::EndMainMenuBar();
+	}
+
+	showEntityHierarchy();
+}
+
 
 
 

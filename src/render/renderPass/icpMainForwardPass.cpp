@@ -3,6 +3,7 @@
 #include "../../core/icpSystemContainer.h"
 #include "../../core/icpConfigSystem.h"
 #include "../../resource/icpResourceSystem.h"
+#include "../../resource/icpResourceBase.h"
 #include "../../mesh/icpMeshResource.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -378,7 +379,7 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 	vkCmdBindIndexBuffer(commandBuffer, m_rhi->m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &m_rhi->m_descriptorSets[curFrame], 0, nullptr);
-	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["viking_room"]);
+	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH]["viking_room"]);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshP->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);

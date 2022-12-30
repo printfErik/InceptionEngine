@@ -9,6 +9,8 @@
 #include <backends/imgui_impl_vulkan.h>
 #include <backends/imgui_impl_glfw.h>
 
+#include "../../ui/editorUI/icpEditorUI.h"
+
 INCEPTION_BEGIN_NAMESPACE
 
 icpEditorUiPass::~icpEditorUiPass()
@@ -152,9 +154,8 @@ void icpEditorUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, V
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow();
-
-	//m_editorUI->showEditorUI();
+	//ImGui::ShowDemoWindow();
+	m_editorUI->showEditorUI();
 
 	ImGui::Render();
 

@@ -739,7 +739,7 @@ void icpVulkanRHI::createObjModels()
 
 void icpVulkanRHI::createVertexBuffers()
 {
-	auto objPair = *(g_system_container.m_resourceSystem->m_resources.m_allResources.begin());
+	auto objPair = *(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH].begin());
 	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(objPair.second);
 
 	auto bufferSize = sizeof(meshP->m_meshData.m_vertices[0]) * meshP->m_meshData.m_vertices.size();
@@ -780,7 +780,7 @@ void icpVulkanRHI::createVertexBuffers()
 
 void icpVulkanRHI::createIndexBuffers()
 {
-	auto objPair = *(g_system_container.m_resourceSystem->m_resources.m_allResources.begin());
+	auto objPair = *(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH].begin());
 	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(objPair.second);
 
 	VkDeviceSize bufferSize = sizeof(meshP->m_meshData.m_vertexIndices[0]) * meshP->m_meshData.m_vertexIndices.size();
@@ -848,7 +848,7 @@ void icpVulkanRHI::createTextureImages()
 	auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / "viking_room.png";
 	g_system_container.m_resourceSystem->loadImageResource(imgPath);
 
-	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["viking_room_img"]);
+	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::TEXTURE]["viking_room_img"]);
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMem;
@@ -924,7 +924,7 @@ void icpVulkanRHI::createTextureSampler()
 	sampler.compareEnable = VK_FALSE;
 	sampler.compareOp = VK_COMPARE_OP_ALWAYS;
 
-	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources["viking_room_img"]);
+	auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::TEXTURE]["viking_room_img"]);
 	sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	sampler.mipLodBias = 0.0f;
 	sampler.minLod = 0.0f;
@@ -1162,7 +1162,8 @@ void icpVulkanRHI::allocateCommandBuffers()
 		throw std::runtime_error("failed to allocate ui command buffer!");
 	}
 
-	m_viewportCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	
+	/*m_viewportCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 	VkCommandBufferAllocateInfo viewportAllocInfo{};
 	viewportAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	viewportAllocInfo.commandPool = m_transferCommandPool;
@@ -1172,10 +1173,11 @@ void icpVulkanRHI::allocateCommandBuffers()
 	if (vkAllocateCommandBuffers(m_device, &viewportAllocInfo, m_viewportCommandBuffers.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate viewport command buffer!");
-	}
+	}*/
 
 }
 
+// TODO: should be related to each objects
 void icpVulkanRHI::createDescriptorSetLayout()
 {
 	VkDescriptorSetLayoutBinding uboLayoutBinding{};
