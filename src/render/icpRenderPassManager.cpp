@@ -2,7 +2,6 @@
 #include "icpVulkanRHI.h"
 #include "icpVulkanUtility.h"
 #include "renderPass/icpMainForwardPass.h"
-#include "renderPass/icpUiPass.h"
 #include "renderPass/icpEditorUiPass.h"
 
 #include <vulkan/vulkan.hpp>
@@ -34,16 +33,15 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 
 	m_renderPasses.push_back(mainForwordPass);
 
-	/*
-	icpRenderPassBase::RendePassInitInfo uiPassInfo;
-	uiPassInfo.rhi = m_rhi;
-	uiPassInfo.passType = eRenderPass::UI_PASS;
-	uiPassInfo.dependency = m_renderPasses[0];
-	std::shared_ptr<icpRenderPassBase> uiPass = std::make_shared<icpUiPass>();
-	uiPass->initializeRenderPass(uiPassInfo);
+	
+	/*icpRenderPassBase::RendePassInitInfo copyPassInfo;
+	copyPassInfo.rhi = m_rhi;
+	copyPassInfo.passType = eRenderPass::COPY_PASS;
+	std::shared_ptr<icpRenderPassBase> copyPass = std::make_shared<icpRenderToImgPass>();
+	copyPass->initializeRenderPass(copyPassInfo);
 
-	m_renderPasses.push_back(uiPass);
-	*/
+	m_renderPasses.push_back(copyPass);*/
+	
 
 	icpRenderPassBase::RendePassInitInfo editorUIInfo;
 	editorUIInfo.rhi = m_rhi;

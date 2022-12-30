@@ -21,15 +21,8 @@ public:
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex);
 	void createFrameBuffers();
 
-	void showDebugUI();
-
-	void createViewPortImage();
-
 private:
 
-	std::vector<VkImage> m_viewPortImages;
-	std::vector<VkDeviceMemory> m_viewPortImageDeviceMemory;
-	std::vector<VkImageView> m_viewPortImageViews;
 };
 
 INCEPTION_END_NAMESPACE

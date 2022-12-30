@@ -18,25 +18,22 @@ public:
 	void createFrameBuffers();
 
 	void createRenderPass();
-	void cleanupSwapChain();
-	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
+
+	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex);
 	void recreateSwapChain() override;
 
-	void createViewPortImage();
+	//void createViewPortImage();
 
-	VkSemaphore m_waitSemaphores[1];
-	VkPipelineStageFlags m_waitStages[1];
+	//std::vector<VkFramebuffer> m_viewPortFramebuffers;
 
-	std::vector<VkFramebuffer> m_viewPortFramebuffers;
-
-	std::vector<VkDescriptorSet> m_Dset;
+	//std::vector<VkDescriptorSet> m_Dset;
 
 private:
 	std::shared_ptr<icpEditorUI> m_editorUI;
 
-	std::vector<VkImage> m_viewPortImages;
-	std::vector<VkDeviceMemory> m_viewPortImageDeviceMemory;
-	std::vector<VkImageView> m_viewPortImageViews;
+	//std::vector<VkImage> m_viewPortImages;
+	//std::vector<VkDeviceMemory> m_viewPortImageDeviceMemory;
+	//std::vector<VkImageView> m_viewPortImageViews;
 
 };
 
