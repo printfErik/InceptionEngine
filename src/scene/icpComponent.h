@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../core/icpMacros.h"
+#include "icpEntity.h"
+
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -10,7 +12,7 @@ public:
 	icpComponentBase();
 	virtual ~icpComponentBase();
 
-
+	icpGameEntity* m_possessor;
 
 private:
 

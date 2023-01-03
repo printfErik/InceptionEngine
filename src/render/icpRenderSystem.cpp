@@ -1,6 +1,7 @@
 #include "icpRenderSystem.h"
 #include "icpVulkanRHI.h"
 #include "../core/icpSystemContainer.h"
+#include "../scene/icpSceneSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -34,5 +35,11 @@ void icpRenderSystem::setFrameBufferResized(bool _isResized)
 {
 	std::dynamic_pointer_cast<icpVulkanRHI>(m_rhi)->m_framebufferResized = _isResized;
 }
+
+void icpRenderSystem::getAllStaticMeshRenderers()
+{
+	
+}
+
 
 INCEPTION_END_NAMESPACE

@@ -10,6 +10,7 @@
 #include "../../scene/icpSceneSystem.h"
 #include "../icpCameraSystem.h"
 #include "../../scene/icpXFormComponent.h"
+#include "../icpRenderSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
 	icpMainForwardPass::~icpMainForwardPass()
@@ -436,36 +437,33 @@ void icpMainForwardPass::updateMeshUniformBuffers(uint32_t curFrame)
 {
 	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
 
-	std::vector<std::shared_ptr<icpGameEntity>> rootList;
-	g_system_container.m_sceneSystem->getRootEntityList(rootList);
-	for (auto entity : rootList)
+	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
+
+	for (auto entity: view)
 	{
-		if (entity->hasComponent<icpMeshRendererComponent>())
-		{
-			auto& meshResId = entity->accessComponent<icpMeshRendererComponent>().m_meshResId;
-			auto res = g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH][meshResId];
-			auto meshRes = dynamic_pointer_cast<icpMeshResource>(res);
+		auto& meshRenderer = view.get<icpMeshRendererComponent>(entity);
+		auto& meshResId = meshRenderer.m_meshResId;
+		auto res = g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH][meshResId];
+		auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(res);
 
-			auto& xformComp = entity->accessComponent<icpXFormComponent>();
+		auto& xformComp = view.get<icpXFormComponent>(entity);
 
-			UniformBufferObject ubo{};
-			auto firstRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(0.f, 0.f, 1.f));
-			auto secondRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(1.f, 0.f, 0.f));
+		UniformBufferObject ubo{};
+		auto firstRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(0.f, 0.f, 1.f));
+		auto secondRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(1.f, 0.f, 0.f));
 
+		ubo.model = secondRotate * firstRotate;
 
-			ubo.model = secondRotate * firstRotate;
+		ubo.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
+		auto aspectRatio = m_rhi->m_swapChainExtent.width / (float)m_rhi->m_swapChainExtent.height;
+		ubo.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
+		ubo.projection[1][1] *= -1;
 
-			ubo.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
-			auto aspectRatio = m_rhi->m_swapChainExtent.width / (float)m_rhi->m_swapChainExtent.height;
-			ubo.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
-			ubo.projection[1][1] *= -1;
+		void* data;
+		vkMapMemory(m_rhi->m_device, meshRes->m_meshData.m_uniformBufferMem[curFrame], 0, sizeof(ubo), 0, &data);
+		memcpy(data, &ubo, sizeof(ubo));
+		vkUnmapMemory(m_rhi->m_device, meshRes->m_meshData.m_uniformBufferMem[curFrame]);
 
-			void* data;
-			vkMapMemory(m_rhi->m_device, meshRes->m_meshData.m_uniformBufferMem[curFrame], 0, sizeof(ubo), 0, &data);
-			memcpy(data, &ubo, sizeof(ubo));
-			vkUnmapMemory(m_rhi->m_device, meshRes->m_meshData.m_uniformBufferMem[curFrame]);
-
-		}
 	}
 }
 

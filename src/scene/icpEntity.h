@@ -14,14 +14,14 @@ public:
 	icpGameEntity();
 	virtual ~icpGameEntity() = default;
 
-	void initializeEntity(entt::entity entityHandle, icpSceneSystem* sceneSystem);
+	void initializeEntity(entt::entity entityHandle, icpSceneSystem* sceneSystem, bool isRoot = false);
 
 	template<typename T, typename... Args>
 	T& installComponent(Args&&... args)
 	{
 		assert(!hasComponent<T>());
 		T& component = m_sceneSystem->m_registry.emplace<T>(m_entityHandle, std::forward<Args>(args)...);
-		//m_sceneSystem->OnComponentAdded<T>(*this, component);
+		component.m_possessor = this;
 		return component;
 	}
 

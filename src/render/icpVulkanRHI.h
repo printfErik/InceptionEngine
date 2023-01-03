@@ -130,19 +130,6 @@ public:
 	std::vector<VkCommandBuffer> m_uiCommandBuffers;
 	/*std::vector<VkCommandBuffer> m_viewportCommandBuffers;*/
 
-	VkBuffer m_vertexBuffer;
-	VkBuffer m_indexBuffer;
-	std::vector<VkBuffer> m_uniformBuffers;
-
-	VkDeviceMemory m_vertexBufferMem;
-	VkDeviceMemory m_indexBufferMem;
-	std::vector<VkDeviceMemory> m_uniformBufferMem;
-
-	VkImage m_textureImage;
-	VkDeviceMemory m_textureBufferMem;
-	VkImageView m_textureImageView;
-	VkSampler m_textureSampler;
-
 	VkImage m_depthImage;
 	VkDeviceMemory m_depthBufferMem;
 	VkImageView m_depthImageView;
@@ -153,7 +140,6 @@ public:
 
 	VkDescriptorSetLayout m_descriptorSetLayout{ VK_NULL_HANDLE };
 	VkDescriptorPool m_descriptorPool{ VK_NULL_HANDLE };
-	std::vector<VkDescriptorSet> m_descriptorSets;
 
 	bool m_framebufferResized = false;
 

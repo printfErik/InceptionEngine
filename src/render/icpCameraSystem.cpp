@@ -33,9 +33,13 @@ void icpCameraSystem::initialize()
 	auto cameraView = g_system_container.m_sceneSystem->m_registry.view<icpCameraComponent>();
 	if (cameraView.empty())
 	{
-		std::shared_ptr<icpCameraComponent> firstCamera = std::make_shared<icpCameraComponent>();
-		firstCamera->initializeCamera();
-		m_cameras.push_back(firstCamera);
+		icpGameEntity entity = g_system_container.m_sceneSystem->createEntity("EditorCamera", true);
+
+		auto& firstCamera = entity.installComponent<icpCameraComponent>();
+		firstCamera.initializeCamera();
+		std::shared_ptr<icpCameraComponent> pCamera = std::make_shared<icpCameraComponent>(firstCamera);
+		m_cameras.push_back(pCamera);
+
 		return;
 	}
 

@@ -6,6 +6,7 @@
 #include "../mesh/icpMeshRendererComponent.h"
 #include "../mesh/icpMeshResource.h"
 #include "../resource/icpResourceSystem.h"
+#include "../core/icpSystemContainer.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -17,18 +18,19 @@
 #include <fstream>
 #include <iostream>
 
-INCEPTION_BEGIN_NAMESPACE
+#include "../render/icpRenderSystem.h"
 
-void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
+INCEPTION_BEGIN_NAMESPACE
+	void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
 {
 	//loadSceneFromMapPath("D:\\Softwares\\InceptionEngine\\test\\testflat");
 
 }
 
-icpGameEntity icpSceneSystem::createEntity(const std::string& name)
+icpGameEntity icpSceneSystem::createEntity(const std::string& name, bool isRoot)
 {
 	icpGameEntity entity;
-	entity.initializeEntity(m_registry.create(), this);
+	entity.initializeEntity(m_registry.create(), this, isRoot);
 	auto&& entityData = entity.installComponent<icpEntityDataComponent>();
 	entityData.m_name = name;
 	entityData.m_guid = icpGuid();
@@ -281,7 +283,7 @@ void icpSceneSystem::createMeshEnityFromResource(std::shared_ptr<icpResourceBase
 	dynamic_pointer_cast<icpMeshResource>(meshRes)->prepareRenderResourceForMesh();
 
 	icpGameEntity entity;
-	entity.initializeEntity(m_registry.create(), this);
+	entity.initializeEntity(m_registry.create(), this, true);
 
 	auto&& entityData = entity.installComponent<icpEntityDataComponent>();
 	entityData.m_name = meshRes->m_id;
@@ -290,10 +292,9 @@ void icpSceneSystem::createMeshEnityFromResource(std::shared_ptr<icpResourceBase
 	auto&& xform = entity.installComponent<icpXFormComponent>();
 	
 	auto&& mesh = entity.installComponent<icpMeshRendererComponent>();
+
 	mesh.m_meshResId = meshRes->m_id;
 	mesh.m_texResId = meshRes->m_id + "_img";
-
-	m_sceneRoots.push_back(std::make_shared<icpGameEntity>(entity));
 }
 
 
