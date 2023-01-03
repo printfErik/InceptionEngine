@@ -70,6 +70,16 @@ public:
 		const char* filePath,
 		VkDevice device
 	);
+
+	static void copyBuffer(VkBuffer srcBuffer,
+		VkBuffer dstBuffer,
+		VkDeviceSize size,
+		VkDevice device,
+		VkCommandPool cbp,
+		VkQueue queue
+	);
+
+
 };
 
 

@@ -129,6 +129,7 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::loadObjModelResource(const s
 
 	meshP->m_meshData = mesh;
 	meshP->m_resType = icpResourceType::MESH;
+	meshP->m_id = objName;
 
 	m_resources.m_allResources[icpResourceType::MESH][objName] = modelRes;
 
@@ -136,7 +137,7 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::loadObjModelResource(const s
 	{
 		auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / (objName + ".png");
 		auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->loadImageResource(imgPath));
-		mesh.m_imgRes = imgP;
+		meshP->m_meshData.m_imgRes = imgP;
 	}
 
 	return modelRes;

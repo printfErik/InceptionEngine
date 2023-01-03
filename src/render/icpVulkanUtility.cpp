@@ -244,5 +244,23 @@ VkShaderModule icpVulkanUtility::createShaderModule(const char* shaderFileName, 
 	return shader;
 }
 
+void icpVulkanUtility::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDevice device, VkCommandPool cbp, VkQueue queue)
+{
+	VkCommandBuffer commandBuffer = icpVulkanUtility::beginSingleTimeCommands(cbp, device);
+
+	VkBufferCopy copyRegin{};
+	copyRegin.srcOffset = 0;
+	copyRegin.dstOffset = 0;
+	copyRegin.size = size;
+	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegin);
+
+	icpVulkanUtility::endSingleTimeCommandsAndSubmit(
+		commandBuffer,
+		queue,
+		cbp,
+		device
+	);
+}
+
 
 INCEPTION_END_NAMESPACE

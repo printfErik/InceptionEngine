@@ -380,9 +380,16 @@ void icpMeshData::createVertexBuffers()
 		m_vertexBuffer,
 		m_vertexBufferMem,
 		vulkanRHI->m_device,
-		vulkanRHI->m_physicalDevice);
+		vulkanRHI->m_physicalDevice
+	);
 
-	vulkanRHI->copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
+	icpVulkanUtility::copyBuffer(stagingBuffer, 
+		m_vertexBuffer, 
+		bufferSize,
+		vulkanRHI->m_device,
+		vulkanRHI->m_transferCommandPool,
+		vulkanRHI->m_transferQueue
+	);
 
 	vkDestroyBuffer(vulkanRHI->m_device, stagingBuffer, nullptr);
 	vkFreeMemory(vulkanRHI->m_device, stagingBufferMem, nullptr);
@@ -423,7 +430,13 @@ void icpMeshData::createIndexBuffers()
 		vulkanRHI->m_device,
 		vulkanRHI->m_physicalDevice);
 
-	vulkanRHI->copyBuffer(stagingBuffer, m_indexBuffer, bufferSize);
+	icpVulkanUtility::copyBuffer(stagingBuffer,
+		m_indexBuffer,
+		bufferSize,
+		vulkanRHI->m_device,
+		vulkanRHI->m_transferCommandPool,
+		vulkanRHI->m_transferQueue
+	);
 
 	vkDestroyBuffer(vulkanRHI->m_device, stagingBuffer, nullptr);
 	vkFreeMemory(vulkanRHI->m_device, stagingBufferMem, nullptr);

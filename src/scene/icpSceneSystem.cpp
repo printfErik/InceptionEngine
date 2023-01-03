@@ -21,7 +21,7 @@ INCEPTION_BEGIN_NAMESPACE
 
 void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
 {
-	loadSceneFromMapPath("D:\\Softwares\\InceptionEngine\\test\\testflat");
+	//loadSceneFromMapPath("D:\\Softwares\\InceptionEngine\\test\\testflat");
 
 }
 
@@ -292,7 +292,10 @@ void icpSceneSystem::createMeshEnityFromResource(std::shared_ptr<icpResourceBase
 	auto&& mesh = entity.installComponent<icpMeshRendererComponent>();
 	mesh.m_meshResId = meshRes->m_id;
 	mesh.m_texResId = meshRes->m_id + "_img";
+
+	m_sceneRoots.push_back(std::make_shared<icpGameEntity>(entity));
 }
+
 
 
 INCEPTION_END_NAMESPACE

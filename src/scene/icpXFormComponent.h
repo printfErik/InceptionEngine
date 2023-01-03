@@ -2,13 +2,15 @@
 
 #include "../core/icpMacros.h"
 #include "../core/icpGuid.h"
+#include "icpComponent.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-INCEPTION_BEGIN_NAMESPACE
+#include "icpEntity.h"
 
-class icpXFormComponent : public icpComponentBase
+INCEPTION_BEGIN_NAMESPACE
+	class icpXFormComponent : public icpComponentBase
 {
 public:
 	icpXFormComponent() = default;

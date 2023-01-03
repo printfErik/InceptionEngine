@@ -61,15 +61,10 @@ public:
 	void createSwapChain();
 	void createSwapChainImageViews();
 
-	void updateUniformBuffers(uint32_t _curImage);
-
 	void createDepthResources();
-	void createUniformBuffers();
 	void createDescriptorPools();
-	void allocateDescriptorSets();
 
 	void allocateCommandBuffers();
-	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 private:
 	void createInstance();
@@ -80,24 +75,9 @@ private:
 	
 	void createCommandPools();
 
-	void createObjModels();
-	void createVertexBuffers();
-	void createIndexBuffers();
-	
-	void createTextureImages();
-	void createTextureImageViews(size_t mipmaplevel);
-	void createTextureSampler();
-
-	void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t width, int32_t height, uint32_t mipmapLevels);
-
 	void createSyncObjects();
 	void createDescriptorSetLayout();
 
-	
-	void copyBuffer2Image(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height);
-
-	void transitionImageLayout(VkImage image, VkFormat format,
-		VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipmapLevel);
 
 	bool checkValidationLayerSupport();
 

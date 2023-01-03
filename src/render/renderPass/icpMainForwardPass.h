@@ -26,7 +26,7 @@ public:
 	VkPipelineStageFlags m_waitStages[1];
 private:
 
-	
+	void updateMeshUniformBuffers(uint32_t curFrame);
 };
 
 INCEPTION_END_NAMESPACE
