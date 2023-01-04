@@ -18,9 +18,9 @@ public:
 	void showEditorUI();
 	void showEditorDockingSpaceUI();
 	void recursiveAddEntityToHierarchy(std::shared_ptr<icpGameEntity> entity);
-
+	
 private:
-
+	void showEntityRightClickMenu(const char* entityName);
 	void showEntityHierarchy();
 };
 

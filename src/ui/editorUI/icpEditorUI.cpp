@@ -181,6 +181,27 @@ void icpEditorUI::recursiveAddEntityToHierarchy(std::shared_ptr<icpGameEntity> e
 		}
 		ImGui::TreePop();
 	}
+	showEntityRightClickMenu(entityData.m_name.c_str());
+}
+
+void icpEditorUI::showEntityRightClickMenu(const char* entityName)
+{
+	if(ImGui::BeginPopupContextItem(entityName))
+	{
+		if (ImGui::MenuItem("Delete"))
+		{
+			
+		}
+		if (ImGui::MenuItem("Copy"))
+		{
+
+		}
+		if (ImGui::MenuItem("Cut"))
+		{
+
+		}
+		ImGui::EndPopup();
+	}
 }
 
 void icpEditorUI::showEditorUI()
