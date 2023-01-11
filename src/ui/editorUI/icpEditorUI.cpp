@@ -6,6 +6,7 @@
 #include "../../scene/icpEntity.h"
 #include "../../scene/icpEntityDataComponent.h"
 #include "../../scene/icpXFormComponent.h"
+#include "../../render/icpRenderSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
 

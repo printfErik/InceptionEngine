@@ -7,12 +7,6 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-enum class ePrimitiveType
-{
-	CUBE = 0,
-	SPHERE = 1,
-	NONE = 9999
-};
 
 class icpMeshRendererComponent : public icpComponentBase
 {
@@ -22,8 +16,6 @@ public:
 
 	std::string m_meshResId;
 	std::string m_texResId;
-
-	ePrimitiveType m_primitive = ePrimitiveType::NONE;
 };
 
 

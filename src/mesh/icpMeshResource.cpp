@@ -18,6 +18,10 @@ void icpMeshResource::prepareRenderResourceForMesh()
 void icpMeshResource::prepareRenderResourceForPrimitive(ePrimitiveType type)
 {
 	m_meshData.fillInPrimitiveData(type);
+
+
+	m_meshData.createUniformBuffers();
+	m_meshData.allocateDescriptorSets();
 }
 
 
