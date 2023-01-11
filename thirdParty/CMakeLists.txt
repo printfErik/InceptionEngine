@@ -40,3 +40,8 @@ if (NOT TARGET FlatBuffers)
 	add_subdirectory(Flatbuffers)
 	set_target_properties(FlatBuffers PROPERTIES FOLDER ${third_party_folder}/flatbuffers)
 endif()
+
+if (NOT TARGET spdlog)
+	add_subdirectory(spdlog)
+	set_target_properties(spdlog PROPERTIES FOLDER ${third_party_folder}/spdlog)
+endif()

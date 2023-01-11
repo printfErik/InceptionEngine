@@ -12,6 +12,7 @@ class icpResourceSystem;
 class icpCameraSystem;
 class icpUiSystem;
 class icpSceneSystem;
+class icpLogSystem;
 
 class icpSystemContainer 
 {
@@ -21,6 +22,7 @@ public:
 
 	void shutdownAllSystems();
 
+	std::shared_ptr<icpLogSystem> m_logSystem;
 	std::shared_ptr<icpConfigSystem> m_configSystem;
 	std::shared_ptr<icpWindowSystem> m_windowSystem;
 	std::shared_ptr<icpCameraSystem> m_cameraSystem;

@@ -4,6 +4,7 @@
 #include "../render/icpCameraSystem.h"
 #include "../resource/icpResourceSystem.h"
 #include "../scene/icpSceneSystem.h"
+#include "icpLogSystem.h"
 
 #include "icpConfigSystem.h"
 #include "../ui/icpUiSystem.h"
@@ -19,6 +20,8 @@ static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
 
 void icpSystemContainer::initializeAllSystems(const std::filesystem::path& _configFilePath)
 {
+	m_logSystem = std::make_shared<icpLogSystem>();
+
 	m_configSystem = std::make_shared<icpConfigSystem>(_configFilePath);
 
 	m_resourceSystem = std::make_shared<icpResourceSystem>();
@@ -48,6 +51,7 @@ void icpSystemContainer::shutdownAllSystems()
 	m_cameraSystem.reset();
 	m_resourceSystem.reset();
 	m_configSystem.reset();
+	m_logSystem.reset();
 }
 
 INCEPTION_END_NAMESPACE
