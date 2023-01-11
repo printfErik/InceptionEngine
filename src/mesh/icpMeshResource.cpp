@@ -15,5 +15,11 @@ void icpMeshResource::prepareRenderResourceForMesh()
 }
 
 
+void icpMeshResource::prepareRenderResourceForPrimitive(ePrimitiveType type)
+{
+	m_meshData.fillInPrimitiveData(type);
+}
+
+
 
 INCEPTION_END_NAMESPACE

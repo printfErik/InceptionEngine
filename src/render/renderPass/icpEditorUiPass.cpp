@@ -25,28 +25,7 @@ void icpEditorUiPass::initializeRenderPass(RendePassInitInfo initInfo)
 	m_editorUI = initInfo.editorUi;
 
 	createRenderPass();
-
-	ImGui::CreateContext();
-
-	auto io = ImGui::GetIO();
-
-	auto window = g_system_container.m_windowSystem->getWindow();
-
-	ImGui_ImplGlfw_InitForVulkan(window, true);
-
-	ImGui_ImplVulkan_InitInfo info{};
-	info.Device = m_rhi->m_device;
-	info.DescriptorPool = m_rhi->m_descriptorPool;
-	info.ImageCount = 3;
-	info.Instance = m_rhi->m_instance;
-	info.MinImageCount = 3;
-	info.PhysicalDevice = m_rhi->m_physicalDevice;
-	info.Queue = m_rhi->m_graphicsQueue;
-	info.QueueFamily = m_rhi->m_queueIndices.m_graphicsFamily.value();
-	info.Subpass = 0;
-
-	ImGui_ImplVulkan_Init(&info, m_renderPassObj);
-
+	setupPipeline();
 	createFrameBuffers();
 
 	VkCommandBuffer command_buffer = icpVulkanUtility::beginSingleTimeCommands(m_rhi->m_uiCommandPool, m_rhi->m_device);
@@ -205,7 +184,26 @@ void icpEditorUiPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_
 
 void icpEditorUiPass::setupPipeline()
 {
-	
+	ImGui::CreateContext();
+
+	auto io = ImGui::GetIO();
+
+	auto window = g_system_container.m_windowSystem->getWindow();
+
+	ImGui_ImplGlfw_InitForVulkan(window, true);
+
+	ImGui_ImplVulkan_InitInfo info{};
+	info.Device = m_rhi->m_device;
+	info.DescriptorPool = m_rhi->m_descriptorPool;
+	info.ImageCount = 3;
+	info.Instance = m_rhi->m_instance;
+	info.MinImageCount = 3;
+	info.PhysicalDevice = m_rhi->m_physicalDevice;
+	info.Queue = m_rhi->m_graphicsQueue;
+	info.QueueFamily = m_rhi->m_queueIndices.m_graphicsFamily.value();
+	info.Subpass = 0;
+
+	ImGui_ImplVulkan_Init(&info, m_renderPassObj);
 }
 
 

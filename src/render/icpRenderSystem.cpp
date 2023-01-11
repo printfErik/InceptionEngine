@@ -2,6 +2,7 @@
 #include "icpVulkanRHI.h"
 #include "../core/icpSystemContainer.h"
 #include "../scene/icpSceneSystem.h"
+#include "../scene/icpXFormComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -39,6 +40,15 @@ void icpRenderSystem::setFrameBufferResized(bool _isResized)
 void icpRenderSystem::getAllStaticMeshRenderers()
 {
 	
+}
+
+void icpRenderSystem::drawCube()
+{
+	auto cubeEntity = g_system_container.m_sceneSystem->createEntity("Cube", true);
+
+	auto&& meshRenderer = cubeEntity.installComponent<icpMeshRendererComponent>();
+
+	meshRenderer.m_primitive = ePrimitiveType::CUBE;
 }
 
 

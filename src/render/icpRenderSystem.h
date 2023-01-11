@@ -22,6 +22,8 @@ public:
 	std::shared_ptr<icpRHIBase> m_rhi;
 	std::shared_ptr<icpRenderPassManager> m_renderPassManager;
 
+	void drawCube();
+
 private:
 };
 

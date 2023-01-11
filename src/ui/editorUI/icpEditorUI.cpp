@@ -294,6 +294,10 @@ void icpEditorUI::showEditorUI()
 }
 
 
+void icpEditorUI::drawCube()
+{
+	g_system_container.m_renderSystem->drawCube();
+}
 
 
 INCEPTION_END_NAMESPACE

@@ -442,4 +442,89 @@ void icpMeshData::createIndexBuffers()
 	vkFreeMemory(vulkanRHI->m_device, stagingBufferMem, nullptr);
 }
 
+void icpMeshData::fillInPrimitiveData(ePrimitiveType type)
+{
+	switch (type)
+	{
+		case ePrimitiveType::CUBE:
+		{
+			fillInCubeData();
+		}
+		break;
+	}
+}
+
+void icpMeshData::fillInCubeData()
+{
+	createCubeVertexBuffers();
+}
+
+void icpMeshData::createCubeVertexBuffers()
+{
+	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+
+	std::vector<icpVertex> cubeVertices {
+		{{1,1,1},{1,1,1},{0,0}},
+		{{-1,1,1},{1,1,1},{0,1}},
+		{{-1,1,-1},{1,1,1},{1,0}},
+		{{1,1,-1},{1,1,1},{1,1}},
+		{{1,-1,1},{1,1,1},{0,0}},
+		{{-1,-1,1},{1,1,1},{0,1}},
+		{{-1,-1,-1},{1,1,1},{1,0}},
+		{{1,-1,-1},{1,1,1},{1,1}},
+	};
+
+	m_vertices.assign(cubeVertices.begin(), cubeVertices.end());
+
+	auto bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMem;
+
+	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+	icpVulkanUtility::createVulkanBuffer(bufferSize,
+		mode,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		stagingBuffer,
+		stagingBufferMem,
+		vulkanRHI->m_device,
+		vulkanRHI->m_physicalDevice);
+
+	void* data;
+	vkMapMemory(vulkanRHI->m_device, stagingBufferMem, 0, bufferSize, 0, &data);
+	memcpy(data, m_vertices.data(), (size_t)bufferSize);
+	vkUnmapMemory(vulkanRHI->m_device, stagingBufferMem);
+
+	icpVulkanUtility::createVulkanBuffer(bufferSize,
+		mode,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		m_vertexBuffer,
+		m_vertexBufferMem,
+		vulkanRHI->m_device,
+		vulkanRHI->m_physicalDevice
+	);
+
+	icpVulkanUtility::copyBuffer(stagingBuffer,
+		m_vertexBuffer,
+		bufferSize,
+		vulkanRHI->m_device,
+		vulkanRHI->m_transferCommandPool,
+		vulkanRHI->m_transferQueue
+	);
+
+	vkDestroyBuffer(vulkanRHI->m_device, stagingBuffer, nullptr);
+	vkFreeMemory(vulkanRHI->m_device, stagingBufferMem, nullptr);
+}
+
+void icpMeshData::createCubeIndexBuffers()
+{
+	std::vector<uint32_t> cubeIndex {
+		1, 4, 2, 
+	};
+}
+
+
 INCEPTION_END_NAMESPACE
