@@ -1,1 +1,215 @@
 #include "icpPrimitiveRendererComponment.h"
+#include "../core/icpSystemContainer.h"
+#include "../core/icpLogSystem.h"
+#include "../render/icpRenderSystem.h"
+#include "../render/icpVulkanUtility.h"
+#include "../mesh/icpMeshData.h"
+
+INCEPTION_BEGIN_NAMESPACE
+
+
+void icpPrimitiveRendererComponment::fillInPrimitiveData()
+{
+	switch (m_primitive)
+	{
+	case ePrimitiveType::CUBE:
+	{
+		std::vector<icpVertex> cubeVertices {
+		{{1,1,1},{1,1,1},{-1,-1}},
+		{{-1,1,1},{1,1,1},{-1,-1}},
+		{{-1,1,-1},{1,1,1},{-1,-1}},
+		{{1,1,-1},{1,1,1},{-1,-1}},
+		{{1,-1,1},{1,1,1},{-1,-1}},
+		{{-1,-1,1},{1,1,1},{-1,-1}},
+		{{-1,-1,-1},{1,1,1},{-1,-1}},
+		{{1,-1,-1},{1,1,1},{-1,-1}},
+		};
+
+		m_vertices.assign(cubeVertices.begin(), cubeVertices.end());
+
+		std::vector<uint32_t> cubeIndex{
+			0, 3, 1, 3, 2, 1, 4, 7, 5, 7, 6, 5
+		};
+
+		m_vertexIndices.assign(cubeIndex.begin(), cubeIndex.end());
+	}
+	break;
+	default:
+	{
+		ICP_LOG_WARING("no such primitive");
+	}
+	break;
+	}
+}
+
+void icpPrimitiveRendererComponment::createVertexBuffers()
+{
+	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+
+	auto bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMem;
+
+	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+	icpVulkanUtility::createVulkanBuffer(bufferSize,
+		mode,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		stagingBuffer,
+		stagingBufferMem,
+		vulkanRHI->m_device,
+		vulkanRHI->m_physicalDevice);
+
+	void* data;
+	vkMapMemory(vulkanRHI->m_device, stagingBufferMem, 0, bufferSize, 0, &data);
+	memcpy(data, m_vertices.data(), (size_t)bufferSize);
+	vkUnmapMemory(vulkanRHI->m_device, stagingBufferMem);
+
+	icpVulkanUtility::createVulkanBuffer(bufferSize,
+		mode,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		m_vertexBuffer,
+		m_vertexBufferMem,
+		vulkanRHI->m_device,
+		vulkanRHI->m_physicalDevice
+	);
+
+	icpVulkanUtility::copyBuffer(stagingBuffer,
+		m_vertexBuffer,
+		bufferSize,
+		vulkanRHI->m_device,
+		vulkanRHI->m_transferCommandPool,
+		vulkanRHI->m_transferQueue
+	);
+
+	vkDestroyBuffer(vulkanRHI->m_device, stagingBuffer, nullptr);
+	vkFreeMemory(vulkanRHI->m_device, stagingBufferMem, nullptr);
+}
+
+void icpPrimitiveRendererComponment::createIndexBuffers()
+{
+	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+
+
+	VkDeviceSize bufferSize = sizeof(m_vertexIndices[0]) * m_vertexIndices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMem;
+
+	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+	icpVulkanUtility::createVulkanBuffer(
+		bufferSize,
+		mode,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
+		stagingBuffer,
+		stagingBufferMem,
+		vulkanRHI->m_device,
+		vulkanRHI->m_physicalDevice);
+
+	void* data;
+	vkMapMemory(vulkanRHI->m_device, stagingBufferMem, 0, bufferSize, 0, &data);
+	memcpy(data, m_vertexIndices.data(), (size_t)bufferSize);
+	vkUnmapMemory(vulkanRHI->m_device, stagingBufferMem);
+
+	icpVulkanUtility::createVulkanBuffer(bufferSize,
+		mode,
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		m_indexBuffer,
+		m_indexBufferMem,
+		vulkanRHI->m_device,
+		vulkanRHI->m_physicalDevice);
+
+	icpVulkanUtility::copyBuffer(stagingBuffer,
+		m_indexBuffer,
+		bufferSize,
+		vulkanRHI->m_device,
+		vulkanRHI->m_transferCommandPool,
+		vulkanRHI->m_transferQueue
+	);
+
+	vkDestroyBuffer(vulkanRHI->m_device, stagingBuffer, nullptr);
+	vkFreeMemory(vulkanRHI->m_device, stagingBufferMem, nullptr);
+}
+
+void icpPrimitiveRendererComponment::allocateDescriptorSets()
+{
+	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, vulkanRHI->m_meshDSLayout);
+
+	VkDescriptorSetAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+	allocateInfo.descriptorPool = vulkanRHI->m_descriptorPool;
+	allocateInfo.pSetLayouts = layouts.data();
+
+	m_descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+
+	if (vkAllocateDescriptorSets(vulkanRHI->m_device, &allocateInfo, m_descriptorSets.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate descriptor sets!");
+	}
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = m_uniformBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(UniformBufferObject);
+
+		VkDescriptorImageInfo imageInfo{};
+		imageInfo.imageView = VK_NULL_HANDLE;
+		imageInfo.sampler = VK_NULL_HANDLE;
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+		std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[0].dstSet = m_descriptorSets[i];
+		descriptorWrites[0].dstBinding = 0;
+		descriptorWrites[0].dstArrayElement = 0;
+		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrites[0].descriptorCount = 1;
+		descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[1].dstSet = m_descriptorSets[i];
+		descriptorWrites[1].dstBinding = 1;
+		descriptorWrites[1].dstArrayElement = 0;
+		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[1].descriptorCount = 1;
+		descriptorWrites[1].pImageInfo = &imageInfo;
+
+		vkUpdateDescriptorSets(vulkanRHI->m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	}
+}
+
+void icpPrimitiveRendererComponment::createUniformBuffers()
+{
+	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+	auto bufferSize = sizeof(UniformBufferObject);
+
+	m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	m_uniformBufferMem.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpVulkanUtility::createVulkanBuffer(
+			bufferSize,
+			mode,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
+			m_uniformBuffers[i],
+			m_uniformBufferMem[i],
+			vulkanRHI->m_device,
+			vulkanRHI->m_physicalDevice);
+	}
+}
+
+INCEPTION_END_NAMESPACE

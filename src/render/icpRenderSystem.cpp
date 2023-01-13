@@ -3,6 +3,7 @@
 #include "../core/icpSystemContainer.h"
 #include "../scene/icpSceneSystem.h"
 #include "../scene/icpXFormComponent.h"
+#include "../mesh/icpPrimitiveRendererComponment.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -46,10 +47,19 @@ void icpRenderSystem::drawCube()
 {
 	auto cubeEntity = g_system_container.m_sceneSystem->createEntity("Cube", true);
 
-	auto&& meshRenderer = cubeEntity.installComponent<icpMeshRendererComponent>();
+	auto& primitive = cubeEntity.installComponent<icpPrimitiveRendererComponment>();
 
-	meshRenderer.m_primitive = ePrimitiveType::CUBE;
+	primitive.m_primitive = ePrimitiveType::CUBE;
+
+	primitive.fillInPrimitiveData();
+	primitive.createVertexBuffers();
+	primitive.createUniformBuffers();
+
+	primitive.allocateDescriptorSets();
 }
+
+
+
 
 
 INCEPTION_END_NAMESPACE

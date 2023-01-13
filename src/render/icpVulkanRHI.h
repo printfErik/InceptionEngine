@@ -138,7 +138,7 @@ public:
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;
 	std::vector<VkFence> m_inFlightFences;
 
-	VkDescriptorSetLayout m_descriptorSetLayout{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout m_meshDSLayout{ VK_NULL_HANDLE };
 	VkDescriptorPool m_descriptorPool{ VK_NULL_HANDLE };
 
 	bool m_framebufferResized = false;

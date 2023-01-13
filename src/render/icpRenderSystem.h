@@ -6,6 +6,7 @@
 #include "icpRenderPassManager.h"
 
 INCEPTION_BEGIN_NAMESPACE
+class icpPrimitiveRendererComponment;
 
 class icpRenderSystem
 {

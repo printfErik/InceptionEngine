@@ -13,8 +13,6 @@ public:
 	icpMeshData m_meshData;
 
 	void prepareRenderResourceForMesh();
-
-	void prepareRenderResourceForPrimitive(ePrimitiveType type);
 };
 
 

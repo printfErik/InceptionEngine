@@ -122,7 +122,7 @@ void icpVulkanRHI::cleanup()
 
 	vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 
-	vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
+	vkDestroyDescriptorSetLayout(m_device, m_meshDSLayout, nullptr);
 
 	vkDestroyDevice(m_device, nullptr);
 
@@ -732,7 +732,7 @@ void icpVulkanRHI::createDescriptorSetLayout()
 	createInfo.pBindings = bindings.data();
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 
-	if (vkCreateDescriptorSetLayout(m_device, &createInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS)
+	if (vkCreateDescriptorSetLayout(m_device, &createInfo, nullptr, &m_meshDSLayout) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create descriptor set layout!");
 	}
