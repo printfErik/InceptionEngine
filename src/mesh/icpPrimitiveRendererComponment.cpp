@@ -241,7 +241,7 @@ void icpPrimitiveRendererComponment::createTextureImages()
 	icpVulkanUtility::createVulkanImage(
 		static_cast<uint32_t>(1),
 		static_cast<uint32_t>(1),
-		0,
+		static_cast<uint32_t>(1),
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
@@ -252,9 +252,9 @@ void icpPrimitiveRendererComponment::createTextureImages()
 		vulkanRHI->m_physicalDevice
 	);
 
-	transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0);
+	transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(1));
 	copyBuffer2Image(stagingBuffer, m_textureImage, static_cast<uint32_t>(1), static_cast<uint32_t>(1));
-	//transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, static_cast<uint32_t>(imgP->m_mipmapLevel));
+	transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
 
 	vkDestroyBuffer(vulkanRHI->m_device, stagingBuffer, nullptr);
 	vkFreeMemory(vulkanRHI->m_device, stagingBufferMem, nullptr);
@@ -346,7 +346,7 @@ void icpPrimitiveRendererComponment::copyBuffer2Image(VkBuffer srcBuffer, VkImag
 void icpPrimitiveRendererComponment::createTextureImageViews()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-	m_textureImageView = icpVulkanUtility::createImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, 0, vulkanRHI->m_device);
+	m_textureImageView = icpVulkanUtility::createImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, 1, vulkanRHI->m_device);
 }
 
 void icpPrimitiveRendererComponment::createTextureSampler()
@@ -377,7 +377,7 @@ void icpPrimitiveRendererComponment::createTextureSampler()
 	sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	sampler.mipLodBias = 0.0f;
 	sampler.minLod = 0.0f;
-	sampler.maxLod = 0;
+	sampler.maxLod = static_cast<float>(1);
 
 	if (vkCreateSampler(vulkanRHI->m_device, &sampler, nullptr, &m_textureSampler) != VK_SUCCESS)
 	{

@@ -51,8 +51,12 @@ void icpRenderSystem::drawCube()
 
 	primitive.m_primitive = ePrimitiveType::CUBE;
 
+	primitive.createTextureImages();
+	primitive.createTextureSampler();
+
 	primitive.fillInPrimitiveData();
 	primitive.createVertexBuffers();
+	primitive.createIndexBuffers();
 	primitive.createUniformBuffers();
 
 	primitive.allocateDescriptorSets();
