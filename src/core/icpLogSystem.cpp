@@ -27,6 +27,7 @@ icpLogSystem::icpLogSystem()
 icpLogSystem::~icpLogSystem()
 {
 	m_logger->flush();
+	spdlog::drop_all();
 }
 
 std::shared_ptr<spdlog::logger> icpLogSystem::getLogger()

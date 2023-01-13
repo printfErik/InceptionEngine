@@ -9,11 +9,13 @@ layout(location = 0) out vec4 outColor;
 
 void main() {
 
-    if (fragTexCord.x >= 0.0 && fragTexCord.y >= 0.0)
+    vec2 size = textureSize(texSampler, 0);
+    if (size.x == 1.0 && size.y == 1.0)
+    {
+        outColor = vec4(fragColor, 1);
+    }
+    else
     {
         outColor = texture(texSampler, fragTexCord);
-    }
-    else{
-        outColor = fragColor;
-    }
+    }        
 }

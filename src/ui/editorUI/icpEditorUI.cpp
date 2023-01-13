@@ -284,6 +284,16 @@ void icpEditorUI::showEditorUI()
 				}
 				ImGui::TreePop();
 			}
+			if (ImGui::TreeNode("Primitive Test"))
+			{
+
+				if (ImGui::Button("Create Cube"))
+				{
+					drawCube();
+				}
+
+				ImGui::TreePop();
+			}
 
 			ImGui::EndMenu();
 		}

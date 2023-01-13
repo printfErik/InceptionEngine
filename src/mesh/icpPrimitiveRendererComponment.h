@@ -32,6 +32,13 @@ public:
 
 	void fillInPrimitiveData();
 
+	void createTextureImages();
+	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipmapLevel);
+	void copyBuffer2Image(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height);
+
+	void createTextureImageViews();
+	void createTextureSampler();
+
 	std::vector<VkDescriptorSet> m_descriptorSets;
 
 	std::vector<VkBuffer> m_uniformBuffers;
@@ -44,6 +51,14 @@ public:
 
 	std::vector<icpVertex> m_vertices;
 	std::vector<uint32_t> m_vertexIndices;
+
+	// just one pixel texture as empty texture
+	// this method will be slower than create an another pipeline
+	// so todo: use different pipeline
+	VkImage m_textureImage;
+	VkDeviceMemory m_textureBufferMem;
+	VkImageView m_textureImageView;
+	VkSampler m_textureSampler;
 
 private:
 
