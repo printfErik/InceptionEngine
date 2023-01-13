@@ -453,6 +453,13 @@ void icpMainForwardPass::updateMeshUniformBuffers(uint32_t curFrame)
 
 	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
 
+	UniformBufferObject ubo{};
+
+	ubo.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
+	auto aspectRatio = m_rhi->m_swapChainExtent.width / (float)m_rhi->m_swapChainExtent.height;
+	ubo.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
+	ubo.projection[1][1] *= -1;
+
 	for (auto entity: view)
 	{
 		auto& meshRenderer = view.get<icpMeshRendererComponent>(entity);
@@ -462,23 +469,31 @@ void icpMainForwardPass::updateMeshUniformBuffers(uint32_t curFrame)
 
 		auto& xformComp = view.get<icpXFormComponent>(entity);
 
-		UniformBufferObject ubo{};
+		// for temp use
 		auto firstRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(0.f, 0.f, 1.f));
 		auto secondRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(1.f, 0.f, 0.f));
 
 		ubo.model = secondRotate * firstRotate;
 
-		ubo.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
-		auto aspectRatio = m_rhi->m_swapChainExtent.width / (float)m_rhi->m_swapChainExtent.height;
-		ubo.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
-		ubo.projection[1][1] *= -1;
-
 		void* data;
 		vkMapMemory(m_rhi->m_device, meshRes->m_meshData.m_uniformBufferMem[curFrame], 0, sizeof(ubo), 0, &data);
 		memcpy(data, &ubo, sizeof(ubo));
 		vkUnmapMemory(m_rhi->m_device, meshRes->m_meshData.m_uniformBufferMem[curFrame]);
-
 	}
+
+	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponment, icpXFormComponent>();
+
+	for (auto entity: primitiveView)
+	{
+		auto& primitiveRender = primitiveView.get<icpPrimitiveRendererComponment>(entity);
+		ubo.model = glm::mat4(1.f);
+
+		void* data;
+		vkMapMemory(m_rhi->m_device, primitiveRender.m_uniformBufferMem[curFrame], 0, sizeof(ubo), 0, &data);
+		memcpy(data, &ubo, sizeof(ubo));
+		vkUnmapMemory(m_rhi->m_device, primitiveRender.m_uniformBufferMem[curFrame]);
+	}
+
 }
 
 INCEPTION_END_NAMESPACE

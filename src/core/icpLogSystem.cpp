@@ -26,7 +26,6 @@ icpLogSystem::icpLogSystem()
 
 icpLogSystem::~icpLogSystem()
 {
-	m_logger->flush();
 	spdlog::drop_all();
 }
 

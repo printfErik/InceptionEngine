@@ -30,7 +30,7 @@ public:
 
 	void allocateDescriptorSets();
 
-	void fillInPrimitiveData();
+	void fillInPrimitiveData(const glm::vec3& color);
 
 	void createTextureImages();
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipmapLevel);

@@ -54,7 +54,7 @@ void icpRenderSystem::drawCube()
 	primitive.createTextureImages();
 	primitive.createTextureSampler();
 
-	primitive.fillInPrimitiveData();
+	primitive.fillInPrimitiveData(glm::vec3(1,0,1));
 	primitive.createVertexBuffers();
 	primitive.createIndexBuffers();
 	primitive.createUniformBuffers();

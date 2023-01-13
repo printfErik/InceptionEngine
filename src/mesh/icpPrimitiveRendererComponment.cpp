@@ -8,27 +8,27 @@
 INCEPTION_BEGIN_NAMESPACE
 
 
-void icpPrimitiveRendererComponment::fillInPrimitiveData()
+void icpPrimitiveRendererComponment::fillInPrimitiveData(const glm::vec3& color)
 {
 	switch (m_primitive)
 	{
 	case ePrimitiveType::CUBE:
 	{
 		std::vector<icpVertex> cubeVertices {
-		{{1,1,1},{1,1,1},{-1,-1}},
-		{{-1,1,1},{1,1,1},{-1,-1}},
-		{{-1,1,-1},{1,1,1},{-1,-1}},
-		{{1,1,-1},{1,1,1},{-1,-1}},
-		{{1,-1,1},{1,1,1},{-1,-1}},
-		{{-1,-1,1},{1,1,1},{-1,-1}},
-		{{-1,-1,-1},{1,1,1},{-1,-1}},
-		{{1,-1,-1},{1,1,1},{-1,-1}},
+		{{1,1,1}, color ,{-1,-1}},
+		{{-1,1,1},color,{-1,-1}},
+		{{-1,1,-1},color,{-1,-1}},
+		{{1,1,-1},color,{-1,-1}},
+		{{1,-1,1},color,{-1,-1}},
+		{{-1,-1,1},color,{-1,-1}},
+		{{-1,-1,-1},color,{-1,-1}},
+		{{1,-1,-1},color,{-1,-1}},
 		};
 
 		m_vertices.assign(cubeVertices.begin(), cubeVertices.end());
 
 		std::vector<uint32_t> cubeIndex{
-			0, 3, 1, 3, 2, 1, 4, 7, 5, 7, 6, 5
+			0, 3, 1, 3, 2, 1, 4, 5, 7, 5, 6, 7, 0, 4, 7, 0, 7, 3, 1, 2, 6, 1, 6, 5, 1, 4, 0, 1, 5, 4, 3, 7, 6, 3, 6, 2
 		};
 
 		m_vertexIndices.assign(cubeIndex.begin(), cubeIndex.end());
