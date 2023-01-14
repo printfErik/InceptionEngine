@@ -28,10 +28,18 @@ public:
 	void createTextureImageViews(size_t mipmaplevel);
 	void createTextureSampler();
 
-	std::vector<VkDescriptorSet> m_descriptorSets;
+	std::vector<VkDescriptorSet> m_descriptorSetsPerFrame;
+	std::vector<VkDescriptorSet> m_descriptorSetsPerMaterial;
+	std::vector<VkDescriptorSet> m_descriptorSetsPerObject;
 
-	std::vector<VkBuffer> m_uniformBuffers;
-	std::vector<VkDeviceMemory> m_uniformBufferMem;
+	std::vector<VkBuffer> m_perMaterialUniformBuffers;
+	std::vector<VkDeviceMemory> m_perMaterialUniformBufferMem;
+
+	std::vector<VkBuffer> m_perFrameStorageBuffers;
+	std::vector<VkDeviceMemory> m_perFrameStorageBufferMem;
+
+	std::vector<VkBuffer> m_objectStorageBuffers;
+	std::vector<VkDeviceMemory> m_objectStorageBufferMem;
 
 	VkBuffer m_vertexBuffer;
 	VkBuffer m_indexBuffer;

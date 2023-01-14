@@ -387,19 +387,18 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 	{
 		if (entity->hasComponent<icpMeshRendererComponent>())
 		{
-			auto meshResId = entity->accessComponent<icpMeshRendererComponent>().m_meshResId;
+			const auto& meshRender = entity->accessComponent<icpMeshRendererComponent>();
+			auto& meshResId = meshRender.m_meshResId;
 			auto res = g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH][meshResId];
 			auto meshRes = dynamic_pointer_cast<icpMeshResource>(res);
 
-			auto vertBuf = meshRes->m_meshData.m_vertexBuffer;
-
-			auto descriptorSets = meshRes->m_meshData.m_descriptorSets;
+			auto vertBuf = meshRender.m_vertexBuffer;
 			std::vector<VkBuffer>vertexBuffers{ vertBuf };
 
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
-			vkCmdBindIndexBuffer(commandBuffer, meshRes->m_meshData.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_descriptorSets[curFrame], 0, nullptr);
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshRes->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
 		else if (entity->hasComponent<icpPrimitiveRendererComponment>())
@@ -463,22 +462,19 @@ void icpMainForwardPass::updateMeshUniformBuffers(uint32_t curFrame)
 	for (auto entity: view)
 	{
 		auto& meshRenderer = view.get<icpMeshRendererComponent>(entity);
-		auto& meshResId = meshRenderer.m_meshResId;
-		auto res = g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH][meshResId];
-		auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(res);
 
 		auto& xformComp = view.get<icpXFormComponent>(entity);
 
-		// for temp use
+		// for temp use todo: remove it
 		auto firstRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(0.f, 0.f, 1.f));
 		auto secondRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(1.f, 0.f, 0.f));
 
 		ubo.model = secondRotate * firstRotate;
 
 		void* data;
-		vkMapMemory(m_rhi->m_device, meshRes->m_meshData.m_uniformBufferMem[curFrame], 0, sizeof(ubo), 0, &data);
+		vkMapMemory(m_rhi->m_device, meshRenderer.m_uniformBufferMem[curFrame], 0, sizeof(ubo), 0, &data);
 		memcpy(data, &ubo, sizeof(ubo));
-		vkUnmapMemory(m_rhi->m_device, meshRes->m_meshData.m_uniformBufferMem[curFrame]);
+		vkUnmapMemory(m_rhi->m_device, meshRenderer.m_uniformBufferMem[curFrame]);
 	}
 
 	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponment, icpXFormComponent>();

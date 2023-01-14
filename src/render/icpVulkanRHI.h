@@ -16,11 +16,47 @@ INCEPTION_BEGIN_NAMESPACE
 
 static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
 
-struct UniformBufferObject
+struct DirectionalLightRenderResource
 {
-	alignas(16) glm::mat4 model;
-	alignas(16) glm::mat4 view;
-	alignas(16) glm::mat4 projection;
+	glm::vec3 direction;
+	glm::vec3 ambient;
+	glm::vec3 diffuse;
+	glm::vec3 specular;
+};
+
+struct PointLightRenderResource
+{
+	glm::vec3 position;
+	float constant;
+	float linear;
+	float quadratic;
+
+	glm::vec3 ambient;
+	glm::vec3 diffuse;
+	glm::vec3 specular;
+};
+
+struct MeshRenderResource
+{
+	glm::mat4 model;
+};
+
+struct SSBOPerFrame
+{
+	glm::mat4 view;
+	glm::mat4 projection;
+	DirectionalLightRenderResource dirLight;
+	PointLightRenderResource pointLight[16];
+};
+
+struct UBOPerMaterial
+{
+	float shininess;
+};
+
+struct SSBOObjects
+{
+	MeshRenderResource all_meshes[128];
 };
 
 struct QueueFamilyIndices
@@ -76,8 +112,10 @@ private:
 	void createCommandPools();
 
 	void createSyncObjects();
-	void createDescriptorSetLayout();
 
+	void createPerFrameDescriptorSetLayout(); // set 0
+	void createPerMaterialDesciptotSetLayout(); // set 1
+	void createPerObjectDesciptotSetLayout(); // set 2
 
 	bool checkValidationLayerSupport();
 
@@ -138,7 +176,10 @@ public:
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;
 	std::vector<VkFence> m_inFlightFences;
 
-	VkDescriptorSetLayout m_meshDSLayout{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout m_perFrameDSLayout{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout m_perMaterialDSLayout{ VK_NULL_HANDLE };
+	VkDescriptorSetLayout m_perObjectDSLayout{ VK_NULL_HANDLE };
+
 	VkDescriptorPool m_descriptorPool{ VK_NULL_HANDLE };
 
 	bool m_framebufferResized = false;

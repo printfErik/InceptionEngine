@@ -220,6 +220,23 @@ void icpEditorUI::showEditorUI()
 
 		if (ImGui::BeginMenu("Entity"))
 		{
+			if (ImGui::TreeNode("Primitive"))
+			{
+				if (ImGui::Selectable("Cube"))
+				{
+					drawCube();
+				}
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("Light"))
+			{
+				if (ImGui::Selectable("Directional Light"))
+				{
+					createDirLight();
+				}
+				ImGui::TreePop();
+			}
 			ImGui::EndMenu();
 		}
 
@@ -310,5 +327,9 @@ void icpEditorUI::drawCube()
 	g_system_container.m_renderSystem->drawCube();
 }
 
+void icpEditorUI::createDirLight()
+{
+	g_system_container.m_renderSystem->createDirLight();
+}
 
 INCEPTION_END_NAMESPACE

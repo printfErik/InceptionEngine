@@ -1,21 +1,25 @@
 #pragma once
 
-#include "../core/icpMacros.h"
+#include "../../core/icpMacros.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
-class enum eMaterialModel
+enum class eMaterialModel
 {
-	LIT_MODEL = 0,
+	DIFFUSE_SPECULAR = 0,
 	ONE_TEXTURE_ONLY = 1,
+	PBR = 2,
 	MATERIAL_MODEL_MAX_ENUM = 9999
 };
 
-class icpMaterial
+class icpSimpleMaterial
 {
 public:
-	icpMaterial();
-	virtual ~icpMaterial();
+	icpSimpleMaterial() = default;
+	virtual ~icpSimpleMaterial() = default;
+
+	std::string m_diffuseMapTexResId;
+	std::string m_specularMapTexResId;
 };
 
 INCEPTION_END_NAMESPACE

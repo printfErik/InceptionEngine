@@ -178,7 +178,7 @@ void icpMeshRendererComponent::createTextureImageViews(size_t mipmaplevel)
 void icpMeshRendererComponent::createUniformBuffers()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-	auto bufferSize = sizeof(UniformBufferObject);
+	auto bufferSize = sizeof(UBOPerMaterial);
 
 	m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 	m_uniformBufferMem.resize(MAX_FRAMES_IN_FLIGHT);

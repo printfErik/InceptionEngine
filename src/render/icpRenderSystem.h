@@ -24,6 +24,7 @@ public:
 	std::shared_ptr<icpRenderPassManager> m_renderPassManager;
 
 	void drawCube();
+	void createDirLight();
 
 private:
 };
