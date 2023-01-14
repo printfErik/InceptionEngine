@@ -280,8 +280,6 @@ void icpSceneSystem::getRootEntityList(std::vector<std::shared_ptr<icpGameEntity
 void icpSceneSystem::createMeshEnityFromResource(std::shared_ptr<icpResourceBase> meshRes)
 {
 
-	dynamic_pointer_cast<icpMeshResource>(meshRes)->prepareRenderResourceForMesh();
-
 	icpGameEntity entity;
 	entity.initializeEntity(m_registry.create(), this, true);
 
@@ -295,6 +293,8 @@ void icpSceneSystem::createMeshEnityFromResource(std::shared_ptr<icpResourceBase
 
 	mesh.m_meshResId = meshRes->m_id;
 	mesh.m_texResId = meshRes->m_id + "_img";
+
+	mesh.prepareRenderResourceForMesh();
 }
 
 
