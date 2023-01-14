@@ -24,13 +24,13 @@ void icpMeshRendererComponent::prepareRenderResourceForMesh()
 void icpMeshRendererComponent::allocateDescriptorSets()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, vulkanRHI->m_meshDSLayout);
+	std::vector<VkDescriptorSetLayout> perMaterialLayouts(MAX_FRAMES_IN_FLIGHT, vulkanRHI->m_perMaterialDSLayout);
 
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
 	allocateInfo.descriptorPool = vulkanRHI->m_descriptorPool;
-	allocateInfo.pSetLayouts = layouts.data();
+	allocateInfo.pSetLayouts = perMaterialLayouts.data();
 
 	m_descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -178,24 +178,55 @@ void icpMeshRendererComponent::createTextureImageViews(size_t mipmaplevel)
 void icpMeshRendererComponent::createUniformBuffers()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-	auto bufferSize = sizeof(UBOPerMaterial);
 
-	m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	m_uniformBufferMem.resize(MAX_FRAMES_IN_FLIGHT);
+	auto perMaterialBufferSize = sizeof(UBOPerMaterial);
+	auto perFrameBuffSize = sizeof(SSBOPerFrame);
+	auto perObjBuffSize = sizeof(SSBOObjects);
+
+	m_perMaterialUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	m_perMaterialUniformBufferMem.resize(MAX_FRAMES_IN_FLIGHT);
+
+	m_perFrameStorageBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	m_perFrameStorageBufferMem.resize(MAX_FRAMES_IN_FLIGHT);
+
+	m_objectStorageBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	m_objectStorageBufferMem.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		icpVulkanUtility::createVulkanBuffer(
-			bufferSize,
+			perMaterialBufferSize,
 			mode,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
-			m_uniformBuffers[i],
-			m_uniformBufferMem[i],
+			m_perMaterialUniformBuffers[i],
+			m_perMaterialUniformBufferMem[i],
 			vulkanRHI->m_device,
 			vulkanRHI->m_physicalDevice);
+
+		icpVulkanUtility::createVulkanBuffer(
+			perFrameBuffSize,
+			mode,
+			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
+			m_perFrameStorageBuffers[i],
+			m_perFrameStorageBufferMem[i],
+			vulkanRHI->m_device,
+			vulkanRHI->m_physicalDevice
+		);
+
+		icpVulkanUtility::createVulkanBuffer(
+			perObjBuffSize,
+			mode,
+			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
+			m_objectStorageBuffers[i],
+			m_objectStorageBufferMem[i],
+			vulkanRHI->m_device,
+			vulkanRHI->m_physicalDevice
+		);
 	}
 }
 

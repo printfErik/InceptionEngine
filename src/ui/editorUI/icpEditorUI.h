@@ -19,7 +19,7 @@ public:
 	void showEditorDockingSpaceUI();
 	void recursiveAddEntityToHierarchy(std::shared_ptr<icpGameEntity> entity);
 	void drawCube();
-
+	void createDirLight();
 
 private:
 	void showEntityRightClickMenu(const char* entityName);
