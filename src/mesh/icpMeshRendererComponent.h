@@ -7,9 +7,29 @@
 
 #include <vulkan/vulkan.hpp>
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "../render/material/icpMaterial.h"
+
 INCEPTION_BEGIN_NAMESPACE
 
 class icpImageResource;
+
+
+struct UBOMeshRenderResource
+{
+	glm::mat4 model;
+};
+
+/* todo maybe later
+struct SSBOObjects
+{
+	UBOMeshRenderResource all_meshes[128];
+};
+*/
 
 class icpMeshRendererComponent : public icpComponentBase
 {
@@ -24,37 +44,21 @@ public:
 
 	void allocateDescriptorSets();
 
-	void createTextureImages();
-	void createTextureImageViews(size_t mipmaplevel);
-	void createTextureSampler();
+	VkDescriptorSet m_perMeshDS;
 
-	std::vector<VkDescriptorSet> m_descriptorSetsPerFrame;
-	std::vector<VkDescriptorSet> m_descriptorSetsPerMaterial;
-	std::vector<VkDescriptorSet> m_descriptorSetsPerObject;
-
-	std::vector<VkBuffer> m_perMaterialUniformBuffers;
-	std::vector<VkDeviceMemory> m_perMaterialUniformBufferMem;
-
-	std::vector<VkBuffer> m_perFrameStorageBuffers;
-	std::vector<VkDeviceMemory> m_perFrameStorageBufferMem;
-
-	std::vector<VkBuffer> m_objectStorageBuffers;
-	std::vector<VkDeviceMemory> m_objectStorageBufferMem;
+	VkBuffer m_perMeshUniformBuffers;
+	VkDeviceMemory m_perMeshUniformBufferMem;
 
 	VkBuffer m_vertexBuffer;
-	VkBuffer m_indexBuffer;
 	VkDeviceMemory m_vertexBufferMem;
+
+	VkBuffer m_indexBuffer;
 	VkDeviceMemory m_indexBufferMem;
 
-	VkImage m_textureImage;
-	VkDeviceMemory m_textureBufferMem;
-	VkImageView m_textureImageView;
-	VkSampler m_textureSampler;
-
-	std::shared_ptr<icpImageResource> m_imgRes = nullptr;
-
 	std::string m_meshResId;
-	std::string m_texResId;
+
+	// only one material for one mesh for now
+	std::vector<std::shared_ptr<icpBlinnPhongMaterial>> m_material;
 };
 
 

@@ -492,4 +492,145 @@ void icpMainForwardPass::updateMeshUniformBuffers(uint32_t curFrame)
 
 }
 
+void icpMainForwardPass::createDescriptorSetLayouts()
+{
+	m_DSLayouts.resize(eMainForwardPassDSType::LAYOUT_TYPE_COUNT);
+
+	// per mesh
+	{
+		// set 0, binding 0 
+		VkDescriptorSetLayoutBinding perObjectSSBOBinding{};
+		perObjectSSBOBinding.binding = 0;
+		perObjectSSBOBinding.descriptorCount = 1;
+		perObjectSSBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		perObjectSSBOBinding.pImmutableSamplers = nullptr;
+		perObjectSSBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+
+		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perObjectSSBOBinding };
+
+		VkDescriptorSetLayoutCreateInfo createInfo{};
+		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		createInfo.pBindings = bindings.data();
+		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+		if (vkCreateDescriptorSetLayout(m_rhi->m_device, &createInfo, nullptr, &m_DSLayouts[eMainForwardPassDSType::PER_MESH]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+
+	// per Material
+	{
+		VkDescriptorSetLayoutBinding perMaterialUBOBinding{};
+		perMaterialUBOBinding.binding = 0;
+		perMaterialUBOBinding.descriptorCount = 1;
+		perMaterialUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		perMaterialUBOBinding.pImmutableSamplers = nullptr;
+		perMaterialUBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		VkDescriptorSetLayoutBinding perMaterialDiffuseSamplerLayoutBinding{};
+		perMaterialDiffuseSamplerLayoutBinding.binding = 1;
+		perMaterialDiffuseSamplerLayoutBinding.descriptorCount = 1;
+		perMaterialDiffuseSamplerLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		perMaterialDiffuseSamplerLayoutBinding.pImmutableSamplers = nullptr;
+		perMaterialDiffuseSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		VkDescriptorSetLayoutBinding perMaterialSpecularSamplerLayoutBinding{};
+		perMaterialSpecularSamplerLayoutBinding.binding = 2;
+		perMaterialSpecularSamplerLayoutBinding.descriptorCount = 1;
+		perMaterialSpecularSamplerLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		perMaterialSpecularSamplerLayoutBinding.pImmutableSamplers = nullptr;
+		perMaterialSpecularSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		std::array<VkDescriptorSetLayoutBinding, 3> bindings{ perMaterialUBOBinding, perMaterialDiffuseSamplerLayoutBinding, perMaterialSpecularSamplerLayoutBinding };
+
+		VkDescriptorSetLayoutCreateInfo createInfo{};
+		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		createInfo.pBindings = bindings.data();
+		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+		if (vkCreateDescriptorSetLayout(m_rhi->m_device, &createInfo, nullptr, &m_DSLayouts[eMainForwardPassDSType::PER_MATERIAL]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+
+	// perFrame
+	{
+		VkDescriptorSetLayoutBinding perFrameSSBOBinding{};
+		perFrameSSBOBinding.binding = 0;
+		perFrameSSBOBinding.descriptorCount = 1;
+		perFrameSSBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		perFrameSSBOBinding.pImmutableSamplers = nullptr;
+		perFrameSSBOBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
+
+		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perFrameSSBOBinding };
+
+		VkDescriptorSetLayoutCreateInfo createInfo{};
+		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		createInfo.pBindings = bindings.data();
+		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+		if (vkCreateDescriptorSetLayout(m_rhi->m_device, &createInfo, nullptr, &m_DSLayouts[eMainForwardPassDSType::PER_FRAME]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+}
+
+void icpMainForwardPass::allocateDescriptorSets()
+{
+	/*
+	// per mesh
+	{
+
+	}
+
+	// per material
+	{
+		VkDescriptorSetAllocateInfo allocateInfo{};
+		allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocateInfo.descriptorSetCount = 1;
+		allocateInfo.descriptorPool = m_rhi->m_descriptorPool;
+		allocateInfo.pSetLayouts = &m_descriptorInfos[eMainForwardPassDSType::PER_MATERIAL].m_descriptorSetLayout;
+
+		if (vkAllocateDescriptorSets(m_rhi->m_device, &allocateInfo, &m_descriptorInfos[eMainForwardPassDSType::PER_MATERIAL].m_descriptorSet) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to allocate descriptor sets!");
+		}
+	}
+	*/
+	// per frame
+	{
+		VkDescriptorSetAllocateInfo allocateInfo{};
+		allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocateInfo.descriptorSetCount = 1;
+		allocateInfo.descriptorPool = m_rhi->m_descriptorPool;
+		allocateInfo.pSetLayouts = &m_DSLayouts[eMainForwardPassDSType::PER_FRAME];
+
+		if (vkAllocateDescriptorSets(m_rhi->m_device, &allocateInfo, &m_perFrameDS) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to allocate descriptor sets!");
+		}
+	}
+
+	VkDescriptorBufferInfo bufferInfo{};
+	bufferInfo.buffer = m_SSBOPerFrame;
+	bufferInfo.offset = 0;
+	bufferInfo.range = sizeof(SSBOPerFrame);
+	
+	std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrites[0].dstSet = m_perFrameDS;
+	descriptorWrites[0].dstBinding = 0;
+	descriptorWrites[0].dstArrayElement = 0;
+	descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	descriptorWrites[0].descriptorCount = 1;
+	descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+	vkUpdateDescriptorSets(m_rhi->m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+
+}
+
+
 INCEPTION_END_NAMESPACE

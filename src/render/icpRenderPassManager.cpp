@@ -116,5 +116,9 @@ void icpRenderPassManager::render()
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
+std::shared_ptr<icpRenderPassBase> icpRenderPassManager::accessRenderPass(eRenderPass passType)
+{
+	return m_renderPasses[passType];
+}
 
 INCEPTION_END_NAMESPACE

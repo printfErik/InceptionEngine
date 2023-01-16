@@ -6,13 +6,14 @@
 #include "../core/icpLogSystem.h"
 #include "../resource/icpResourceSystem.h"
 #include "icpMeshResource.h"
+#include "../render/renderPass/icpMainForwardPass.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
 void icpMeshRendererComponent::prepareRenderResourceForMesh()
 {
-	createTextureImages();
-	createTextureSampler();
+	//createTextureImages();
+	//createTextureSampler();
 
 	createVertexBuffers();
 	createIndexBuffers();
@@ -24,210 +25,56 @@ void icpMeshRendererComponent::prepareRenderResourceForMesh()
 void icpMeshRendererComponent::allocateDescriptorSets()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-	std::vector<VkDescriptorSetLayout> perMaterialLayouts(MAX_FRAMES_IN_FLIGHT, vulkanRHI->m_perMaterialDSLayout);
 
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+	allocateInfo.descriptorSetCount = 1;
 	allocateInfo.descriptorPool = vulkanRHI->m_descriptorPool;
-	allocateInfo.pSetLayouts = perMaterialLayouts.data();
 
-	m_descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+	auto&layout = g_system_container.m_renderSystem->m_renderPassManager->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
 
-	if (vkAllocateDescriptorSets(vulkanRHI->m_device, &allocateInfo, m_descriptorSets.data()) != VK_SUCCESS)
+	allocateInfo.pSetLayouts = &layout;
+
+	if (vkAllocateDescriptorSets(vulkanRHI->m_device, &allocateInfo, &m_perMeshDS) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate descriptor sets!");
 	}
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = m_uniformBuffers[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UniformBufferObject);
+	VkDescriptorBufferInfo bufferInfo{};
+	bufferInfo.buffer = m_perMeshUniformBuffers;
+	bufferInfo.offset = 0;
+	bufferInfo.range = sizeof(UBOMeshRenderResource);
 
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageView = m_textureImageView;
-		imageInfo.sampler = m_textureSampler;
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrites[0].dstSet = m_perMeshDS;
+	descriptorWrites[0].dstBinding = 0;
+	descriptorWrites[0].dstArrayElement = 0;
+	descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorWrites[0].descriptorCount = 1;
+	descriptorWrites[0].pBufferInfo = &bufferInfo;
 
-		std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
-		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet = m_descriptorSets[i];
-		descriptorWrites[0].dstBinding = 0;
-		descriptorWrites[0].dstArrayElement = 0;
-		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount = 1;
-		descriptorWrites[0].pBufferInfo = &bufferInfo;
+	vkUpdateDescriptorSets(vulkanRHI->m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 
-		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[1].dstSet = m_descriptorSets[i];
-		descriptorWrites[1].dstBinding = 1;
-		descriptorWrites[1].dstArrayElement = 0;
-		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrites[1].descriptorCount = 1;
-		descriptorWrites[1].pImageInfo = &imageInfo;
-
-		vkUpdateDescriptorSets(vulkanRHI->m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-	}
-}
-
-void icpMeshRendererComponent::createTextureImages()
-{
-	// todo: remove all dynamic_cast
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-
-	if (!m_imgRes)
-	{
-		m_imgRes = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::TEXTURE][m_texResId]);
-	}
-
-	if (!m_imgRes)
-	{
-		ICP_LOG_FATAL("image resource should be valid!");
-	}
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMem;
-
-	icpVulkanUtility::createVulkanBuffer(
-		m_imgRes->getImgBuffer().size(),
-		VK_SHARING_MODE_EXCLUSIVE,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		stagingBuffer,
-		stagingBufferMem,
-		vulkanRHI->m_device,
-		vulkanRHI->m_physicalDevice
-	);
-
-	void* data;
-	vkMapMemory(vulkanRHI->m_device, stagingBufferMem, 0, static_cast<uint32_t>(m_imgRes->getImgBuffer().size()), 0, &data);
-	memcpy(data, m_imgRes->getImgBuffer().data(), m_imgRes->getImgBuffer().size());
-	vkUnmapMemory(vulkanRHI->m_device, stagingBufferMem);
-
-	icpVulkanUtility::createVulkanImage(
-		static_cast<uint32_t>(m_imgRes->m_imgWidth),
-		static_cast<uint32_t>(m_imgRes->m_height),
-		static_cast<uint32_t>(m_imgRes->m_mipmapLevel),
-		VK_FORMAT_R8G8B8A8_SRGB,
-		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		m_textureImage,
-		m_textureBufferMem,
-		vulkanRHI->m_device,
-		vulkanRHI->m_physicalDevice
-	);
-
-	icpVulkanUtility::transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(m_imgRes->m_mipmapLevel), vulkanRHI->m_transferCommandPool, vulkanRHI->m_device, vulkanRHI->m_transferQueue);
-	icpVulkanUtility::copyBuffer2Image(stagingBuffer, m_textureImage, static_cast<uint32_t>(m_imgRes->m_imgWidth), static_cast<uint32_t>(m_imgRes->m_height), vulkanRHI->m_transferCommandPool, vulkanRHI->m_device, vulkanRHI->m_transferQueue);
-	//transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, static_cast<uint32_t>(imgP->m_mipmapLevel));
-
-	vkDestroyBuffer(vulkanRHI->m_device, stagingBuffer, nullptr);
-	vkFreeMemory(vulkanRHI->m_device, stagingBufferMem, nullptr);
-
-	icpVulkanUtility::generateMipmaps(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, static_cast<uint32_t>(m_imgRes->m_imgWidth), static_cast<uint32_t>(m_imgRes->m_height), static_cast<uint32_t>(m_imgRes->m_mipmapLevel), vulkanRHI->m_graphicsCommandPool, vulkanRHI->m_device, vulkanRHI->m_graphicsQueue, vulkanRHI->m_physicalDevice);
-
-	createTextureImageViews(m_imgRes->m_mipmapLevel);
-}
-
-void icpMeshRendererComponent::createTextureSampler()
-{
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-
-	VkSamplerCreateInfo sampler{};
-	sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	sampler.magFilter = VkFilter::VK_FILTER_LINEAR;
-	sampler.minFilter = VkFilter::VK_FILTER_LINEAR;
-
-	sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-	sampler.anisotropyEnable = VK_TRUE;
-
-	VkPhysicalDeviceProperties properties;
-	vkGetPhysicalDeviceProperties(vulkanRHI->m_physicalDevice, &properties);
-
-	sampler.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-	sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
-
-	sampler.unnormalizedCoordinates = VK_FALSE;
-	sampler.compareEnable = VK_FALSE;
-	sampler.compareOp = VK_COMPARE_OP_ALWAYS;
-
-	const auto imgP = m_imgRes;
-	sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	sampler.mipLodBias = 0.0f;
-	sampler.minLod = 0.0f;
-	sampler.maxLod = static_cast<float>(imgP->m_mipmapLevel);
-
-	if (vkCreateSampler(vulkanRHI->m_device, &sampler, nullptr, &m_textureSampler) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create sampler!");
-	}
-}
-
-void icpMeshRendererComponent::createTextureImageViews(size_t mipmaplevel)
-{
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-	m_textureImageView = icpVulkanUtility::createImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipmaplevel, vulkanRHI->m_device);
 }
 
 void icpMeshRendererComponent::createUniformBuffers()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 
-	auto perMaterialBufferSize = sizeof(UBOPerMaterial);
-	auto perFrameBuffSize = sizeof(SSBOPerFrame);
-	auto perObjBuffSize = sizeof(SSBOObjects);
-
-	m_perMaterialUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	m_perMaterialUniformBufferMem.resize(MAX_FRAMES_IN_FLIGHT);
-
-	m_perFrameStorageBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	m_perFrameStorageBufferMem.resize(MAX_FRAMES_IN_FLIGHT);
-
-	m_objectStorageBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	m_objectStorageBufferMem.resize(MAX_FRAMES_IN_FLIGHT);
+	auto perMeshSize = sizeof(UBOMeshRenderResource);
 
 	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		icpVulkanUtility::createVulkanBuffer(
-			perMaterialBufferSize,
-			mode,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
-			m_perMaterialUniformBuffers[i],
-			m_perMaterialUniformBufferMem[i],
-			vulkanRHI->m_device,
-			vulkanRHI->m_physicalDevice);
-
-		icpVulkanUtility::createVulkanBuffer(
-			perFrameBuffSize,
-			mode,
-			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
-			m_perFrameStorageBuffers[i],
-			m_perFrameStorageBufferMem[i],
-			vulkanRHI->m_device,
-			vulkanRHI->m_physicalDevice
-		);
-
-		icpVulkanUtility::createVulkanBuffer(
-			perObjBuffSize,
-			mode,
-			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
-			m_objectStorageBuffers[i],
-			m_objectStorageBufferMem[i],
-			vulkanRHI->m_device,
-			vulkanRHI->m_physicalDevice
-		);
-	}
+	icpVulkanUtility::createVulkanBuffer(
+		perMeshSize,
+		mode,
+		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
+		m_perMeshUniformBuffers,
+		m_perMeshUniformBufferMem,
+		vulkanRHI->m_device,
+		vulkanRHI->m_physicalDevice);
 }
 
 void icpMeshRendererComponent::createVertexBuffers()

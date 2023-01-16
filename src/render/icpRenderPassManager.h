@@ -5,6 +5,14 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
+enum class eRenderPass
+{
+	MAIN_FORWARD_PASS = 0,
+	EDITOR_UI_PASS,
+	//COPY_PASS,
+	RENDER_PASS_COUNT
+};
+
 class icpRenderPassBase;
 
 class icpRenderPassManager
@@ -17,6 +25,8 @@ public:
 	void cleanup();
 
 	void render();
+
+	std::shared_ptr<icpRenderPassBase> accessRenderPass(eRenderPass passType);
 
 private:
 
