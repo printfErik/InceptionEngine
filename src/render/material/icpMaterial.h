@@ -15,15 +15,26 @@ enum class eMaterialModel
 	MATERIAL_TYPE_COUNT
 };
 
-class icpOneTextureMaterial
+class icpMaterialBase
+{
+public:
+	icpMaterialBase();
+	virtual ~icpMaterialBase() = default;
+
+	virtual void createTextureImages() = 0;
+	virtual void createTextureImageViews(size_t mipmaplevel) = 0;
+	virtual void createTextureSampler();
+};
+
+class icpOneTextureMaterial : public icpMaterialBase
 {
 public:
 	icpOneTextureMaterial() = default;
 	virtual ~icpOneTextureMaterial() = default;
 
-	void createTextureImages();
-	void createTextureImageViews(size_t mipmaplevel);
-	void createTextureSampler();
+	void createTextureImages() override;
+	void createTextureImageViews(size_t mipmaplevel) override;
+	void createTextureSampler() override;
 
 	VkImage m_textureImage;
 	VkDeviceMemory m_textureBufferMem;
@@ -35,15 +46,15 @@ public:
 	std::string m_imgId;
 };
 
-class icpBlinnPhongMaterial
+class icpBlinnPhongMaterial : public icpMaterialBase
 {
 public:
 	icpBlinnPhongMaterial() = default;
 	virtual ~icpBlinnPhongMaterial() = default;
 
-	void createTextureImages();
-	void createTextureImageViews(size_t mipmaplevel);
-	void createTextureSampler();
+	void createTextureImages() override;
+	void createTextureImageViews(size_t mipmaplevel) override;
+	void createTextureSampler() override;
 
 	VkImage m_textureImage;
 	VkDeviceMemory m_textureBufferMem;

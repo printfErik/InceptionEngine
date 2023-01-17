@@ -10,6 +10,11 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
+void icpMaterialBase::createTextureImagesViews()
+{
+	
+}
+
 
 void icpOneTextureMaterial::createTextureImages()
 {
