@@ -9,32 +9,52 @@ class icpImageResource;
 
 enum class eMaterialModel
 {
-	BlinnPhong = 0,
-	ONE_TEXTURE_ONLY,
+	UNINITIALIZED = 0,
+	LANBERMT,
+	BLINNPHONG,
 	PBR,
 	MATERIAL_TYPE_COUNT
 };
 
-class icpMaterialBase
+
+struct icpMaterialParameter
+{
+	
+};
+
+// pipeline: import img resource --> 
+
+class icpMaterialTemplate
 {
 public:
-	icpMaterialBase();
-	virtual ~icpMaterialBase() = default;
+	icpMaterialTemplate() = default;
+	virtual ~icpMaterialTemplate() = default;
 
 	virtual void createTextureImages() = 0;
 	virtual void createTextureImageViews(size_t mipmaplevel) = 0;
-	virtual void createTextureSampler();
+	virtual void createTextureSampler() = 0;
+private:
+	eMaterialModel m_materialTemplateType = eMaterialModel::UNINITIALIZED;
+
 };
 
-class icpOneTextureMaterial : public icpMaterialBase
+class icpMaterialInstance : public icpMaterialTemplate
+{
+public:
+	icpMaterialInstance() = default;
+	virtual ~icpMaterialInstance() = default;
+
+private:
+	std::vector<icpMaterialTextureDescriptionInfo>
+};
+
+class icpOneTextureMaterial
 {
 public:
 	icpOneTextureMaterial() = default;
 	virtual ~icpOneTextureMaterial() = default;
 
-	void createTextureImages() override;
-	void createTextureImageViews(size_t mipmaplevel) override;
-	void createTextureSampler() override;
+	
 
 	VkImage m_textureImage;
 	VkDeviceMemory m_textureBufferMem;
@@ -46,15 +66,15 @@ public:
 	std::string m_imgId;
 };
 
-class icpBlinnPhongMaterial : public icpMaterialBase
+class icpBlinnPhongMaterial
 {
 public:
 	icpBlinnPhongMaterial() = default;
 	virtual ~icpBlinnPhongMaterial() = default;
 
-	void createTextureImages() override;
-	void createTextureImageViews(size_t mipmaplevel) override;
-	void createTextureSampler() override;
+	void createTextureImages();
+	void createTextureImageViews(size_t mipmaplevel);
+	void createTextureSampler();
 
 	VkImage m_textureImage;
 	VkDeviceMemory m_textureBufferMem;
