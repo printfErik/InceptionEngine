@@ -22,6 +22,7 @@ public:
 
 	std::shared_ptr<icpRHIBase> m_rhi;
 	std::shared_ptr<icpRenderPassManager> m_renderPassManager;
+	std::shared_ptr<icpTextureRenderResourceManager> m_textureRenderResourceManager;
 
 	void drawCube();
 	void createDirLight();

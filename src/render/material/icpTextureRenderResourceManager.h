@@ -23,7 +23,7 @@ struct icpTextureRenderResourceInfo
 	VkImage m_texImage{ VK_NULL_HANDLE };
 	VkDeviceMemory m_texBufferMem{ VK_NULL_HANDLE };
 	VkImageView m_texImageView{ VK_NULL_HANDLE };
-
+	VkSampler m_texSampler{ VK_NULL_HANDLE };
 	std::shared_ptr<icpImageResource> m_texImageRes = nullptr;
 	std::string m_texId;
 
@@ -34,12 +34,13 @@ struct icpTextureRenderResourceInfo
 class icpTextureRenderResourceManager
 {
 public:
-	icpTextureRenderResourceManager();
-	virtual icpTextureRenderResourceManager();
+	icpTextureRenderResourceManager(std::shared_ptr<icpVulkanRHI> rhi);
+	virtual ~icpTextureRenderResourceManager() = default;
 
-	void createTextureImageAndView(const std::string& texId);
-	void createTextureSampler(const std::string& texId);
+	void setupTextureRenderResources(const std::string& texId);
+	void checkAndcleanAllDiscardedRenderResources();
 
+	void deleteTexture(const std::string& texId);
 private:
 
 	std::shared_ptr<icpVulkanRHI> m_rhi = nullptr;

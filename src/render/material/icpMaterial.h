@@ -5,21 +5,16 @@
 
 
 INCEPTION_BEGIN_NAMESPACE
+class icpTextureRenderResourceManager;
 class icpImageResource;
 
 enum class eMaterialModel
 {
 	UNINITIALIZED = 0,
-	LANBERMT,
+	LAMBERT,
 	BLINNPHONG,
 	PBR,
 	MATERIAL_TYPE_COUNT
-};
-
-
-struct icpMaterialParameter
-{
-	
 };
 
 // pipeline: import img resource --> 
@@ -29,63 +24,44 @@ class icpMaterialTemplate
 public:
 	icpMaterialTemplate() = default;
 	virtual ~icpMaterialTemplate() = default;
-
-	virtual void createTextureImages() = 0;
-	virtual void createTextureImageViews(size_t mipmaplevel) = 0;
-	virtual void createTextureSampler() = 0;
-private:
+	virtual void allocateDescriptorSets() = 0;
+	virtual void createUniformBuffers() = 0;
+protected:
 	eMaterialModel m_materialTemplateType = eMaterialModel::UNINITIALIZED;
 
+	VkDescriptorSet m_perMaterialDS{VK_NULL_HANDLE};
+
+	VkBuffer m_perMaterialUniformBuffers{ VK_NULL_HANDLE };
+	VkDeviceMemory m_perMaterialUniformBufferMem{ VK_NULL_HANDLE };
+
 };
 
-class icpMaterialInstance : public icpMaterialTemplate
+class icpLambertMaterialInstance : public icpMaterialTemplate
 {
 public:
-	icpMaterialInstance() = default;
-	virtual ~icpMaterialInstance() = default;
+
+	struct UBOPerMaterial
+	{
+		float shininess;
+	};
+
+	icpLambertMaterialInstance();
+	virtual ~icpLambertMaterialInstance() = default;
+	void allocateDescriptorSets() override;
+	void createUniformBuffers() override;
 
 private:
-	std::vector<icpMaterialTextureDescriptionInfo>
+	std::vector<std::string> m_texRenderResourceIDs;
 };
 
-class icpOneTextureMaterial
+class icpBlinnPhongMaterialInstance
 {
-public:
-	icpOneTextureMaterial() = default;
-	virtual ~icpOneTextureMaterial() = default;
-
 	
-
-	VkImage m_textureImage;
-	VkDeviceMemory m_textureBufferMem;
-	VkImageView m_textureImageView;
-	VkSampler m_textureSampler;
-
-	std::shared_ptr<icpImageResource> m_imgRes = nullptr;
-
-	std::string m_imgId;
 };
 
-class icpBlinnPhongMaterial
+class icpPBRMaterialInstance
 {
-public:
-	icpBlinnPhongMaterial() = default;
-	virtual ~icpBlinnPhongMaterial() = default;
-
-	void createTextureImages();
-	void createTextureImageViews(size_t mipmaplevel);
-	void createTextureSampler();
-
-	VkImage m_textureImage;
-	VkDeviceMemory m_textureBufferMem;
-	VkImageView m_textureImageView;
-	VkSampler m_textureSampler;
-
-	std::shared_ptr<icpImageResource> m_diffuseImgRes = nullptr;
-	std::shared_ptr<icpImageResource> m_specularImgRes = nullptr;
-
-	std::string m_diffuseMapTexResId;
-	std::string m_specularMapTexResId;
+	
 };
 
 INCEPTION_END_NAMESPACE

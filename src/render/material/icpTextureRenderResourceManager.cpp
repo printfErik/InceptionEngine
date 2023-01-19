@@ -6,10 +6,17 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-void icpTextureRenderResourceManager::createTextureImageAndView(const std::string& texId)
+icpTextureRenderResourceManager::icpTextureRenderResourceManager(std::shared_ptr<icpVulkanRHI> rhi)
+	: m_rhi(rhi)
+{
+	
+}
+
+
+
+void icpTextureRenderResourceManager::setupTextureRenderResources(const std::string& texId)
 {
 	// todo: remove all dynamic_cast
-
 	icpTextureRenderResourceInfo info{};
 	info.m_texId = texId;
 
@@ -64,13 +71,6 @@ void icpTextureRenderResourceManager::createTextureImageAndView(const std::strin
 
 	info.m_texImageView = icpVulkanUtility::createImageView(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, info.m_texImageRes->m_mipmapLevel, m_rhi->m_device);
 
-	info.m_state = eTextureRenderResouceState::READY;
-	m_textureRenderResurces[info.m_texId] = info;
-
-}
-
-void icpTextureRenderResourceManager::createTextureSampler(const std::string& texId)
-{
 	VkSamplerCreateInfo sampler{};
 	sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	sampler.magFilter = VkFilter::VK_FILTER_LINEAR;
@@ -83,7 +83,7 @@ void icpTextureRenderResourceManager::createTextureSampler(const std::string& te
 	sampler.anisotropyEnable = VK_TRUE;
 
 	VkPhysicalDeviceProperties properties;
-	vkGetPhysicalDeviceProperties(vulkanRHI->m_physicalDevice, &properties);
+	vkGetPhysicalDeviceProperties(m_rhi->m_physicalDevice, &properties);
 
 	sampler.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 	sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
@@ -92,17 +92,48 @@ void icpTextureRenderResourceManager::createTextureSampler(const std::string& te
 	sampler.compareEnable = VK_FALSE;
 	sampler.compareOp = VK_COMPARE_OP_ALWAYS;
 
-	const auto imgP = m_imgRes;
+	const auto imgP = info.m_texImageRes;
 	sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	sampler.mipLodBias = 0.0f;
 	sampler.minLod = 0.0f;
 	sampler.maxLod = static_cast<float>(imgP->m_mipmapLevel);
 
-	if (vkCreateSampler(vulkanRHI->m_device, &sampler, nullptr, &m_textureSampler) != VK_SUCCESS)
+	if (vkCreateSampler(m_rhi->m_device, &sampler, nullptr, &info.m_texSampler) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create sampler!");
 	}
+
+	info.m_state = eTextureRenderResouceState::READY;
+	m_textureRenderResurces[info.m_texId] = info;
+
 }
+
+void icpTextureRenderResourceManager::checkAndcleanAllDiscardedRenderResources()
+{
+	for (auto& renderRes : m_textureRenderResurces)
+	{
+		auto& name = renderRes.first;
+		auto& info = renderRes.second;
+
+		if (info.m_state == eTextureRenderResouceState::DISCARD)
+		{
+			vkDestroySampler(m_rhi->m_device, info.m_texSampler, nullptr);
+			vkDestroyImageView(m_rhi->m_device, info.m_texImageView, nullptr);
+			vkDestroyImage(m_rhi->m_device, info.m_texImage, nullptr);
+			vkFreeMemory(m_rhi->m_device, info.m_texBufferMem, nullptr);
+
+			m_textureRenderResurces.erase(name);
+		}
+	}
+}
+
+void icpTextureRenderResourceManager::deleteTexture(const std::string& texId)
+{
+	auto& info = m_textureRenderResurces[texId];
+
+	info.m_state = eTextureRenderResouceState::DISCARD;
+}
+
 
 
 

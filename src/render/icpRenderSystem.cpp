@@ -5,10 +5,10 @@
 #include "../scene/icpXFormComponent.h"
 #include "../mesh/icpPrimitiveRendererComponment.h"
 #include "light/icpLightComponent.h"
+#include "material/icpTextureRenderResourceManager.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-icpRenderSystem::icpRenderSystem()
+	icpRenderSystem::icpRenderSystem()
 {
 }
 
@@ -23,8 +23,11 @@ bool icpRenderSystem::initializeRenderSystem()
 	m_rhi = std::make_shared<icpVulkanRHI>();
 	m_rhi->initialize(g_system_container.m_windowSystem);
 
+	auto vulkanRHI = std::dynamic_pointer_cast<icpVulkanRHI>(m_rhi);
 	m_renderPassManager = std::make_shared<icpRenderPassManager>();
-	m_renderPassManager->initialize(std::dynamic_pointer_cast<icpVulkanRHI>(m_rhi));
+	m_renderPassManager->initialize(vulkanRHI);
+
+	m_textureRenderResourceManager = std::make_shared<icpTextureRenderResourceManager>(vulkanRHI);
 
 	return true;
 }
@@ -48,6 +51,7 @@ for each view{
 void icpRenderSystem::drawFrame()
 {
 	m_renderPassManager->render();
+	m_textureRenderResourceManager->checkAndcleanAllDiscardedRenderResources();
 }
 
 void icpRenderSystem::setFrameBufferResized(bool _isResized)

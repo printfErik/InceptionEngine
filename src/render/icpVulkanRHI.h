@@ -16,11 +16,6 @@ INCEPTION_BEGIN_NAMESPACE
 
 static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
 
-struct UBOPerMaterial
-{
-	float shininess;
-};
-
 struct QueueFamilyIndices
 {
 	std::optional<uint32_t> m_graphicsFamily;

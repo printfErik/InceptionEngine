@@ -44,21 +44,21 @@ public:
 
 	void allocateDescriptorSets();
 
-	VkDescriptorSet m_perMeshDS;
+	VkDescriptorSet m_perMeshDS{ VK_NULL_HANDLE };
 
-	VkBuffer m_perMeshUniformBuffers;
-	VkDeviceMemory m_perMeshUniformBufferMem;
+	VkBuffer m_perMeshUniformBuffers{ VK_NULL_HANDLE };
+	VkDeviceMemory m_perMeshUniformBufferMem{ VK_NULL_HANDLE };
 
-	VkBuffer m_vertexBuffer;
-	VkDeviceMemory m_vertexBufferMem;
+	VkBuffer m_vertexBuffer{ VK_NULL_HANDLE };
+	VkDeviceMemory m_vertexBufferMem{ VK_NULL_HANDLE };
 
-	VkBuffer m_indexBuffer;
-	VkDeviceMemory m_indexBufferMem;
+	VkBuffer m_indexBuffer{ VK_NULL_HANDLE };
+	VkDeviceMemory m_indexBufferMem{ VK_NULL_HANDLE };
 
 	std::string m_meshResId;
 
 	// only one material for one mesh for now
-	std::vector<std::shared_ptr<icpBlinnPhongMaterial>> m_material;
+	std::vector<std::shared_ptr<icpMaterialTemplate>> m_materials;
 };
 
 
