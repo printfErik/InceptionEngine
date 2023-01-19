@@ -24,6 +24,10 @@ void icpMainForwardPass::initializeRenderPass(RendePassInitInfo initInfo)
 {
 	m_rhi = initInfo.rhi;
 
+	createDescriptorSetLayouts();
+	createStorageBuffer();
+	allocateDescriptorSets();
+
 	createRenderPass();
 	setupPipeline();
 	createFrameBuffers();
