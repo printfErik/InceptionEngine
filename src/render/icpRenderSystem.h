@@ -19,13 +19,13 @@ public:
 	void setFrameBufferResized(bool _isResized);
 
 	void getAllStaticMeshRenderers();
+	void drawCube();
+	void createDirLight();
 
 	std::shared_ptr<icpRHIBase> m_rhi;
 	std::shared_ptr<icpRenderPassManager> m_renderPassManager;
 	std::shared_ptr<icpTextureRenderResourceManager> m_textureRenderResourceManager;
-
-	void drawCube();
-	void createDirLight();
+	std::shared_ptr<icpMaterialSystem> m_materialSystem;
 
 private:
 };

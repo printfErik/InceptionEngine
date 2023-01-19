@@ -279,7 +279,6 @@ void icpSceneSystem::getRootEntityList(std::vector<std::shared_ptr<icpGameEntity
 
 void icpSceneSystem::createMeshEnityFromResource(std::shared_ptr<icpResourceBase> meshRes)
 {
-
 	icpGameEntity entity;
 	entity.initializeEntity(m_registry.create(), this, true);
 
@@ -292,9 +291,13 @@ void icpSceneSystem::createMeshEnityFromResource(std::shared_ptr<icpResourceBase
 	auto&& mesh = entity.installComponent<icpMeshRendererComponent>();
 
 	mesh.m_meshResId = meshRes->m_id;
-	mesh.m_texResId = meshRes->m_id + "_img";
 
 	mesh.prepareRenderResourceForMesh();
+	auto material = mesh.addMaterial(eMaterialModel::BLINNPHONG);
+	material->addDiffuseTexture(meshRes->m_id + "_diffuse");
+	material->addSpecularTexture(meshRes->m_id + "_specular");
+	material->addShininess(0.1f);
+	material->
 }
 
 

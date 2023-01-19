@@ -44,6 +44,8 @@ public:
 
 	void allocateDescriptorSets();
 
+	std::shared_ptr<icpMaterialTemplate> addMaterial(eMaterialModel materialType);
+
 	VkDescriptorSet m_perMeshDS{ VK_NULL_HANDLE };
 
 	VkBuffer m_perMeshUniformBuffers{ VK_NULL_HANDLE };

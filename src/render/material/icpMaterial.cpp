@@ -1,4 +1,6 @@
 #include "icpMaterial.h"
+
+#include "icpTextureRenderResourceManager.h"
 #include "../icpVulkanRHI.h"
 #include "../icpVulkanUtility.h"
 #include "../icpRenderSystem.h"
@@ -16,7 +18,7 @@ icpLambertMaterialInstance::icpLambertMaterialInstance()
 	m_materialTemplateType = eMaterialModel::LAMBERT;
 }
 
-void icpLambertMaterialInstance::createUniformBuffers()
+void icpBlinnPhongMaterialInstance::createUniformBuffers()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 
@@ -36,7 +38,7 @@ void icpLambertMaterialInstance::createUniformBuffers()
 }
 
 
-void icpLambertMaterialInstance::allocateDescriptorSets()
+void icpBlinnPhongMaterialInstance::allocateDescriptorSets()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 
@@ -59,18 +61,107 @@ void icpLambertMaterialInstance::allocateDescriptorSets()
 	bufferInfo.offset = 0;
 	bufferInfo.range = sizeof(UBOMeshRenderResource);
 
-	std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+	auto texRenderResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
+	auto& info = texRenderResMgr->m_textureRenderResurces[m_texRenderResourceIDs[0]];
+
+	VkDescriptorImageInfo imageInfo1{};
+	imageInfo1.imageView = info.m_texImageView;
+	imageInfo1.sampler = info.m_texSampler;
+	imageInfo1.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+	info = texRenderResMgr->m_textureRenderResurces[m_texRenderResourceIDs[1]];
+	VkDescriptorImageInfo imageInfo2{};
+	imageInfo2.imageView = info.m_texImageView;
+	imageInfo2.sampler = info.m_texSampler;
+	imageInfo2.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+	std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
 	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrites[0].dstSet = m_perMeshDS;
+	descriptorWrites[0].dstSet = m_perMaterialDS;
 	descriptorWrites[0].dstBinding = 0;
 	descriptorWrites[0].dstArrayElement = 0;
 	descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorWrites[0].descriptorCount = 1;
 	descriptorWrites[0].pBufferInfo = &bufferInfo;
 
+	descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrites[1].dstSet = m_perMaterialDS;
+	descriptorWrites[1].dstBinding = 1;
+	descriptorWrites[1].dstArrayElement = 0;
+	descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrites[1].descriptorCount = 1;
+	descriptorWrites[1].pImageInfo = &imageInfo1;
+
+	descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrites[2].dstSet = m_perMaterialDS;
+	descriptorWrites[2].dstBinding = 1;
+	descriptorWrites[2].dstArrayElement = 0;
+	descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrites[2].descriptorCount = 1;
+	descriptorWrites[2].pImageInfo = &imageInfo2;
+
 	vkUpdateDescriptorSets(vulkanRHI->m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 }
 
+icpBlinnPhongMaterialInstance::icpBlinnPhongMaterialInstance()
+{
+	m_materialTemplateType = eMaterialModel::BLINNPHONG;
+}
+
+
+void icpMaterialSystem::initializeMaterialSystem()
+{
+	m_materials.resize(static_cast<int>(eMaterialModel::MATERIAL_TYPE_COUNT) - 1);
+}
+
+
+std::shared_ptr<icpMaterialTemplate> icpMaterialSystem::createMaterialInstance(eMaterialModel materialType)
+{
+	switch (materialType)
+	{
+		case eMaterialModel::BLINNPHONG:
+		{
+			std::shared_ptr<icpMaterialTemplate> instance = std::make_shared<icpBlinnPhongMaterialInstance>();
+			m_materials.push_back(instance);
+		}
+		break;
+		default:
+			break;
+	}
+}
+
+void icpBlinnPhongMaterialInstance::addDiffuseTexture(const std::string& texID)
+{
+	auto texRendeResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
+	if (texRendeResMgr->m_textureRenderResurces.find(texID) == texRendeResMgr->m_textureRenderResurces.end() 
+		|| texRendeResMgr->m_textureRenderResurces[texID].m_state == eTextureRenderResouceState::UNINITIALIZED)
+	{
+		texRendeResMgr->setupTextureRenderResources(texID);
+	}
+	m_texRenderResourceIDs.push_back(texID);
+}
+
+void icpBlinnPhongMaterialInstance::addSpecularTexture(const std::string& texID)
+{
+	auto texRendeResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
+	if (texRendeResMgr->m_textureRenderResurces.find(texID) == texRendeResMgr->m_textureRenderResurces.end()
+		|| texRendeResMgr->m_textureRenderResurces[texID].m_state == eTextureRenderResouceState::UNINITIALIZED)
+	{
+		texRendeResMgr->setupTextureRenderResources(texID);
+	}
+	m_texRenderResourceIDs.push_back(texID);
+}
+
+void icpBlinnPhongMaterialInstance::addShininess(float shininess)
+{
+	m_ubo.shininess = shininess;
+}
+
+void icpBlinnPhongMaterialInstance::setupMaterialRenderResources()
+{
+	createUniformBuffers();
+	allocateDescriptorSets();
+}
 
 
 INCEPTION_END_NAMESPACE

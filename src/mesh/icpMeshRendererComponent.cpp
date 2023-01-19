@@ -12,9 +12,6 @@ INCEPTION_BEGIN_NAMESPACE
 
 void icpMeshRendererComponent::prepareRenderResourceForMesh()
 {
-	//createTextureImages();
-	//createTextureSampler();
-
 	createVertexBuffers();
 	createIndexBuffers();
 	createUniformBuffers();
@@ -172,6 +169,15 @@ void icpMeshRendererComponent::createIndexBuffers()
 
 	vkDestroyBuffer(vulkanRHI->m_device, stagingBuffer, nullptr);
 	vkFreeMemory(vulkanRHI->m_device, stagingBufferMem, nullptr);
+}
+
+std::shared_ptr<icpMaterialTemplate> icpMeshRendererComponent::addMaterial(eMaterialModel materialType)
+{
+	auto materialSystem = g_system_container.m_renderSystem->m_materialSystem;
+	auto instance = materialSystem->createMaterialInstance(materialType);
+	m_materials.push_back(instance);
+
+	return instance;
 }
 
 

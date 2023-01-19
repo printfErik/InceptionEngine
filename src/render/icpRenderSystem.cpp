@@ -29,6 +29,9 @@ bool icpRenderSystem::initializeRenderSystem()
 
 	m_textureRenderResourceManager = std::make_shared<icpTextureRenderResourceManager>(vulkanRHI);
 
+	m_materialSystem = std::make_shared<icpMaterialSystem>();
+	m_materialSystem->initializeMaterialSystem();
+
 	return true;
 }
 // example for typical loops in rendering
