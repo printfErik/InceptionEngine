@@ -34,10 +34,10 @@ public:
 protected:
 	eMaterialModel m_materialTemplateType = eMaterialModel::UNINITIALIZED;
 
-	VkDescriptorSet m_perMaterialDS{VK_NULL_HANDLE};
+	std::vector<VkDescriptorSet> m_perMaterialDSs;
 
-	VkBuffer m_perMaterialUniformBuffers{ VK_NULL_HANDLE };
-	VkDeviceMemory m_perMaterialUniformBufferMem{ VK_NULL_HANDLE };
+	std::vector<VkBuffer> m_perMaterialUniformBuffers;
+	std::vector<VkDeviceMemory> m_perMaterialUniformBufferMems;
 
 };
 
@@ -82,13 +82,13 @@ class icpPBRMaterialInstance
 	
 };
 
-class icpMaterialSystem
+class icpMaterialSubSystem
 {
 public:
-	icpMaterialSystem() = default;
-	virtual ~icpMaterialSystem() = default;
+	icpMaterialSubSystem() = default;
+	virtual ~icpMaterialSubSystem() = default;
 
-	void initializeMaterialSystem();
+	void initializeMaterialSubSystem();
 	std::shared_ptr<icpMaterialTemplate> createMaterialInstance(eMaterialModel materialType);
 
 	std::vector<std::shared_ptr<icpMaterialTemplate>> m_materials;

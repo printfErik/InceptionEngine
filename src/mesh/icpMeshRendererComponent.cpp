@@ -23,36 +23,40 @@ void icpMeshRendererComponent::allocateDescriptorSets()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 
+	auto& layout = g_system_container.m_renderSystem->m_renderPassManager->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
+
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateInfo.descriptorSetCount = 1;
+	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
 	allocateInfo.descriptorPool = vulkanRHI->m_descriptorPool;
+	allocateInfo.pSetLayouts = layouts.data();
 
-	auto&layout = g_system_container.m_renderSystem->m_renderPassManager->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
+	m_perMeshDSs.resize(MAX_FRAMES_IN_FLIGHT);
 
-	allocateInfo.pSetLayouts = &layout;
-
-	if (vkAllocateDescriptorSets(vulkanRHI->m_device, &allocateInfo, &m_perMeshDS) != VK_SUCCESS)
+	if (vkAllocateDescriptorSets(vulkanRHI->m_device, &allocateInfo, m_perMeshDSs.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate descriptor sets!");
 	}
 
-	VkDescriptorBufferInfo bufferInfo{};
-	bufferInfo.buffer = m_perMeshUniformBuffers;
-	bufferInfo.offset = 0;
-	bufferInfo.range = sizeof(UBOMeshRenderResource);
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = m_perMeshUniformBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(UBOMeshRenderResource);
 
-	std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
-	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrites[0].dstSet = m_perMeshDS;
-	descriptorWrites[0].dstBinding = 0;
-	descriptorWrites[0].dstArrayElement = 0;
-	descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorWrites[0].descriptorCount = 1;
-	descriptorWrites[0].pBufferInfo = &bufferInfo;
+		std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[0].dstSet = m_perMeshDSs[i];
+		descriptorWrites[0].dstBinding = 0;
+		descriptorWrites[0].dstArrayElement = 0;
+		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrites[0].descriptorCount = 1;
+		descriptorWrites[0].pBufferInfo = &bufferInfo;
 
-	vkUpdateDescriptorSets(vulkanRHI->m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-
+		vkUpdateDescriptorSets(vulkanRHI->m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+	}
 }
 
 void icpMeshRendererComponent::createUniformBuffers()
@@ -61,17 +65,23 @@ void icpMeshRendererComponent::createUniformBuffers()
 
 	auto perMeshSize = sizeof(UBOMeshRenderResource);
 
+	m_perMeshUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	m_perMeshUniformBufferMems.resize(MAX_FRAMES_IN_FLIGHT);
+
 	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
-	icpVulkanUtility::createVulkanBuffer(
-		perMeshSize,
-		mode,
-		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
-		m_perMeshUniformBuffers,
-		m_perMeshUniformBufferMem,
-		vulkanRHI->m_device,
-		vulkanRHI->m_physicalDevice);
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpVulkanUtility::createVulkanBuffer(
+			perMeshSize,
+			mode,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
+			m_perMeshUniformBuffers[i],
+			m_perMeshUniformBufferMems[i],
+			vulkanRHI->m_device,
+			vulkanRHI->m_physicalDevice);
+	}
 }
 
 void icpMeshRendererComponent::createVertexBuffers()

@@ -12,6 +12,7 @@
 #include "../../scene/icpXFormComponent.h"
 #include "../icpRenderSystem.h"
 #include "../../mesh/icpPrimitiveRendererComponment.h"
+#include "../light/icpLightComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
 icpMainForwardPass::~icpMainForwardPass()
@@ -141,8 +142,8 @@ void icpMainForwardPass::setupPipeline()
 	// Layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1;
-	pipelineLayoutInfo.pSetLayouts = &m_rhi->m_meshDSLayout;
+	pipelineLayoutInfo.setLayoutCount = m_DSLayouts.size();
+	pipelineLayoutInfo.pSetLayouts = m_DSLayouts.data();
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 
 	if (vkCreatePipelineLayout(m_rhi->m_device, &pipelineLayoutInfo, nullptr, &m_pipelineInfo.m_pipelineLayout) != VK_SUCCESS)
@@ -317,7 +318,7 @@ void icpMainForwardPass::render(uint32_t frameBufferIndex, uint32_t currentFrame
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 
-	updateMeshUniformBuffers(currentFrame);
+	updateGlobalBuffers(currentFrame);
 
 	m_rhi->resetCommandBuffer(currentFrame);
 	recordCommandBuffer(m_rhi->m_graphicsCommandBuffers[currentFrame], frameBufferIndex, currentFrame);
@@ -380,6 +381,17 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 
 	std::vector<VkDeviceSize> offsets{ 0 };
 
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &m_perFrameDSs[curFrame], 0, nullptr);
+
+	auto materialSubSystem = g_system_container.m_renderSystem->m_materialSystem;
+
+	for(auto materialInstance : materialSubSystem->m_materials)
+	{
+		// todo
+	}
+
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &m_perFrameDSs[curFrame], 0, nullptr);
+
 	std::vector<std::shared_ptr<icpGameEntity>> rootList;
 	g_system_container.m_sceneSystem->getRootEntityList(rootList);
 
@@ -398,9 +410,10 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
 			vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_descriptorSets[curFrame], 0, nullptr);
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshRes->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
+		/*
 		else if (entity->hasComponent<icpPrimitiveRendererComponment>())
 		{
 			auto& primitive = entity->accessComponent<icpPrimitiveRendererComponment>();
@@ -414,6 +427,7 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(primitive.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
+		*/
 	}
 
 	vkCmdEndRenderPass(commandBuffer);
@@ -446,20 +460,64 @@ void icpMainForwardPass::recreateSwapChain() {
 }
 
 
-void icpMainForwardPass::updateMeshUniformBuffers(uint32_t curFrame)
+void icpMainForwardPass::updateGlobalBuffers(uint32_t curFrame)
 {
 	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
 
+	SSBOPerFrame ssbo{};
+
+	ssbo.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
+	auto aspectRatio = (float)m_rhi->m_swapChainExtent.width / (float)m_rhi->m_swapChainExtent.height;
+	ssbo.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
+	ssbo.projection[1][1] *= -1;
+
+	auto lightView = g_system_container.m_sceneSystem->m_registry.view<icpLightComponent>();
+
+	int index = 0;
+	for (auto& light : lightView)
+	{
+		auto& lightComp = lightView.get<icpLightComponent>(light);
+		switch (lightComp.m_type)
+		{
+			case eLightType::DIRECTIONAL_LIGHT:
+			{
+				auto dirL = dynamic_cast<icpDirectionalLightComponent&>(lightComp);
+				ssbo.dirLight.ambient = lightComp.m_ambient;
+				ssbo.dirLight.diffuse = lightComp.m_diffuse;
+				ssbo.dirLight.direction = dirL.m_direction;
+				ssbo.dirLight.specular = lightComp.m_specular;
+			}
+			break;
+			case eLightType::POINT_LIGHT:
+			{
+				auto pointLight = dynamic_cast<icpPointlLightComponent&>(lightComp);
+				PointLightRenderResource point{};
+				point.ambient = pointLight.m_ambient;
+				point.diffuse = pointLight.m_diffuse;
+				point.specular = pointLight.m_specular;
+				point.position = pointLight.m_posiotion;
+				point.constant = pointLight.constant;
+				point.linear = pointLight.linear;
+				point.quadratic = pointLight.quadratic;
+				ssbo.pointLight[index] = point;
+				index++;
+			}
+			break;
+			default:
+				break;
+		}
+	}
+
+	{
+		void* data;
+		vkMapMemory(m_rhi->m_device, m_perFrameStorageBufferMems[curFrame], 0, sizeof(SSBOPerFrame), 0, &data);
+		memcpy(data, &ssbo, sizeof(ssbo));
+		vkUnmapMemory(m_rhi->m_device, m_perFrameStorageBufferMems[curFrame]);
+	}
+
 	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
 
-	UniformBufferObject ubo{};
-
-	ubo.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
-	auto aspectRatio = m_rhi->m_swapChainExtent.width / (float)m_rhi->m_swapChainExtent.height;
-	ubo.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
-	ubo.projection[1][1] *= -1;
-
-	for (auto entity: view)
+	for (auto& entity: view)
 	{
 		auto& meshRenderer = view.get<icpMeshRendererComponent>(entity);
 
@@ -469,16 +527,18 @@ void icpMainForwardPass::updateMeshUniformBuffers(uint32_t curFrame)
 		auto firstRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(0.f, 0.f, 1.f));
 		auto secondRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(1.f, 0.f, 0.f));
 
+		UBOMeshRenderResource ubo{};
 		ubo.model = secondRotate * firstRotate;
 
 		void* data;
-		vkMapMemory(m_rhi->m_device, meshRenderer.m_uniformBufferMem[curFrame], 0, sizeof(ubo), 0, &data);
+		vkMapMemory(m_rhi->m_device, meshRenderer.m_perMeshUniformBufferMems[curFrame], 0, sizeof(ubo), 0, &data);
 		memcpy(data, &ubo, sizeof(ubo));
-		vkUnmapMemory(m_rhi->m_device, meshRenderer.m_uniformBufferMem[curFrame]);
+		vkUnmapMemory(m_rhi->m_device, meshRenderer.m_perMeshUniformBufferMems[curFrame]);
 	}
 
 	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponment, icpXFormComponent>();
 
+	/*
 	for (auto entity: primitiveView)
 	{
 		auto& primitiveRender = primitiveView.get<icpPrimitiveRendererComponment>(entity);
@@ -489,13 +549,13 @@ void icpMainForwardPass::updateMeshUniformBuffers(uint32_t curFrame)
 		memcpy(data, &ubo, sizeof(ubo));
 		vkUnmapMemory(m_rhi->m_device, primitiveRender.m_uniformBufferMem[curFrame]);
 	}
-
+	*/
 }
+
 
 void icpMainForwardPass::createDescriptorSetLayouts()
 {
 	m_DSLayouts.resize(eMainForwardPassDSType::LAYOUT_TYPE_COUNT);
-
 	// per mesh
 	{
 		// set 0, binding 0 
@@ -578,58 +638,64 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 	}
 }
 
+void icpMainForwardPass::createStorageBuffer()
+{
+	auto perMeshSize = sizeof(SSBOPerFrame);
+	VkSharingMode mode = m_rhi->m_queueIndices.m_graphicsFamily.value() == m_rhi->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+	m_perFrameStorageBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	m_perFrameStorageBufferMems.resize(MAX_FRAMES_IN_FLIGHT);
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpVulkanUtility::createVulkanBuffer(
+			perMeshSize,
+			mode,
+			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
+			m_perFrameStorageBuffers[i],
+			m_perFrameStorageBufferMems[i],
+			m_rhi->m_device,
+			m_rhi->m_physicalDevice);
+	}
+}
+
 void icpMainForwardPass::allocateDescriptorSets()
 {
-	/*
-	// per mesh
-	{
-
-	}
-
-	// per material
-	{
-		VkDescriptorSetAllocateInfo allocateInfo{};
-		allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocateInfo.descriptorSetCount = 1;
-		allocateInfo.descriptorPool = m_rhi->m_descriptorPool;
-		allocateInfo.pSetLayouts = &m_descriptorInfos[eMainForwardPassDSType::PER_MATERIAL].m_descriptorSetLayout;
-
-		if (vkAllocateDescriptorSets(m_rhi->m_device, &allocateInfo, &m_descriptorInfos[eMainForwardPassDSType::PER_MATERIAL].m_descriptorSet) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to allocate descriptor sets!");
-		}
-	}
-	*/
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_DSLayouts[eMainForwardPassDSType::PER_FRAME]);
 	// per frame
-	{
-		VkDescriptorSetAllocateInfo allocateInfo{};
-		allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocateInfo.descriptorSetCount = 1;
-		allocateInfo.descriptorPool = m_rhi->m_descriptorPool;
-		allocateInfo.pSetLayouts = &m_DSLayouts[eMainForwardPassDSType::PER_FRAME];
+	VkDescriptorSetAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+	allocateInfo.descriptorPool = m_rhi->m_descriptorPool;
+	allocateInfo.pSetLayouts = layouts.data();
 
-		if (vkAllocateDescriptorSets(m_rhi->m_device, &allocateInfo, &m_perFrameDS) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to allocate descriptor sets!");
-		}
+	m_perFrameDSs.resize(MAX_FRAMES_IN_FLIGHT);
+
+	if (vkAllocateDescriptorSets(m_rhi->m_device, &allocateInfo, m_perFrameDSs.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate descriptor sets!");
 	}
 
-	VkDescriptorBufferInfo bufferInfo{};
-	bufferInfo.buffer = m_SSBOPerFrame;
-	bufferInfo.offset = 0;
-	bufferInfo.range = sizeof(SSBOPerFrame);
-	
-	std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
-	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrites[0].dstSet = m_perFrameDS;
-	descriptorWrites[0].dstBinding = 0;
-	descriptorWrites[0].dstArrayElement = 0;
-	descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	descriptorWrites[0].descriptorCount = 1;
-	descriptorWrites[0].pBufferInfo = &bufferInfo;
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
 
-	vkUpdateDescriptorSets(m_rhi->m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = m_perFrameStorageBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(SSBOPerFrame);
 
+		std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[0].dstSet = m_perFrameDSs[i];
+		descriptorWrites[0].dstBinding = 0;
+		descriptorWrites[0].dstArrayElement = 0;
+		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		descriptorWrites[0].descriptorCount = 1;
+		descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+		vkUpdateDescriptorSets(m_rhi->m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	}
 }
 
 

@@ -21,17 +21,19 @@ struct icpVertex
 {
 	glm::vec3 position;
 	glm::vec3 color;
+	glm::vec3 normal;
 	glm::vec2 texCoord;
 
 	static VkVertexInputBindingDescription getBindingDescription();
 
-	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescription();
+	static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescription();
 
 	bool operator==(const icpVertex& v1) const
 	{
 		return position == v1.position
 			&& color == v1.color
-			&& texCoord == v1.texCoord;
+			&& texCoord == v1.texCoord
+			&& normal == v1.normal;
 	}
 };
 

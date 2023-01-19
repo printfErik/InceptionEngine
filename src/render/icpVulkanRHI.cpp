@@ -34,10 +34,6 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	createSwapChain();
 	createSwapChainImageViews();
 
-	createPerFrameDescriptorSetLayout();
-	createPerMaterialDesciptotSetLayout();
-	createPerObjectDesciptotSetLayout();
-
 	createCommandPools();
 	createDepthResources();
 
@@ -125,10 +121,6 @@ void icpVulkanRHI::cleanup()
 	vkDestroyCommandPool(m_device, m_transferCommandPool, nullptr);
 
 	vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
-
-	vkDestroyDescriptorSetLayout(m_device, m_perFrameDSLayout, nullptr);
-	vkDestroyDescriptorSetLayout(m_device, m_perMaterialDSLayout, nullptr);
-	vkDestroyDescriptorSetLayout(m_device, m_perObjectDSLayout, nullptr);
 
 	vkDestroyDevice(m_device, nullptr);
 

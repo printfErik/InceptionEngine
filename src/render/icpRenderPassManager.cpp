@@ -118,7 +118,7 @@ void icpRenderPassManager::render()
 
 std::shared_ptr<icpRenderPassBase> icpRenderPassManager::accessRenderPass(eRenderPass passType)
 {
-	return m_renderPasses[passType];
+	return m_renderPasses[static_cast<int>(passType)];
 }
 
 INCEPTION_END_NAMESPACE

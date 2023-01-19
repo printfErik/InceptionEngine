@@ -4,6 +4,8 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
+#define MAX_POINT_LIGHT_COUNT 16
+
 struct DirectionalLightRenderResource
 {
 	glm::vec3 direction;
@@ -15,13 +17,12 @@ struct DirectionalLightRenderResource
 struct PointLightRenderResource
 {
 	glm::vec3 position;
-	float constant;
-	float linear;
-	float quadratic;
-
 	glm::vec3 ambient;
 	glm::vec3 diffuse;
 	glm::vec3 specular;
+	float constant;
+	float linear;
+	float quadratic;
 };
 
 struct SSBOPerFrame
@@ -29,7 +30,7 @@ struct SSBOPerFrame
 	glm::mat4 view;
 	glm::mat4 projection;
 	DirectionalLightRenderResource dirLight;
-	PointLightRenderResource pointLight[16];
+	PointLightRenderResource pointLight[MAX_POINT_LIGHT_COUNT];
 };
 
 
@@ -61,17 +62,19 @@ public:
 	void recreateSwapChain() override;
 
 	void createDescriptorSetLayouts() override;
+	void createStorageBuffer();
 	void allocateDescriptorSets() override;
 
 	VkSemaphore m_waitSemaphores[1];
 	VkPipelineStageFlags m_waitStages[1];
 
-	VkBuffer m_SSBOPerFrame{VK_NULL_HANDLE};
-	VkDescriptorSet m_perFrameDS;
+	std::vector<VkBuffer> m_perFrameStorageBuffers{ VK_NULL_HANDLE };
+	std::vector<VkDeviceMemory> m_perFrameStorageBufferMems{ VK_NULL_HANDLE };
+	std::vector<VkDescriptorSet> m_perFrameDSs{ VK_NULL_HANDLE };
 
 private:
 
-	void updateMeshUniformBuffers(uint32_t curFrame);
+	void updateGlobalBuffers(uint32_t curFrame);
 };
 
 INCEPTION_END_NAMESPACE

@@ -46,10 +46,10 @@ public:
 
 	std::shared_ptr<icpMaterialTemplate> addMaterial(eMaterialModel materialType);
 
-	VkDescriptorSet m_perMeshDS{ VK_NULL_HANDLE };
+	std::vector<VkDescriptorSet> m_perMeshDSs;
 
-	VkBuffer m_perMeshUniformBuffers{ VK_NULL_HANDLE };
-	VkDeviceMemory m_perMeshUniformBufferMem{ VK_NULL_HANDLE };
+	std::vector<VkBuffer> m_perMeshUniformBuffers;
+	std::vector<VkDeviceMemory> m_perMeshUniformBufferMems;
 
 	VkBuffer m_vertexBuffer{ VK_NULL_HANDLE };
 	VkDeviceMemory m_vertexBufferMem{ VK_NULL_HANDLE };

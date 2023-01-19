@@ -25,7 +25,7 @@ public:
 	std::shared_ptr<icpRHIBase> m_rhi;
 	std::shared_ptr<icpRenderPassManager> m_renderPassManager;
 	std::shared_ptr<icpTextureRenderResourceManager> m_textureRenderResourceManager;
-	std::shared_ptr<icpMaterialSystem> m_materialSystem;
+	std::shared_ptr<icpMaterialSubSystem> m_materialSystem;
 
 private:
 };

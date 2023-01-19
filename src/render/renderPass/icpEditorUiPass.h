@@ -22,18 +22,13 @@ public:
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex);
 	void recreateSwapChain() override;
 
-	//void createViewPortImage();
-
-	//std::vector<VkFramebuffer> m_viewPortFramebuffers;
-
-	//std::vector<VkDescriptorSet> m_Dset;
+	void allocateDescriptorSets() override {}
+	void createDescriptorSetLayouts() override {}
 
 private:
 	std::shared_ptr<icpEditorUI> m_editorUI;
 
-	//std::vector<VkImage> m_viewPortImages;
-	//std::vector<VkDeviceMemory> m_viewPortImageDeviceMemory;
-	//std::vector<VkImageView> m_viewPortImageViews;
+
 
 };
 

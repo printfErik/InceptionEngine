@@ -29,8 +29,8 @@ bool icpRenderSystem::initializeRenderSystem()
 
 	m_textureRenderResourceManager = std::make_shared<icpTextureRenderResourceManager>(vulkanRHI);
 
-	m_materialSystem = std::make_shared<icpMaterialSystem>();
-	m_materialSystem->initializeMaterialSystem();
+	m_materialSystem = std::make_shared<icpMaterialSubSystem>();
+	m_materialSystem->initializeMaterialSubSystem();
 
 	return true;
 }
@@ -90,7 +90,7 @@ void icpRenderSystem::createDirLight()
 {
 	auto dirLightEntity = g_system_container.m_sceneSystem->createEntity("DirLight", true);
 
-	auto& light = dirLightEntity.installComponent<icpLightComponent>();
+	auto& light = dirLightEntity.installComponent<icpDirectionalLightComponent>();
 	light.m_type = eLightType::DIRECTIONAL_LIGHT;
 
 	light.m_direction = glm::vec3(-1, -1, 1);

@@ -27,8 +27,6 @@ public:
 	};
 
 
-	VkDescriptorSetLayout m_descriptorSetLayout;
-
 	icpRenderPassBase() = default;
 	virtual ~icpRenderPassBase() {}
 

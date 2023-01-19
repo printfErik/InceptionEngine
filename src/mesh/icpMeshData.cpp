@@ -18,9 +18,9 @@ VkVertexInputBindingDescription icpVertex::getBindingDescription()
 	return bindingDescription;
 }
 
-std::array<VkVertexInputAttributeDescription, 3> icpVertex::getAttributeDescription()
+std::array<VkVertexInputAttributeDescription, 4> icpVertex::getAttributeDescription()
 {
-	std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+	std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
 	attributeDescriptions[0].binding = 0;
 	attributeDescriptions[0].location = 0;
 	attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -31,8 +31,13 @@ std::array<VkVertexInputAttributeDescription, 3> icpVertex::getAttributeDescript
 	attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 	attributeDescriptions[1].offset = offsetof(icpVertex, color);
 
+	attributeDescriptions[1].binding = 0;
+	attributeDescriptions[1].location = 2;
+	attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[1].offset = offsetof(icpVertex, normal);
+
 	attributeDescriptions[2].binding = 0;
-	attributeDescriptions[2].location = 2;
+	attributeDescriptions[2].location = 3;
 	attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
 	attributeDescriptions[2].offset = offsetof(icpVertex, texCoord);
 

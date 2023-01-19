@@ -264,7 +264,7 @@ icpGameEntity icpSceneSystem::createEntityFromMap(const fb::flatbufferTreeNode* 
 			auto meshRenderFB = static_cast<const fb::icpMeshRendererComponent*>(comp);
 			auto&& mesh = entity.installComponent<icpMeshRendererComponent>();
 			mesh.m_meshResId = meshRenderFB->m_meshResID()->str();
-			mesh.m_texResId = meshRenderFB->m_textureResID()->str();
+			//mesh.m_texResId = meshRenderFB->m_textureResID()->str();
 		}
 	}
 
@@ -297,7 +297,7 @@ void icpSceneSystem::createMeshEnityFromResource(std::shared_ptr<icpResourceBase
 	material->addDiffuseTexture(meshRes->m_id + "_diffuse");
 	material->addSpecularTexture(meshRes->m_id + "_specular");
 	material->addShininess(0.1f);
-	material->
+	material->setupMaterialRenderResources();
 }
 
 
