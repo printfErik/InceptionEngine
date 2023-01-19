@@ -139,6 +139,7 @@ void icpPrimitiveRendererComponment::createIndexBuffers()
 
 void icpPrimitiveRendererComponment::allocateDescriptorSets()
 {
+	/*
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, vulkanRHI->m_meshDSLayout);
 
@@ -187,12 +188,13 @@ void icpPrimitiveRendererComponment::allocateDescriptorSets()
 
 		vkUpdateDescriptorSets(vulkanRHI->m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
+	*/
 }
 
 void icpPrimitiveRendererComponment::createUniformBuffers()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-	auto bufferSize = sizeof(UniformBufferObject);
+	auto bufferSize = 0;// sizeof(UniformBufferObject);
 
 	m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 	m_uniformBufferMem.resize(MAX_FRAMES_IN_FLIGHT);

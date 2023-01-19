@@ -508,12 +508,14 @@ void icpMainForwardPass::updateGlobalBuffers(uint32_t curFrame)
 		}
 	}
 
+	if (!lightView.empty())
 	{
 		void* data;
 		vkMapMemory(m_rhi->m_device, m_perFrameStorageBufferMems[curFrame], 0, sizeof(SSBOPerFrame), 0, &data);
 		memcpy(data, &ssbo, sizeof(ssbo));
 		vkUnmapMemory(m_rhi->m_device, m_perFrameStorageBufferMems[curFrame]);
 	}
+	
 
 	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
 

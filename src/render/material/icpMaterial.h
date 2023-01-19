@@ -46,8 +46,13 @@ class icpLambertMaterialInstance : public icpMaterialTemplate
 public:
 	icpLambertMaterialInstance();
 	virtual ~icpLambertMaterialInstance() = default;
-	void allocateDescriptorSets() override;
-	void createUniformBuffers() override;
+
+	void allocateDescriptorSets() override {}
+	void createUniformBuffers() override {}
+	void addDiffuseTexture(const std::string& texID) override {}
+	void addSpecularTexture(const std::string& texID) override {}
+	void addShininess(float shininess) override {}
+	void setupMaterialRenderResources() override {}
 
 private:
 	std::vector<std::string> m_texRenderResourceIDs;
