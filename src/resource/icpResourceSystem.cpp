@@ -116,6 +116,12 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::loadObjModelResource(const s
 
 			v.color = { 1.f, 1.f, 1.f };
 
+			v.normal = {
+				attrib.normals[3 * static_cast<size_t>(index.texcoord_index) + 0],
+				attrib.normals[3 * static_cast<size_t>(index.texcoord_index) + 1],
+				attrib.normals[3 * static_cast<size_t>(index.texcoord_index) + 2]
+			};
+
 			if (uniqueVexticesMap.count(v) == 0)
 			{
 				uniqueVexticesMap[v] = static_cast<uint32_t>(mesh.m_vertices.size());

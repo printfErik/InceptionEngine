@@ -173,5 +173,9 @@ void icpBlinnPhongMaterialInstance::setupMaterialRenderResources()
 	allocateDescriptorSets();
 }
 
+icpNullMaterialInstance::icpNullMaterialInstance()
+{
+	m_materialTemplateType = eMaterialModel::NULL_MATERIAL;
+}
 
 INCEPTION_END_NAMESPACE

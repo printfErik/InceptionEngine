@@ -14,15 +14,15 @@ void icpPrimitiveRendererComponment::fillInPrimitiveData(const glm::vec3& color)
 	{
 	case ePrimitiveType::CUBE:
 	{
-		std::vector<icpVertex> cubeVertices {
-		{{1,1,1}, color ,{-1,-1}},
-		{{-1,1,1},color,{-1,-1}},
-		{{-1,1,-1},color,{-1,-1}},
-		{{1,1,-1},color,{-1,-1}},
-		{{1,-1,1},color,{-1,-1}},
-		{{-1,-1,1},color,{-1,-1}},
-		{{-1,-1,-1},color,{-1,-1}},
-		{{1,-1,-1},color,{-1,-1}},
+		std::vector<icpVertex> cubeVertices{
+		{{1,1,1}, color ,{1, 1, 1 }, {-1,-1}},
+		{{-1,1,1},color,{-1, 1, 1 }, {-1,-1}},
+		{{-1,1,-1},color,{-1,1,-1},{-1,-1}},
+		{{1,1,-1},color,{1,1,-1},{-1,-1}},
+		{{1,-1,1},color,{1,-1,1},{-1,-1}},
+		{{-1,-1,1},color,{-1,-1,1},{-1,-1}},
+		{{-1,-1,-1},color,{-1,-1,-1},{-1,-1}},
+		{{1,-1,-1},color,{-1,-1,-1},{-1,-1}},
 		};
 
 		m_vertices.assign(cubeVertices.begin(), cubeVertices.end());

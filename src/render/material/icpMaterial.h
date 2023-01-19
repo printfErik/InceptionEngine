@@ -10,7 +10,7 @@ class icpImageResource;
 
 enum class eMaterialModel
 {
-	UNINITIALIZED = 0,
+	NULL_MATERIAL = 0,
 	LAMBERT,
 	BLINNPHONG,
 	PBR,
@@ -32,7 +32,7 @@ public:
 	virtual void setupMaterialRenderResources() = 0;
 
 protected:
-	eMaterialModel m_materialTemplateType = eMaterialModel::UNINITIALIZED;
+	eMaterialModel m_materialTemplateType = eMaterialModel::NULL_MATERIAL;
 
 	std::vector<VkDescriptorSet> m_perMaterialDSs;
 
@@ -75,6 +75,20 @@ private:
 
 	UBOPerMaterial m_ubo{};
 
+};
+
+class icpNullMaterialInstance : public icpMaterialTemplate
+{
+public:
+	icpNullMaterialInstance();
+	virtual ~icpNullMaterialInstance() = default;
+
+	void allocateDescriptorSets() override {}
+	void createUniformBuffers() override {}
+	void addDiffuseTexture(const std::string& texID) override {}
+	void addSpecularTexture(const std::string& texID) override {}
+	void addShininess(float shininess) override {}
+	void setupMaterialRenderResources() override {}
 };
 
 class icpPBRMaterialInstance
