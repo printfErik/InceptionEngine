@@ -1,11 +1,23 @@
 #version 450
 
-layout(binding = 0) uniform uniformBufferObject
+layout(set = 0, binding = 0) uniform UBOMeshRenderResource
 {
     mat4 model;
+} meshUBO;
+
+layout(set = 1, binding = 0) uniform UBOPerMaterial
+{
+    float shininess;
+}
+
+layout(set = 2, binding = 0) readonly buffer SSBOPerFrame
+{
     mat4 view;
-    mat4 projection;
-} ubo;
+    mat4 proj;
+    
+}
+
+
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
