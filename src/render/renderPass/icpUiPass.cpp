@@ -3,7 +3,7 @@
 #include "../../core/icpSystemContainer.h"
 #include "../../render/icpWindowSystem.h"
 #include "../../render/icpRenderSystem.h"
-#include "../../render/icpVulkanUtility.h"
+#include "../../render/RHI/Vulkan/icpVulkanUtility.h"
 #include "icpMainForwardPass.h"
 
 #include <backends/imgui_impl_glfw.h>

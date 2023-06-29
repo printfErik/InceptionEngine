@@ -1,7 +1,7 @@
 #include "icpMeshData.h"
 #include "../core/icpSystemContainer.h"
 #include "../render/icpRenderSystem.h"
-#include "../render/icpVulkanUtility.h"
+#include "../render/RHI/Vulkan/icpVulkanUtility.h"
 #include "../render/icpImageResource.h"
 #include "../core/icpLogSystem.h"
 

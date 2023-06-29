@@ -1,5 +1,5 @@
 #include "icpRenderSystem.h"
-#include "icpVulkanRHI.h"
+#include "RHI/Vulkan/icpVulkanRHI.h"
 #include "../core/icpSystemContainer.h"
 #include "../scene/icpSceneSystem.h"
 #include "../scene/icpXFormComponent.h"

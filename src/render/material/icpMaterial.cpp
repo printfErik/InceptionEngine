@@ -1,8 +1,8 @@
 #include "icpMaterial.h"
 
 #include "icpTextureRenderResourceManager.h"
-#include "../icpVulkanRHI.h"
-#include "../icpVulkanUtility.h"
+#include "../RHI/Vulkan/icpVulkanRHI.h"
+#include "../RHI/Vulkan/icpVulkanUtility.h"
 #include "../icpRenderSystem.h"
 #include "../../core/icpSystemContainer.h"
 #include "../../resource/icpResourceSystem.h"

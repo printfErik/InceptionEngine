@@ -2,7 +2,7 @@
 #include "../core/icpSystemContainer.h"
 #include "../core/icpLogSystem.h"
 #include "../render/icpRenderSystem.h"
-#include "../render/icpVulkanUtility.h"
+#include "../render/RHI/Vulkan/icpVulkanUtility.h"
 #include "../mesh/icpMeshData.h"
 
 INCEPTION_BEGIN_NAMESPACE

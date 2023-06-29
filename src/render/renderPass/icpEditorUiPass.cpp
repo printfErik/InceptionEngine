@@ -1,5 +1,5 @@
 #include "icpEditorUiPass.h"
-#include "../../render/icpVulkanUtility.h"
+#include "../../render/RHI/Vulkan/icpVulkanUtility.h"
 #include "../../mesh/icpMeshData.h"
 #include "../../core/icpSystemContainer.h"
 #include "../../core/icpConfigSystem.h"

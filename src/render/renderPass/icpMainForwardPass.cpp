@@ -1,5 +1,5 @@
 #include "icpMainForwardPass.h"
-#include "../icpVulkanUtility.h"
+#include "../RHI/Vulkan/icpVulkanUtility.h"
 #include "../../core/icpSystemContainer.h"
 #include "../../core/icpConfigSystem.h"
 #include "../../resource/icpResourceSystem.h"

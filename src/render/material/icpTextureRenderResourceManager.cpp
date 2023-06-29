@@ -1,6 +1,6 @@
 #include "icpTextureRenderResourceManager.h"
-#include "../icpVulkanRHI.h"
-#include "../icpVulkanUtility.h"
+#include "../RHI/Vulkan/icpVulkanRHI.h"
+#include "../RHI/Vulkan/icpVulkanUtility.h"
 #include "../../core/icpLogSystem.h"
 #include "../icpImageResource.h"
 

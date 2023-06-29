@@ -1,6 +1,6 @@
 #pragma once
 #include "../../core/icpMacros.h"
-#include "../icpVulkanRHI.h"
+#include "../RHI/Vulkan/icpVulkanRHI.h"
 
 #include <vulkan/vulkan.hpp>
 

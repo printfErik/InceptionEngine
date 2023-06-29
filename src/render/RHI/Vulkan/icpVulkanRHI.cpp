@@ -1,3 +1,5 @@
+#define VMA_IMPLEMENTATION
+
 #include "icpVulkanRHI.h"
 #include "../../../core/icpSystemContainer.h"
 #include "../../../resource/icpResourceSystem.h"
@@ -28,13 +30,10 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 
 	createInstance();
 	initializeDebugMessenger();
-
-	createVmaAllocator();
-
 	createWindowSurface();
 	initializePhysicalDevice();
 	createLogicalDevice();
-
+	createVmaAllocator();
 	createSwapChain();
 	createSwapChainImageViews();
 
