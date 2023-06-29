@@ -1,7 +1,7 @@
 #pragma once
 #include "../core/icpMacros.h"
 #include <vulkan/vulkan.hpp>
-#include "icpVulkanRHI.h"
+#include "RHI/Vulkan/icpVulkanRHI.h"
 
 INCEPTION_BEGIN_NAMESPACE
 

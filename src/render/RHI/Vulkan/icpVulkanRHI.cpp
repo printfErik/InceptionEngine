@@ -1,10 +1,10 @@
 #include "icpVulkanRHI.h"
-#include "../core/icpSystemContainer.h"
-#include "../resource/icpResourceSystem.h"
-#include "../mesh/icpMeshResource.h"
-#include "icpCameraSystem.h"
+#include "../../../core/icpSystemContainer.h"
+#include "../../../resource/icpResourceSystem.h"
+#include "../../../mesh/icpMeshResource.h"
+#include "../../icpCameraSystem.h"
 #include "icpVulkanUtility.h"
-#include "icpImageResource.h"
+#include "../../icpImageResource.h"
 #include <iostream>
 #include <map>
 #include <set>
@@ -12,7 +12,8 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "../core/icpConfigSystem.h"
+#include "../../../core/icpConfigSystem.h"
+
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -27,6 +28,9 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 
 	createInstance();
 	initializeDebugMessenger();
+
+	createVmaAllocator();
+
 	createWindowSurface();
 	initializePhysicalDevice();
 	createLogicalDevice();
@@ -45,6 +49,18 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 
 	return true;
 }
+
+void icpVulkanRHI::createVmaAllocator()
+{
+	VmaAllocatorCreateInfo vma_create_info{};
+	vma_create_info.vulkanApiVersion = VK_API_VERSION_1_3;
+	vma_create_info.device = m_device;
+	vma_create_info.instance = m_instance;
+	vma_create_info.physicalDevice = m_physicalDevice;
+
+	VkResult result = vmaCreateAllocator(&vma_create_info, &m_vmaAllocator);
+}
+
 
 void icpVulkanRHI::createInstance()
 {

@@ -33,6 +33,8 @@ void icpVulkanUtility::createVulkanBuffer(
 	VkDevice& device,
 	VkPhysicalDevice& physicalDevice)
 {
+
+
 	VkBufferCreateInfo bufferInfo{};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	bufferInfo.size = size;

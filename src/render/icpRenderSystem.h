@@ -2,7 +2,7 @@
 #include "../core/icpMacros.h"
 #include "../mesh/icpMeshRendererComponent.h"
 
-#include "icpRHI.h"
+#include "RHI/icpRHI.h"
 #include "icpRenderPassManager.h"
 
 INCEPTION_BEGIN_NAMESPACE

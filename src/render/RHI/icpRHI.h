@@ -1,6 +1,6 @@
 #pragma once
-#include "../core/icpMacros.h"
-#include "icpWindowSystem.h"
+#include "../../core/icpMacros.h"
+#include "../icpWindowSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
 	class icpRHIBase

@@ -3,7 +3,9 @@
 #include <vector>
 #include <chrono>
 
-#include "icpRHI.h"
+#include "vk_mem_alloc.h"
+
+#include "../icpRHI.h"
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
 
@@ -58,6 +60,8 @@ public:
 	void createDescriptorPools();
 
 	void allocateCommandBuffers();
+
+	void createVmaAllocator();
 
 private:
 	void createInstance();
@@ -130,6 +134,8 @@ public:
 	std::vector<VkFence> m_inFlightFences;
 
 	VkDescriptorPool m_descriptorPool{ VK_NULL_HANDLE };
+
+	VmaAllocator m_vmaAllocator{ VK_NULL_HANDLE };
 
 	bool m_framebufferResized = false;
 
