@@ -232,7 +232,7 @@ void icpPrimitiveRendererComponment::createTextureImages()
 	memcpy(data, emptyImgData.data(), 4);
 	vmaUnmapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation);
 
-	icpVulkanUtility::createVulkanImage(
+	icpVulkanUtility::CreateGPUImage(
 		static_cast<uint32_t>(1),
 		static_cast<uint32_t>(1),
 		static_cast<uint32_t>(1),

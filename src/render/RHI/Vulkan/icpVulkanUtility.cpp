@@ -67,7 +67,7 @@ void icpVulkanUtility::CreateGPUBuffer(
 	vmaCreateBuffer(allocator, &bufferInfo, &vma_create_info, &buffer, &allocation, nullptr);
 }
 
-void icpVulkanUtility::createVulkanImage(
+void icpVulkanUtility::CreateGPUImage(
 	uint32_t width,
 	uint32_t height,
 	uint32_t mipmapLevel,

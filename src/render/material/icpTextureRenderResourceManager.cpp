@@ -12,8 +12,6 @@ icpTextureRenderResourceManager::icpTextureRenderResourceManager(std::shared_ptr
 	
 }
 
-
-
 void icpTextureRenderResourceManager::setupTextureRenderResources(const std::string& texId)
 {
 	// todo: remove all dynamic_cast
@@ -30,7 +28,7 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMem;
 
-	icpVulkanUtility::createVulkanBuffer(
+	icpVulkanUtility::CreateGPUBuffer(
 		info.m_texImageRes->getImgBuffer().size(),
 		VK_SHARING_MODE_EXCLUSIVE,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,

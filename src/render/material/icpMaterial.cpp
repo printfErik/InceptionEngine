@@ -31,7 +31,7 @@ void icpBlinnPhongMaterialInstance::createUniformBuffers()
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		icpVulkanUtility::createVulkanBuffer(
+		icpVulkanUtility::CreateGPUBuffer(
 			UBOSize,
 			mode,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
