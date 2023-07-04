@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iterator>
 
-
 INCEPTION_BEGIN_NAMESPACE
 
 uint32_t icpVulkanUtility::findMemoryType(
@@ -23,24 +22,22 @@ uint32_t icpVulkanUtility::findMemoryType(
 	return UINT32_MAX;
 }
 
-void icpVulkanUtility::createVulkanBuffer(
+void icpVulkanUtility::CreateGPUBuffer(
 	VkDeviceSize size,
 	VkSharingMode sharingMode,
 	VkBufferUsageFlags usage,
-	VkMemoryPropertyFlags properties,
-	VkBuffer& buffer,
-	VkDeviceMemory& bufferMemory,
-	VkDevice& device,
-	VkPhysicalDevice& physicalDevice)
+	VmaAllocator& allocator,
+	VmaAllocation& allocation,
+	VkBuffer& buffer)
 {
-
-
 	VkBufferCreateInfo bufferInfo{};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	bufferInfo.size = size;
 	bufferInfo.sharingMode = sharingMode;
 	bufferInfo.usage = usage;
 
+
+	/*
 	if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create vertex buffer!");
@@ -61,6 +58,13 @@ void icpVulkanUtility::createVulkanBuffer(
 	}
 
 	vkBindBufferMemory(device, buffer, bufferMemory, 0);
+	*/
+
+	VmaAllocationCreateInfo vma_create_info{};
+	vma_create_info.usage = VMA_MEMORY_USAGE_AUTO;
+	vma_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+
+	vmaCreateBuffer(allocator, &bufferInfo, &vma_create_info, &buffer, &allocation, nullptr);
 }
 
 void icpVulkanUtility::createVulkanImage(

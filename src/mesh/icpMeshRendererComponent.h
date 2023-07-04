@@ -13,6 +13,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "../render/material/icpMaterial.h"
+#include "../render/RHI/Vulkan/vk_mem_alloc.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -49,13 +50,13 @@ public:
 	std::vector<VkDescriptorSet> m_perMeshDSs;
 
 	std::vector<VkBuffer> m_perMeshUniformBuffers;
-	std::vector<VkDeviceMemory> m_perMeshUniformBufferMems;
+	std::vector<VmaAllocation> m_perMeshUniformBufferAllocations;
 
 	VkBuffer m_vertexBuffer{ VK_NULL_HANDLE };
-	VkDeviceMemory m_vertexBufferMem{ VK_NULL_HANDLE };
+	VmaAllocation m_vertexBufferAllocation{ VK_NULL_HANDLE };
 
 	VkBuffer m_indexBuffer{ VK_NULL_HANDLE };
-	VkDeviceMemory m_indexBufferMem{ VK_NULL_HANDLE };
+	VmaAllocation m_indexBufferAllocation{ VK_NULL_HANDLE };
 
 	std::string m_meshResId;
 

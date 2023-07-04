@@ -3,27 +3,26 @@
 
 #include <vulkan/vulkan.hpp>
 
-INCEPTION_BEGIN_NAMESPACE
+#include "vk_mem_alloc.h"
 
-class icpVulkanUtility
+INCEPTION_BEGIN_NAMESPACE
+	class icpVulkanUtility
 {
 public:
-	static void createVulkanBuffer(
+	static void CreateGPUBuffer(
 		VkDeviceSize size,
 		VkSharingMode sharingMode,
-		VkBufferUsageFlags usage, 
-		VkMemoryPropertyFlags properties, 
-		VkBuffer& buffer, 
-		VkDeviceMemory& bufferMemory,
-		VkDevice& device,
-		VkPhysicalDevice& physicalDevice);
+		VkBufferUsageFlags usage,
+		VmaAllocator& allocator,
+		VmaAllocation& allocation,
+		VkBuffer& buffer);
 
 	static uint32_t findMemoryType(
 		uint32_t typeFilter,
 		VkMemoryPropertyFlags properties,
 		VkPhysicalDevice& physicalDevice);
 
-	static void createVulkanImage(
+	static void CreateGPUImage(
 		uint32_t width,
 		uint32_t height,
 		uint32_t mipmapLevel,

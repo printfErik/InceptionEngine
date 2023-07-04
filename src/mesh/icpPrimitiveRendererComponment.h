@@ -6,6 +6,7 @@
 
 #include "../scene/icpComponent.h"
 #include <vulkan/vulkan.hpp>
+#include "../render/RHI/Vulkan/vk_mem_alloc.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -13,7 +14,7 @@ enum class ePrimitiveType
 {
 	CUBE = 0,
 	SPHERE = 1,
-	NONE = 9999
+	PRIMITIVE_TYPE_MAX,
 };
 
 class icpPrimitiveRendererComponment : public icpComponentBase
@@ -22,7 +23,7 @@ public:
 	icpPrimitiveRendererComponment() = default;
 	virtual ~icpPrimitiveRendererComponment() = default;
 
-	ePrimitiveType m_primitive = ePrimitiveType::NONE;
+	ePrimitiveType m_primitive = ePrimitiveType::PRIMITIVE_TYPE_MAX;
 
 	void createVertexBuffers();
 	void createIndexBuffers();
@@ -40,12 +41,13 @@ public:
 	std::vector<VkDescriptorSet> m_descriptorSets;
 
 	std::vector<VkBuffer> m_uniformBuffers;
-	std::vector<VkDeviceMemory> m_uniformBufferMem;
+	std::vector<VmaAllocation> m_uniformBufferAllocations;
 
 	VkBuffer m_vertexBuffer{VK_NULL_HANDLE};
+	VmaAllocation m_vertexBufferAllocation{ VK_NULL_HANDLE };
+
 	VkBuffer m_indexBuffer{ VK_NULL_HANDLE };
-	VkDeviceMemory m_vertexBufferMem{ VK_NULL_HANDLE };
-	VkDeviceMemory m_indexBufferMem{ VK_NULL_HANDLE };
+	VmaAllocation m_indexBufferAllocation{ VK_NULL_HANDLE };
 
 	std::vector<icpVertex> m_vertices;
 	std::vector<uint32_t> m_vertexIndices;

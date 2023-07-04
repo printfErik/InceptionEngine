@@ -4,11 +4,11 @@
 #include "../render/icpRenderSystem.h"
 #include "../render/RHI/Vulkan/icpVulkanUtility.h"
 #include "../mesh/icpMeshData.h"
+#include "../render/RHI/Vulkan/vk_mem_alloc.h"
+#include "../render/RHI/Vulkan/vk_mem_alloc.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-
-void icpPrimitiveRendererComponment::fillInPrimitiveData(const glm::vec3& color)
+	void icpPrimitiveRendererComponment::fillInPrimitiveData(const glm::vec3& color)
 {
 	switch (m_primitive)
 	{
@@ -49,32 +49,31 @@ void icpPrimitiveRendererComponment::createVertexBuffers()
 	auto bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
 
 	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMem;
+	VmaAllocation stagingBufferAllocation;
 
 	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
-	icpVulkanUtility::createVulkanBuffer(bufferSize,
+	icpVulkanUtility::CreateGPUBuffer(
+		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		stagingBuffer,
-		stagingBufferMem,
-		vulkanRHI->m_device,
-		vulkanRHI->m_physicalDevice);
+		vulkanRHI->m_vmaAllocator,
+		stagingBufferAllocation,
+		stagingBuffer
+	);
 
 	void* data;
-	vkMapMemory(vulkanRHI->m_device, stagingBufferMem, 0, bufferSize, 0, &data);
+	vmaMapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation, &data);
 	memcpy(data, m_vertices.data(), (size_t)bufferSize);
-	vkUnmapMemory(vulkanRHI->m_device, stagingBufferMem);
+	vmaUnmapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation);
 
-	icpVulkanUtility::createVulkanBuffer(bufferSize,
+	icpVulkanUtility::CreateGPUBuffer(
+		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		m_vertexBuffer,
-		m_vertexBufferMem,
-		vulkanRHI->m_device,
-		vulkanRHI->m_physicalDevice
+		vulkanRHI->m_vmaAllocator,
+		m_vertexBufferAllocation,
+		m_vertexBuffer
 	);
 
 	icpVulkanUtility::copyBuffer(stagingBuffer,
@@ -85,45 +84,42 @@ void icpPrimitiveRendererComponment::createVertexBuffers()
 		vulkanRHI->m_transferQueue
 	);
 
-	vkDestroyBuffer(vulkanRHI->m_device, stagingBuffer, nullptr);
-	vkFreeMemory(vulkanRHI->m_device, stagingBufferMem, nullptr);
+	vmaDestroyBuffer(vulkanRHI->m_vmaAllocator, stagingBuffer, stagingBufferAllocation);
+	
 }
 
 void icpPrimitiveRendererComponment::createIndexBuffers()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-
-
 	VkDeviceSize bufferSize = sizeof(m_vertexIndices[0]) * m_vertexIndices.size();
 
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMem;
+	VkBuffer stagingBuffer{ VK_NULL_HANDLE };
+	VmaAllocation stagingBufferAllocation{ VK_NULL_HANDLE };
 
 	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
-	icpVulkanUtility::createVulkanBuffer(
+	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
-		stagingBuffer,
-		stagingBufferMem,
-		vulkanRHI->m_device,
-		vulkanRHI->m_physicalDevice);
+		vulkanRHI->m_vmaAllocator,
+		stagingBufferAllocation,
+		stagingBuffer
+	);
 
 	void* data;
-	vkMapMemory(vulkanRHI->m_device, stagingBufferMem, 0, bufferSize, 0, &data);
+	vmaMapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation, &data);
 	memcpy(data, m_vertexIndices.data(), (size_t)bufferSize);
-	vkUnmapMemory(vulkanRHI->m_device, stagingBufferMem);
+	vmaUnmapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation);
 
-	icpVulkanUtility::createVulkanBuffer(bufferSize,
+	icpVulkanUtility::CreateGPUBuffer(
+		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		m_indexBuffer,
-		m_indexBufferMem,
-		vulkanRHI->m_device,
-		vulkanRHI->m_physicalDevice);
+		vulkanRHI->m_vmaAllocator,
+		m_indexBufferAllocation,
+		m_indexBuffer
+	);
 
 	icpVulkanUtility::copyBuffer(stagingBuffer,
 		m_indexBuffer,
@@ -133,8 +129,7 @@ void icpPrimitiveRendererComponment::createIndexBuffers()
 		vulkanRHI->m_transferQueue
 	);
 
-	vkDestroyBuffer(vulkanRHI->m_device, stagingBuffer, nullptr);
-	vkFreeMemory(vulkanRHI->m_device, stagingBufferMem, nullptr);
+	vmaDestroyBuffer(vulkanRHI->m_vmaAllocator, stagingBuffer, stagingBufferAllocation);
 }
 
 void icpPrimitiveRendererComponment::allocateDescriptorSets()
@@ -197,21 +192,20 @@ void icpPrimitiveRendererComponment::createUniformBuffers()
 	auto bufferSize = 0;// sizeof(UniformBufferObject);
 
 	m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	m_uniformBufferMem.resize(MAX_FRAMES_IN_FLIGHT);
+	m_uniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		icpVulkanUtility::createVulkanBuffer(
+		icpVulkanUtility::CreateGPUBuffer(
 			bufferSize,
 			mode,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
-			m_uniformBuffers[i],
-			m_uniformBufferMem[i],
-			vulkanRHI->m_device,
-			vulkanRHI->m_physicalDevice);
+			vulkanRHI->m_vmaAllocator,
+			m_uniformBufferAllocations[i],
+			m_uniformBuffers[i]
+		);
 	}
 }
 
@@ -219,26 +213,24 @@ void icpPrimitiveRendererComponment::createTextureImages()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMem;
+	VkBuffer stagingBuffer{ VK_NULL_HANDLE };
+	VmaAllocation stagingBufferAllocation { VK_NULL_HANDLE };
 
 	std::vector<char> emptyImgData{0, 0, 0, 0};
 
-	icpVulkanUtility::createVulkanBuffer(
+	icpVulkanUtility::CreateGPUBuffer(
 		4, //1 * 1 * 4 rgba
 		VK_SHARING_MODE_EXCLUSIVE,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		stagingBuffer,
-		stagingBufferMem,
-		vulkanRHI->m_device,
-		vulkanRHI->m_physicalDevice
+		vulkanRHI->m_vmaAllocator,
+		stagingBufferAllocation,
+		stagingBuffer
 	);
 
 	void* data;
-	vkMapMemory(vulkanRHI->m_device, stagingBufferMem, 0, static_cast<uint32_t>(4), 0, &data);
+	vmaMapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation, &data);
 	memcpy(data, emptyImgData.data(), 4);
-	vkUnmapMemory(vulkanRHI->m_device, stagingBufferMem);
+	vmaUnmapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation);
 
 	icpVulkanUtility::createVulkanImage(
 		static_cast<uint32_t>(1),
@@ -258,8 +250,7 @@ void icpPrimitiveRendererComponment::createTextureImages()
 	icpVulkanUtility::copyBuffer2Image(stagingBuffer, m_textureImage, static_cast<uint32_t>(1), static_cast<uint32_t>(1), vulkanRHI->m_transferCommandPool, vulkanRHI->m_device, vulkanRHI->m_transferQueue);
 	icpVulkanUtility::transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, vulkanRHI->m_transferCommandPool, vulkanRHI->m_device, vulkanRHI->m_transferQueue);
 
-	vkDestroyBuffer(vulkanRHI->m_device, stagingBuffer, nullptr);
-	vkFreeMemory(vulkanRHI->m_device, stagingBufferMem, nullptr);
+	vmaDestroyBuffer(vulkanRHI->m_vmaAllocator, stagingBuffer, stagingBufferAllocation);
 
 	createTextureImageViews();
 }
