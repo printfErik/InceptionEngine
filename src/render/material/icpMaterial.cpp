@@ -25,7 +25,7 @@ void icpBlinnPhongMaterialInstance::createUniformBuffers()
 	auto UBOSize = sizeof(UBOPerMaterial);
 
 	m_perMaterialUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	m_perMaterialUniformBufferMems.resize(MAX_FRAMES_IN_FLIGHT);
+	m_perMaterialUniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
@@ -35,11 +35,10 @@ void icpBlinnPhongMaterialInstance::createUniformBuffers()
 			UBOSize,
 			mode,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
-			m_perMaterialUniformBuffers[i],
-			m_perMaterialUniformBufferMems[i],
-			vulkanRHI->m_device,
-			vulkanRHI->m_physicalDevice);
+			vulkanRHI->m_vmaAllocator,
+			m_perMaterialUniformBufferAllocations[i],
+			m_perMaterialUniformBuffers[i]
+		);
 	}
 }
 

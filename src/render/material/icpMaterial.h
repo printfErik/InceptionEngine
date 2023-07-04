@@ -3,6 +3,7 @@
 #include "../../core/icpMacros.h"
 #include <vulkan/vulkan.hpp>
 
+#include "../RHI/Vulkan/vk_mem_alloc.h"
 
 INCEPTION_BEGIN_NAMESPACE
 class icpTextureRenderResourceManager;
@@ -37,7 +38,7 @@ protected:
 	std::vector<VkDescriptorSet> m_perMaterialDSs;
 
 	std::vector<VkBuffer> m_perMaterialUniformBuffers;
-	std::vector<VkDeviceMemory> m_perMaterialUniformBufferMems;
+	std::vector<VmaAllocation> m_perMaterialUniformBufferAllocations;
 
 };
 

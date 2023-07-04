@@ -515,9 +515,9 @@ void icpMainForwardPass::updateGlobalBuffers(uint32_t curFrame)
 	if (!lightView.empty())
 	{
 		void* data;
-		vkMapMemory(m_rhi->m_device, m_perFrameStorageBufferMems[curFrame], 0, sizeof(SSBOPerFrame), 0, &data);
+		vmaMapMemory(m_rhi->m_vmaAllocator, m_perFrameStorageBufferAllocations[curFrame], &data);
 		memcpy(data, &ssbo, sizeof(ssbo));
-		vkUnmapMemory(m_rhi->m_device, m_perFrameStorageBufferMems[curFrame]);
+		vmaUnmapMemory(m_rhi->m_vmaAllocator, m_perFrameStorageBufferAllocations[curFrame]);
 	}
 	
 
@@ -537,9 +537,9 @@ void icpMainForwardPass::updateGlobalBuffers(uint32_t curFrame)
 		ubo.model = secondRotate * firstRotate;
 
 		void* data;
-		vkMapMemory(m_rhi->m_device, meshRenderer.m_perMeshUniformBufferMems[curFrame], 0, sizeof(ubo), 0, &data);
+		vmaMapMemory(m_rhi->m_vmaAllocator, meshRenderer.m_perMeshUniformBufferAllocations[curFrame], &data);
 		memcpy(data, &ubo, sizeof(ubo));
-		vkUnmapMemory(m_rhi->m_device, meshRenderer.m_perMeshUniformBufferMems[curFrame]);
+		vmaUnmapMemory(m_rhi->m_vmaAllocator, meshRenderer.m_perMeshUniformBufferAllocations[curFrame]);
 	}
 
 	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponment, icpXFormComponent>();
@@ -650,7 +650,7 @@ void icpMainForwardPass::createStorageBuffer()
 	VkSharingMode mode = m_rhi->m_queueIndices.m_graphicsFamily.value() == m_rhi->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
 	m_perFrameStorageBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	m_perFrameStorageBufferMems.resize(MAX_FRAMES_IN_FLIGHT);
+	m_perFrameStorageBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -658,11 +658,10 @@ void icpMainForwardPass::createStorageBuffer()
 			perMeshSize,
 			mode,
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD,
-			m_perFrameStorageBuffers[i],
-			m_perFrameStorageBufferMems[i],
-			m_rhi->m_device,
-			m_rhi->m_physicalDevice);
+			m_rhi->m_vmaAllocator,
+			m_perFrameStorageBufferAllocations[i],
+			m_perFrameStorageBuffers[i]
+		);
 	}
 }
 

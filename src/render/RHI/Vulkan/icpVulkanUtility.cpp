@@ -74,11 +74,9 @@ void icpVulkanUtility::CreateGPUImage(
 	VkFormat format,
 	VkImageTiling tiling,
 	VkImageUsageFlags usage,
-	VkMemoryPropertyFlags properties,
+	VmaAllocator& allocator,
 	VkImage& image,
-	VkDeviceMemory& imageMem,
-	VkDevice& device,
-	VkPhysicalDevice& physicalDevice
+	VmaAllocation& allocation
 )
 {
 	VkImageCreateInfo imageInfo{};
@@ -96,6 +94,8 @@ void icpVulkanUtility::CreateGPUImage(
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 
+
+	/*
 	if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create image");
@@ -116,8 +116,14 @@ void icpVulkanUtility::CreateGPUImage(
 	{
 		throw std::runtime_error("failed to allocate memory!");
 	}
-
+	
 	vkBindImageMemory(device, image, imageMem, 0);
+	*/
+
+	VmaAllocationCreateInfo memory_info{};
+	memory_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+
+	vmaCreateImage(allocator, &imageInfo, &memory_info, &image, &allocation, nullptr);
 }
 
 VkCommandBuffer icpVulkanUtility::beginSingleTimeCommands(VkCommandPool& cbPool, VkDevice& device)
@@ -169,7 +175,7 @@ void icpVulkanUtility::endSingleTimeCommandsAndSubmit(
 	vkFreeCommandBuffers(device, cbPool, 1, &cb);
 }
 
-VkImageView icpVulkanUtility::createImageView(
+VkImageView icpVulkanUtility::CreateGPUImageView(
 	VkImage image, 
 	VkFormat format,
 	VkImageAspectFlags aspectFlags,

@@ -152,8 +152,7 @@ void icpVulkanRHI::cleanup()
 void icpVulkanRHI::cleanupSwapChain()
 {
 	vkDestroyImageView(m_device, m_depthImageView, nullptr);
-	vkDestroyImage(m_device, m_depthImage, nullptr);
-	vkFreeMemory(m_device, m_depthBufferMem, nullptr);
+	vmaDestroyImage(m_vmaAllocator, m_depthImage, m_depthBufferAllocation);
 
 	for (const auto& imgView : m_swapChainImageViews)
 	{
@@ -586,7 +585,7 @@ void icpVulkanRHI::createSwapChainImageViews()
 	m_swapChainImageViews.resize(m_swapChainImages.size());
 
 	for (size_t i = 0; i < m_swapChainImages.size(); i++) {
-		m_swapChainImageViews[i] = icpVulkanUtility::createImageView(m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, m_device);
+		m_swapChainImageViews[i] = icpVulkanUtility::CreateGPUImageView(m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, m_device);
 	}
 }
 
@@ -625,20 +624,18 @@ void icpVulkanRHI::createCommandPools()
 void icpVulkanRHI::createDepthResources() {
 	VkFormat depthFormat = icpVulkanUtility::findDepthFormat(m_physicalDevice);
 
-	icpVulkanUtility::createVulkanImage(
+	icpVulkanUtility::CreateGPUImage(
 		m_swapChainExtent.width, 
 		m_swapChainExtent.height,
 		1,
 		depthFormat, 
 		VK_IMAGE_TILING_OPTIMAL, 
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		m_vmaAllocator,
 		m_depthImage, 
-		m_depthBufferMem,
-		m_device,
-		m_physicalDevice
+		m_depthBufferAllocation
 	);
-	m_depthImageView = icpVulkanUtility::createImageView(m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, m_device);
+	m_depthImageView = icpVulkanUtility::CreateGPUImageView(m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, m_device);
 }
 
 bool hasStencilComponent(VkFormat format) {

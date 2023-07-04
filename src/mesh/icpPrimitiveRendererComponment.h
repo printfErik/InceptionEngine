@@ -56,7 +56,7 @@ public:
 	// this method will be slower than create an another pipeline
 	// so todo: use different pipeline
 	VkImage m_textureImage;
-	VkDeviceMemory m_textureBufferMem;
+	VmaAllocation m_textureBufferAllocation;
 	VkImageView m_textureImageView;
 	VkSampler m_textureSampler;
 

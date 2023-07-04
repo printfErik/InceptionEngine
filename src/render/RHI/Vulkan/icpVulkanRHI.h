@@ -126,7 +126,8 @@ public:
 	/*std::vector<VkCommandBuffer> m_viewportCommandBuffers;*/
 
 	VkImage m_depthImage;
-	VkDeviceMemory m_depthBufferMem;
+	VmaAllocation m_depthBufferAllocation;
+
 	VkImageView m_depthImageView;
 
 	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;

@@ -239,11 +239,9 @@ void icpPrimitiveRendererComponment::createTextureImages()
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		vulkanRHI->m_vmaAllocator,
 		m_textureImage,
-		m_textureBufferMem,
-		vulkanRHI->m_device,
-		vulkanRHI->m_physicalDevice
+		m_textureBufferAllocation
 	);
 
 	icpVulkanUtility::transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(1), vulkanRHI->m_transferCommandPool, vulkanRHI->m_device, vulkanRHI->m_transferQueue);
@@ -258,7 +256,7 @@ void icpPrimitiveRendererComponment::createTextureImages()
 void icpPrimitiveRendererComponment::createTextureImageViews()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-	m_textureImageView = icpVulkanUtility::createImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, 1, vulkanRHI->m_device);
+	m_textureImageView = icpVulkanUtility::CreateGPUImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, 1, vulkanRHI->m_device);
 }
 
 void icpPrimitiveRendererComponment::createTextureSampler()

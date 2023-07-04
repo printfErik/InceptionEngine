@@ -69,7 +69,7 @@ public:
 	VkPipelineStageFlags m_waitStages[1];
 
 	std::vector<VkBuffer> m_perFrameStorageBuffers{ VK_NULL_HANDLE };
-	std::vector<VkDeviceMemory> m_perFrameStorageBufferMems{ VK_NULL_HANDLE };
+	std::vector<VmaAllocation> m_perFrameStorageBufferAllocations{ VK_NULL_HANDLE };
 	std::vector<VkDescriptorSet> m_perFrameDSs{ VK_NULL_HANDLE };
 
 private:

@@ -29,11 +29,9 @@ public:
 		VkFormat format,
 		VkImageTiling tiling,
 		VkImageUsageFlags usage,
-		VkMemoryPropertyFlags properties,
+		VmaAllocator& allocator,
 		VkImage& image,
-		VkDeviceMemory& imageMem,
-		VkDevice& device,
-		VkPhysicalDevice& physicalDevice
+		VmaAllocation& allocation
 	);
 
 	static VkCommandBuffer beginSingleTimeCommands(
@@ -48,7 +46,7 @@ public:
 		VkDevice& device
 	);
 
-	static VkImageView createImageView(
+	static VkImageView CreateGPUImageView(
 		VkImage image,
 		VkFormat format,
 		VkImageAspectFlags aspectFlags,

@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include "../RHI/Vulkan/vk_mem_alloc.h"
+
 INCEPTION_BEGIN_NAMESPACE
 
 class icpImageResource;
@@ -21,7 +23,7 @@ enum class eTextureRenderResouceState
 struct icpTextureRenderResourceInfo
 {
 	VkImage m_texImage{ VK_NULL_HANDLE };
-	VkDeviceMemory m_texBufferMem{ VK_NULL_HANDLE };
+	VmaAllocation m_texBufferAllocation{ VK_NULL_HANDLE };
 	VkImageView m_texImageView{ VK_NULL_HANDLE };
 	VkSampler m_texSampler{ VK_NULL_HANDLE };
 	std::shared_ptr<icpImageResource> m_texImageRes = nullptr;
