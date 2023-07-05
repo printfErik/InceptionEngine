@@ -40,10 +40,10 @@ public:
 	glm::vec3 m_direction{};
 };
 
-class icpPointlLightComponent : public icpLightComponent
+class icpPointLightComponent : public icpLightComponent
 {
 public:
-	glm::vec3 m_posiotion{};
+	glm::vec3 m_position{};
 
 	float constant = 0.f;
 	float linear = 0.f;
