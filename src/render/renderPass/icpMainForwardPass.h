@@ -4,7 +4,7 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-#define MAX_POINT_LIGHT_COUNT 16
+#define MAX_POINT_LIGHT_COUNT 4
 
 struct DirectionalLightRenderResource
 {
@@ -25,10 +25,11 @@ struct PointLightRenderResource
 	float quadratic;
 };
 
-struct SSBOPerFrame
+struct perFrameCB
 {
 	glm::mat4 view;
 	glm::mat4 projection;
+	uint32_t pointLightNumber = 0;
 	DirectionalLightRenderResource dirLight;
 	PointLightRenderResource pointLight[MAX_POINT_LIGHT_COUNT];
 };
@@ -62,15 +63,19 @@ public:
 	void recreateSwapChain() override;
 
 	void createDescriptorSetLayouts() override;
-	void createStorageBuffer();
 	void allocateDescriptorSets() override;
+
+	void CreateSceneCB();
 
 	VkSemaphore m_waitSemaphores[1];
 	VkPipelineStageFlags m_waitStages[1];
 
-	std::vector<VkBuffer> m_perFrameStorageBuffers{ VK_NULL_HANDLE };
-	std::vector<VmaAllocation> m_perFrameStorageBufferAllocations{ VK_NULL_HANDLE };
-	std::vector<VkDescriptorSet> m_perFrameDSs{ VK_NULL_HANDLE };
+	std::vector<VkBuffer> m_perFrameCBs;
+	std::vector<VmaAllocation> m_perFrameCBAllocations;
+
+	std::vector<VkDescriptorSet> m_perFrameDSs;
+	std::vector<VkDescriptorSet> m_perMeshDSs;
+	std::vector<VkDescriptorSet> m_perMaterialDSs;
 
 private:
 

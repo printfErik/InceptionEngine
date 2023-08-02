@@ -1,6 +1,6 @@
 #version 450
 
-#define max_point_light_count 16
+#define max_point_light_count 4
 
 struct DirectionalLightRenderResource
 {
@@ -8,7 +8,7 @@ struct DirectionalLightRenderResource
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
-}
+};
 
 struct PointLightRenderResource
 {
@@ -19,7 +19,7 @@ struct PointLightRenderResource
 	float constant;
 	float linear;
 	float quadratic;
-}
+};
 
 layout(set = 0, binding = 0) uniform UBOMeshRenderResource
 {
@@ -31,13 +31,13 @@ layout(set = 1, binding = 0) uniform UBOPerMaterial
     float shininess;
 } uboPerMaterial;
 
-layout(set = 2, binding = 0) readonly buffer SSBOPerFrame
+layout(set = 2, binding = 0) uniform PerFrameCB
 {
     mat4 viewMatrix;
     mat4 projMatrix;
     DirectionalLightRenderResource directionalLit;
-    PointLightRenderResource pointLig[max_point_light_count]
-}
+    PointLightRenderResource pointLight[max_point_light_count];
+} uboPerFrame;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
@@ -50,7 +50,7 @@ layout(location = 2) out vec3 fragNormal;
 
 void main()
 {
-    gl_Position = projMatrix * viewMatrix * uboPerMesh.modelMatrix * vec4(inPosition, 1.0);
+    gl_Position = uboPerFrame.projMatrix *  uboPerFrame.viewMatrix * uboPerMesh.modelMatrix * vec4(inPosition, 1.0);
     fragColor = inColor;
     fragTexCoord = inTexCoord;
 

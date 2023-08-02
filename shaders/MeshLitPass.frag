@@ -6,7 +6,7 @@ struct DirectionalLightRenderResource
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
-}
+};
 
 struct PointLightRenderResource
 {
@@ -17,7 +17,7 @@ struct PointLightRenderResource
 	float constant;
 	float linear;
 	float quadratic;
-}
+};
 
 layout(set = 1, binding = 1) uniform sampler2D DiffuseSampler;
 layout(set = 1, binding = 2) uniform sampler2D SpecularSampler;
@@ -28,15 +28,15 @@ layout(location = 2) in vec3 fragNormal;
 
 layout(location = 0) out vec4 outColor;
 
-void main() {
-
-    vec2 size = textureSize(texSampler, 0);
+void main() 
+{
+    vec2 size = textureSize(DiffuseSampler, 0);
     if (size.x == 1.0 && size.y == 1.0)
     {
         outColor = vec4(fragColor, 1);
     }
     else
     {
-        outColor = texture(texSampler, fragTexCord);
+        outColor = texture(DiffuseSampler, fragTexCord);
     }        
 }

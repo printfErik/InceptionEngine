@@ -32,7 +32,6 @@ public:
 	virtual void addShininess(float shininess) = 0;
 	virtual void setupMaterialRenderResources() = 0;
 
-protected:
 	eMaterialModel m_materialTemplateType = eMaterialModel::NULL_MATERIAL;
 
 	std::vector<VkDescriptorSet> m_perMaterialDSs;
@@ -64,7 +63,7 @@ class icpBlinnPhongMaterialInstance : public icpMaterialTemplate
 public:
 	struct UBOPerMaterial
 	{
-		float shininess;
+		float shininess = 1.f;
 	};
 
 	icpBlinnPhongMaterialInstance();

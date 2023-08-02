@@ -53,8 +53,8 @@ public:
 	std::vector<uint32_t> m_vertexIndices;
 
 	// just one pixel texture as empty texture
-	// this method will be slower than create an another pipeline
-	// so todo: use different pipeline
+	// this method will be slower than creating an another pipeline
+	// so todo: use different pipelines
 	VkImage m_textureImage;
 	VmaAllocation m_textureBufferAllocation;
 	VkImageView m_textureImageView;

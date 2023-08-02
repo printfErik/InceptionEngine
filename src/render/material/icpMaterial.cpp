@@ -67,7 +67,7 @@ void icpBlinnPhongMaterialInstance::allocateDescriptorSets()
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = m_perMaterialUniformBuffers[i];
 		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UBOMeshRenderResource);
+		bufferInfo.range = sizeof(UBOPerMaterial);
 
 		auto texRenderResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
 		auto& info = texRenderResMgr->m_textureRenderResurces[m_texRenderResourceIDs[0]];
@@ -120,7 +120,7 @@ icpBlinnPhongMaterialInstance::icpBlinnPhongMaterialInstance()
 
 void icpMaterialSubSystem::initializeMaterialSubSystem()
 {
-	m_materials.resize(static_cast<int>(eMaterialModel::MATERIAL_TYPE_COUNT) - 1);
+	//m_materials.resize(static_cast<int>(eMaterialModel::MATERIAL_TYPE_COUNT) - 1);
 }
 
 
