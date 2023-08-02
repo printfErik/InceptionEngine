@@ -604,7 +604,7 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 		perMaterialUBOBinding.descriptorCount = 1;
 		perMaterialUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		perMaterialUBOBinding.pImmutableSamplers = nullptr;
-		perMaterialUBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
+		perMaterialUBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 
 		VkDescriptorSetLayoutBinding perMaterialDiffuseSamplerLayoutBinding{};
 		perMaterialDiffuseSamplerLayoutBinding.binding = 1;
@@ -640,7 +640,7 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 		perFrameSSBOBinding.descriptorCount = 1;
 		perFrameSSBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		perFrameSSBOBinding.pImmutableSamplers = nullptr;
-		perFrameSSBOBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
+		perFrameSSBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
 		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perFrameSSBOBinding };
 
