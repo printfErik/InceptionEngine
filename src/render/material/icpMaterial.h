@@ -9,6 +9,7 @@ INCEPTION_BEGIN_NAMESPACE
 class icpTextureRenderResourceManager;
 class icpImageResource;
 
+/*
 enum class eMaterialModel
 {
 	NULL_MATERIAL = 0,
@@ -17,8 +18,9 @@ enum class eMaterialModel
 	PBR,
 	MATERIAL_TYPE_COUNT
 };
+*/
+// pipeline: import img resource -->
 
-// pipeline: import img resource --> 
 
 class icpMaterialTemplate
 {
@@ -41,6 +43,7 @@ public:
 
 };
 
+/*
 class icpLambertMaterialInstance : public icpMaterialTemplate
 {
 public:
@@ -100,7 +103,7 @@ class icpPBRMaterialInstance
 {
 	
 };
-
+*/
 class icpMaterialSubSystem
 {
 public:
