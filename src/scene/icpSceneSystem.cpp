@@ -293,7 +293,7 @@ void icpSceneSystem::createMeshEnityFromResource(std::shared_ptr<icpResourceBase
 	mesh.m_meshResId = meshRes->m_id;
 
 	mesh.prepareRenderResourceForMesh();
-	auto material = mesh.addMaterial(eMaterialModel::BLINNPHONG);
+	auto material = mesh.addMaterial(eMaterialShadingModel::DEFAULT_LIT);
 	material->addDiffuseTexture(meshRes->m_id + "_diffuse");
 	material->addSpecularTexture(meshRes->m_id + "_specular");
 	material->addShininess(0.1f);

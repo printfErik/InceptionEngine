@@ -38,7 +38,7 @@ class icpMaterialTemplate
 {
 public:
 	icpMaterialTemplate() = default;
-	icpMaterialTemplate(eMaterialShadingModel shading_model);
+	icpMaterialTemplate(eMaterialShadingModel shading_model){}
 	virtual ~icpMaterialTemplate() = default;
 	virtual void AllocateDescriptorSets() = 0;
 	virtual void CreateUniformBuffers() = 0;
@@ -47,20 +47,22 @@ public:
 	virtual void addShininess(float shininess) = 0;
 	virtual void setupMaterialRenderResources() = 0;
 
+	// return a mapped CPU address
+	virtual void* MapUniformBuffer(int index) = 0;
+
+
 	eMaterialShadingModel m_shadingModel = eMaterialShadingModel::SHADING_MODEL_COUNT;
 
 	std::vector<VkDescriptorSet> m_perMaterialDSs;
 
 	std::vector<VkBuffer> m_perMaterialUniformBuffers;
 	std::vector<VmaAllocation> m_perMaterialUniformBufferAllocations;
-
-private:
-	
 };
 
 class icpMaterialInstance : public icpMaterialTemplate
 {
-	
+public:
+	icpMaterialInstance() = default;
 	icpMaterialInstance(eMaterialShadingModel shading_model);
 	virtual ~icpMaterialInstance() = default;
 
@@ -70,10 +72,10 @@ class icpMaterialInstance : public icpMaterialTemplate
 	void addSpecularTexture(const std::string& texID) override;
 	void addShininess(float shininess) override;
 	void setupMaterialRenderResources() override;
-
+	void* MapUniformBuffer(int index) override;
 	uint64_t ComputeUBOSize();
 private:
-	icpMaterialInstance() = default;
+	
 	std::vector<float> m_scalarParameterValues;
 	std::vector<bool> m_boolParameterValues;
 	std::vector<glm::vec4> m_vectorParameterValues;

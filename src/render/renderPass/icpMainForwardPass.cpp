@@ -541,6 +541,8 @@ void icpMainForwardPass::updateGlobalBuffers(uint32_t curFrame)
 		// todo classify different materialInstance
 		for (auto& material : meshRenderer.m_materials)
 		{
+			void* pConst = material->MapUniformBuffer(curFrame);
+			/*
 			icpBlinnPhongMaterialInstance::UBOPerMaterial perMaterialCB{};
 
 			perMaterialCB.shininess = 1.f;
@@ -549,6 +551,7 @@ void icpMainForwardPass::updateGlobalBuffers(uint32_t curFrame)
 			vmaMapMemory(m_rhi->m_vmaAllocator, material->m_perMaterialUniformBufferAllocations[curFrame], &data);
 			memcpy(materialData, &perMaterialCB, sizeof(perMaterialCB));
 			vmaUnmapMemory(m_rhi->m_vmaAllocator, material->m_perMaterialUniformBufferAllocations[curFrame]);
+			*/
 		}
 
 	}
