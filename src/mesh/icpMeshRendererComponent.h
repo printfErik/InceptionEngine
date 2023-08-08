@@ -25,12 +25,6 @@ struct UBOMeshRenderResource
 	glm::mat4 model;
 };
 
-/* todo maybe later
-struct SSBOObjects
-{
-	UBOMeshRenderResource all_meshes[128];
-};
-*/
 
 class icpMeshRendererComponent : public icpComponentBase
 {
@@ -45,7 +39,7 @@ public:
 
 	void allocateDescriptorSets();
 
-	std::shared_ptr<icpMaterialTemplate> addMaterial(eMaterialModel materialType);
+	std::shared_ptr<icpMaterialTemplate> addMaterial(eMaterialShadingModel shading_model);
 
 	std::vector<VkDescriptorSet> m_perMeshDSs;
 

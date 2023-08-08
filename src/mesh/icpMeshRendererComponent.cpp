@@ -176,10 +176,10 @@ void icpMeshRendererComponent::createIndexBuffers()
 	vmaDestroyBuffer(vulkanRHI->m_vmaAllocator, stagingBuffer,stagingBufferAllocation);
 }
 
-std::shared_ptr<icpMaterialTemplate> icpMeshRendererComponent::addMaterial(eMaterialModel materialType)
+std::shared_ptr<icpMaterialTemplate> icpMeshRendererComponent::addMaterial(eMaterialShadingModel shadingModel)
 {
 	auto materialSystem = g_system_container.m_renderSystem->m_materialSystem;
-	auto instance = materialSystem->createMaterialInstance(materialType);
+	auto instance = materialSystem->createMaterialInstance(shadingModel);
 	m_materials.push_back(instance);
 
 	return instance;

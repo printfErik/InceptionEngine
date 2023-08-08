@@ -13,36 +13,39 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-icpLambertMaterialInstance::icpLambertMaterialInstance()
+icpMaterialInstance::icpMaterialInstance(eMaterialShadingModel shadingModel)
 {
-	m_materialTemplateType = eMaterialModel::LAMBERT;
+	m_shadingModel = shadingModel;
 }
 
-void icpBlinnPhongMaterialInstance::createUniformBuffers()
+void icpMaterialInstance::CreateUniformBuffers()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 
-	auto UBOSize = sizeof(UBOPerMaterial);
+	uint32_t UBOSize = ComputeUBOSize();
 
-	m_perMaterialUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	m_perMaterialUniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
-
-	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	if (UBOSize > 0)
 	{
-		icpVulkanUtility::CreateGPUBuffer(
-			UBOSize,
-			mode,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			vulkanRHI->m_vmaAllocator,
-			m_perMaterialUniformBufferAllocations[i],
-			m_perMaterialUniformBuffers[i]
-		);
+		m_perMaterialUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+		m_perMaterialUniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
+
+		VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			icpVulkanUtility::CreateGPUBuffer(
+				UBOSize,
+				mode,
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				vulkanRHI->m_vmaAllocator,
+				m_perMaterialUniformBufferAllocations[i],
+				m_perMaterialUniformBuffers[i]
+			);
+		}
 	}
 }
 
-void icpBlinnPhongMaterialInstance::allocateDescriptorSets()
+void icpMaterialInstance::AllocateDescriptorSets()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 
@@ -64,59 +67,61 @@ void icpBlinnPhongMaterialInstance::allocateDescriptorSets()
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
+		uint64_t UBOSize = ComputeUBOSize();
 		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = m_perMaterialUniformBuffers[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UBOPerMaterial);
-
+		if (UBOSize > 0)
+		{
+			bufferInfo.buffer = m_perMaterialUniformBuffers[i];
+			bufferInfo.offset = 0;
+			bufferInfo.range = UBOSize;
+		}
+		
 		auto texRenderResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
-		auto& info = texRenderResMgr->m_textureRenderResurces[m_texRenderResourceIDs[0]];
 
-		VkDescriptorImageInfo imageInfo1{};
-		imageInfo1.imageView = info.m_texImageView;
-		imageInfo1.sampler = info.m_texSampler;
-		imageInfo1.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		std::vector<VkDescriptorImageInfo> imageInfos;
+		for (auto& texture : m_textureParameterValues)
+		{
+			auto& info = texRenderResMgr->m_textureRenderResurces[texture];
 
-		info = texRenderResMgr->m_textureRenderResurces[m_texRenderResourceIDs[1]];
-		VkDescriptorImageInfo imageInfo2{};
-		imageInfo2.imageView = info.m_texImageView;
-		imageInfo2.sampler = info.m_texSampler;
-		imageInfo2.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			VkDescriptorImageInfo imageInfo{};
+			imageInfo.imageView = info.m_texImageView;
+			imageInfo.sampler = info.m_texSampler;
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-		std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
-		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet = m_perMaterialDSs[i];
-		descriptorWrites[0].dstBinding = 0;
-		descriptorWrites[0].dstArrayElement = 0;
-		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount = 1;
-		descriptorWrites[0].pBufferInfo = &bufferInfo;
+			imageInfos.push_back(imageInfo);
+		}
 
-		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[1].dstSet = m_perMaterialDSs[i];
-		descriptorWrites[1].dstBinding = 1;
-		descriptorWrites[1].dstArrayElement = 0;
-		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrites[1].descriptorCount = 1;
-		descriptorWrites[1].pImageInfo = &imageInfo1;
+		uint32_t bindingNumber = (UBOSize > 0 ? 1u : 0u) + m_textureParameterValues.size();
 
-		descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[2].dstSet = m_perMaterialDSs[i];
-		descriptorWrites[2].dstBinding = 1;
-		descriptorWrites[2].dstArrayElement = 0;
-		descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrites[2].descriptorCount = 1;
-		descriptorWrites[2].pImageInfo = &imageInfo2;
+		std::vector<VkWriteDescriptorSet> descriptorWrites(bindingNumber);
+
+		uint32_t index = 0;
+		if (UBOSize > 0)
+		{
+			descriptorWrites[index].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[index].dstSet = m_perMaterialDSs[i];
+			descriptorWrites[index].dstBinding = index;
+			descriptorWrites[index].dstArrayElement = 0;
+			descriptorWrites[index].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[index].descriptorCount = 1;
+			descriptorWrites[index].pBufferInfo = &bufferInfo;
+			index++;
+		}
+		
+		for (auto& info : imageInfos)
+		{
+			descriptorWrites[index].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[index].dstSet = m_perMaterialDSs[i];
+			descriptorWrites[index].dstBinding = index;
+			descriptorWrites[index].dstArrayElement = 0;
+			descriptorWrites[index].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrites[index].descriptorCount = 1;
+			descriptorWrites[index].pImageInfo = &info;
+		}
 
 		vkUpdateDescriptorSets(vulkanRHI->m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 	}
 }
-
-icpBlinnPhongMaterialInstance::icpBlinnPhongMaterialInstance()
-{
-	m_materialTemplateType = eMaterialModel::BLINNPHONG;
-}
-
 
 void icpMaterialSubSystem::initializeMaterialSubSystem()
 {
@@ -124,22 +129,13 @@ void icpMaterialSubSystem::initializeMaterialSubSystem()
 }
 
 
-std::shared_ptr<icpMaterialTemplate> icpMaterialSubSystem::createMaterialInstance(eMaterialModel materialType)
+std::shared_ptr<icpMaterialTemplate> icpMaterialSubSystem::createMaterialInstance(eMaterialShadingModel shadingModel)
 {
-	switch (materialType)
-	{
-		case eMaterialModel::BLINNPHONG:
-		{
-			std::shared_ptr<icpMaterialTemplate> instance = std::make_shared<icpBlinnPhongMaterialInstance>();
-			m_materials.push_back(instance);
-		}
-		break;
-		default:
-			break;
-	}
+	std::shared_ptr<icpMaterialTemplate> instance = std::make_shared<icpMaterialInstance>(shadingModel);
+	m_materials.push_back(instance);
 }
 
-void icpBlinnPhongMaterialInstance::addDiffuseTexture(const std::string& texID)
+void icpMaterialInstance::addDiffuseTexture(const std::string& texID)
 {
 	auto texRendeResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
 	if (texRendeResMgr->m_textureRenderResurces.find(texID) == texRendeResMgr->m_textureRenderResurces.end() 
@@ -147,10 +143,10 @@ void icpBlinnPhongMaterialInstance::addDiffuseTexture(const std::string& texID)
 	{
 		texRendeResMgr->setupTextureRenderResources(texID);
 	}
-	m_texRenderResourceIDs.push_back(texID);
+	m_textureParameterValues.push_back(texID);
 }
 
-void icpBlinnPhongMaterialInstance::addSpecularTexture(const std::string& texID)
+void icpMaterialInstance::addSpecularTexture(const std::string& texID)
 {
 	auto texRendeResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
 	if (texRendeResMgr->m_textureRenderResurces.find(texID) == texRendeResMgr->m_textureRenderResurces.end()
@@ -158,23 +154,40 @@ void icpBlinnPhongMaterialInstance::addSpecularTexture(const std::string& texID)
 	{
 		texRendeResMgr->setupTextureRenderResources(texID);
 	}
-	m_texRenderResourceIDs.push_back(texID);
+	m_textureParameterValues.push_back(texID);
 }
 
-void icpBlinnPhongMaterialInstance::addShininess(float shininess)
+void icpMaterialInstance::addShininess(float shininess)
 {
-	m_ubo.shininess = shininess;
+	//m_ubo.shininess = shininess;
 }
 
-void icpBlinnPhongMaterialInstance::setupMaterialRenderResources()
+uint64_t icpMaterialInstance::ComputeUBOSize()
 {
-	createUniformBuffers();
-	allocateDescriptorSets();
+	uint64_t totalSize = 0;
+	for (auto bVal : m_boolParameterValues)
+	{
+		totalSize += sizeof(float);
+	}
+
+	for (auto fVal : m_scalarParameterValues)
+	{
+		totalSize += sizeof(float);
+	}
+
+	for (auto vVal : m_vectorParameterValues)
+	{
+		totalSize += sizeof(glm::vec4);
+	}
+
+	return totalSize;
 }
 
-icpNullMaterialInstance::icpNullMaterialInstance()
+
+void icpMaterialInstance::setupMaterialRenderResources()
 {
-	m_materialTemplateType = eMaterialModel::NULL_MATERIAL;
+	CreateUniformBuffers();
+	AllocateDescriptorSets();
 }
 
 INCEPTION_END_NAMESPACE
