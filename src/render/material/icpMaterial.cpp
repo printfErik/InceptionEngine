@@ -10,6 +10,7 @@
 #include "../../mesh/icpMeshResource.h"
 #include "../icpImageResource.h"
 #include "../renderPass/icpMainForwardPass.h"
+#include "../../core/icpConfigSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -164,8 +165,13 @@ void icpMaterialInstance::AddTexture(const std::string& texID)
 {
 	auto texRendeResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
 
-	if(texRendeResMgr->m_textureRenderResurces.find(texID) == texRendeResMgr->m_textureRenderResurces.end()
-		|| texRendeResMgr->m_textureRenderResurces[texID].m_state == eTextureRenderResouceState::UNINITIALIZED)
+	if(texRendeResMgr->m_textureRenderResurces.find(texID) == texRendeResMgr->m_textureRenderResurces.end())
+	{
+		auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / (texID + ".png");
+		g_system_container.m_resourceSystem->loadImageResource(texID);
+	}
+
+	if (texRendeResMgr->m_textureRenderResurces[texID].m_state == eTextureRenderResouceState::UNINITIALIZED)
 	{
 		texRendeResMgr->setupTextureRenderResources(texID);
 	}
