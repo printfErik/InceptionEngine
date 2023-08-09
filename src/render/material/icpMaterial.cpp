@@ -168,7 +168,7 @@ void icpMaterialInstance::AddTexture(const std::string& texID)
 	if(texRendeResMgr->m_textureRenderResurces.find(texID) == texRendeResMgr->m_textureRenderResurces.end())
 	{
 		auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / (texID + ".png");
-		g_system_container.m_resourceSystem->loadImageResource(texID);
+		g_system_container.m_resourceSystem->loadImageResource(imgPath);
 	}
 
 	if (texRendeResMgr->m_textureRenderResurces[texID].m_state == eTextureRenderResouceState::UNINITIALIZED)
