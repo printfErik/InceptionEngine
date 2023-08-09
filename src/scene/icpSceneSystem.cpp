@@ -296,9 +296,12 @@ void icpSceneSystem::createMeshEntityFromResource(std::shared_ptr<icpResourceBas
 	mesh.m_meshResId = meshRes->m_id;
 
 	mesh.prepareRenderResourceForMesh();
-	auto material = mesh.addMaterial(eMaterialShadingModel::DEFAULT_LIT);
-	material->addDiffuseTexture(meshRes->m_id + "_diffuse");
-	material->addSpecularTexture(meshRes->m_id + "_specular");
+	auto material = mesh.addMaterial(eMaterialShadingModel::UNLIT);
+	//material->addDiffuseTexture(meshRes->m_id + "_diffuse");
+	//material->addSpecularTexture(meshRes->m_id + "_specular");
+
+	material->AddTexture(meshRes->m_id);
+
 	material->addShininess(0.1f);
 	material->setupMaterialRenderResources();
 }
@@ -320,17 +323,15 @@ void icpSceneSystem::LoadDefaultScene()
 		auto&& plane = entity.installComponent<icpPrimitiveRendererComponent>();
 
 		plane.m_primitive = ePrimitiveType::CUBE;
-		plane.m_primitive = ePrimitiveType::CUBE;
-
-		plane.createTextureImages();
-		plane.createTextureSampler();
+		//plane.createTextureImages();
+		//plane.createTextureSampler();
 
 		plane.fillInPrimitiveData(glm::vec3(1, 0, 1));
-		plane.createVertexBuffers();
-		plane.createIndexBuffers();
-		plane.createUniformBuffers();
+		//plane.createVertexBuffers();
+		//plane.createIndexBuffers();
+		//plane.createUniformBuffers();
 
-		plane.allocateDescriptorSets();
+		//plane.allocateDescriptorSets();
 
 		auto&& material = plane.AddMaterial(eMaterialShadingModel::DEFAULT_LIT);
 
@@ -339,7 +340,7 @@ void icpSceneSystem::LoadDefaultScene()
 		material->AddTexture("rustediron2_normal");
 		material->AddTexture("rustediron2_roughness");
 		material->addShininess(0.1f);
-		material->setupMaterialRenderResources();
+		//material->setupMaterialRenderResources();
 	}
 	
 }

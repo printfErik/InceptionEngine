@@ -81,7 +81,7 @@ void icpMaterialInstance::AllocateDescriptorSets()
 		std::vector<VkDescriptorImageInfo> imageInfos;
 		for (auto& texture : m_textureParameterValues)
 		{
-			auto& info = texRenderResMgr->m_textureRenderResurces[texture];
+			auto& info = texRenderResMgr->m_textureRenderResurces[texture.m_textureID];
 
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageView = info.m_texImageView;

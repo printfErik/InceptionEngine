@@ -26,17 +26,17 @@ void icpSystemContainer::initializeAllSystems(const std::filesystem::path& _conf
 
 	m_resourceSystem = std::make_shared<icpResourceSystem>();
 
-	m_sceneSystem = std::make_shared<icpSceneSystem>();
-	m_sceneSystem->initializeScene("");
-
-	m_cameraSystem = std::make_shared<icpCameraSystem>();
-	m_cameraSystem->initialize();
-
 	m_windowSystem = std::make_shared<icpWindowSystem>();
 	m_windowSystem->initializeWindowSystem();
 
 	m_renderSystem = std::make_shared<icpRenderSystem>();
 	m_renderSystem->initializeRenderSystem();
+
+	m_sceneSystem = std::make_shared<icpSceneSystem>();
+	m_sceneSystem->initializeScene("");
+
+	m_cameraSystem = std::make_shared<icpCameraSystem>();
+	m_cameraSystem->initialize();
 
 	m_uiSystem = std::make_shared<icpUiSystem>();
 	m_uiSystem->initializeUiCanvas();

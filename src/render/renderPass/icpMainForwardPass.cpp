@@ -389,7 +389,7 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 
 	auto materialSubSystem = g_system_container.m_renderSystem->m_materialSystem;
 
-	for(auto materialInstance : materialSubSystem->m_materials)
+	for(auto materialInstance : materialSubSystem->m_vMaterialContainer)
 	{
 		vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 3, &materialInstance->m_perMaterialDSs[curFrame], 0, nullptr);
 	}
