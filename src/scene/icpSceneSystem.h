@@ -25,7 +25,9 @@ public:
 	void saveScene(const std::filesystem::path& outPath);
 
 	void getRootEntityList(std::vector<std::shared_ptr<icpGameEntity>>& list);
-	void createMeshEnityFromResource(std::shared_ptr<icpResourceBase> meshRes);
+	void createMeshEntityFromResource(std::shared_ptr<icpResourceBase> meshRes);
+
+	void LoadDefaultScene();
 
 	entt::registry m_registry;
 

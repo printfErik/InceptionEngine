@@ -178,7 +178,7 @@ void icpMeshRendererComponent::createIndexBuffers()
 
 std::shared_ptr<icpMaterialTemplate> icpMeshRendererComponent::addMaterial(eMaterialShadingModel shadingModel)
 {
-	auto materialSystem = g_system_container.m_renderSystem->m_materialSystem;
+	auto& materialSystem = g_system_container.m_renderSystem->m_materialSystem;
 	auto instance = materialSystem->createMaterialInstance(shadingModel);
 	m_materials.push_back(instance);
 

@@ -3,7 +3,7 @@
 #include "../core/icpSystemContainer.h"
 #include "../scene/icpSceneSystem.h"
 #include "../scene/icpXFormComponent.h"
-#include "../mesh/icpPrimitiveRendererComponment.h"
+#include "../mesh/icpPrimitiveRendererComponent.h"
 #include "light/icpLightComponent.h"
 #include "material/icpTextureRenderResourceManager.h"
 
@@ -71,8 +71,9 @@ void icpRenderSystem::drawCube()
 {
 	auto cubeEntity = g_system_container.m_sceneSystem->createEntity("Cube", true);
 
-	auto& primitive = cubeEntity.installComponent<icpPrimitiveRendererComponment>();
+	auto& primitive = cubeEntity.installComponent<icpPrimitiveRendererComponent>();
 
+	// todo: implicit doing following steps
 	primitive.m_primitive = ePrimitiveType::CUBE;
 
 	primitive.createTextureImages();

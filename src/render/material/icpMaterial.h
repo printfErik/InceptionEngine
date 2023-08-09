@@ -25,6 +25,12 @@ enum class eMaterialModel
 // todo: replace string with real guid
 typedef std::string TextureID;
 
+struct icpTextureParameterInfo
+{
+	std::string m_strTextureName;
+	TextureID m_textureID;
+};
+
 // how to interpret values container
 enum class eMaterialShadingModel
 {
@@ -42,8 +48,9 @@ public:
 	virtual ~icpMaterialTemplate() = default;
 	virtual void AllocateDescriptorSets() = 0;
 	virtual void CreateUniformBuffers() = 0;
-	virtual void addDiffuseTexture(const std::string& texID) = 0;
-	virtual void addSpecularTexture(const std::string& texID) = 0;
+	//virtual void addDiffuseTexture(const std::string& texID) = 0;
+	//virtual void addSpecularTexture(const std::string& texID) = 0;
+	virtual void AddTexture(const std::string& texID) = 0;
 	virtual void addShininess(float shininess) = 0;
 	virtual void setupMaterialRenderResources() = 0;
 
@@ -68,18 +75,20 @@ public:
 
 	void AllocateDescriptorSets() override;
 	void CreateUniformBuffers() override;
-	void addDiffuseTexture(const std::string& texID) override;
-	void addSpecularTexture(const std::string& texID) override;
+	//void addDiffuseTexture(const std::string& texID) override;
+	//void addSpecularTexture(const std::string& texID) override;
+	void AddTexture(const std::string& texID) override;
 	void addShininess(float shininess) override;
 	void setupMaterialRenderResources() override;
 	void* MapUniformBuffer(int index) override;
 	uint64_t ComputeUBOSize();
+
 private:
 	
 	std::vector<float> m_scalarParameterValues;
 	std::vector<bool> m_boolParameterValues;
 	std::vector<glm::vec4> m_vectorParameterValues;
-	std::vector<TextureID> m_textureParameterValues;
+	std::vector<icpTextureParameterInfo> m_textureParameterValues;
 };
 
 /*
@@ -152,7 +161,7 @@ public:
 	void initializeMaterialSubSystem();
 	std::shared_ptr<icpMaterialTemplate> createMaterialInstance(eMaterialShadingModel shadingModel);
 
-	std::vector<std::shared_ptr<icpMaterialTemplate>> m_materials;
+	std::vector<std::shared_ptr<icpMaterialTemplate>> m_vMaterialContainer;
 
 };
 

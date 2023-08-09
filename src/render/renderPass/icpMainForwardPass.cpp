@@ -11,7 +11,7 @@
 #include "../icpCameraSystem.h"
 #include "../../scene/icpXFormComponent.h"
 #include "../icpRenderSystem.h"
-#include "../../mesh/icpPrimitiveRendererComponment.h"
+#include "../../mesh/icpPrimitiveRendererComponent.h"
 #include "../light/icpLightComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -416,9 +416,9 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshRes->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
 		/*
-		else if (entity->hasComponent<icpPrimitiveRendererComponment>())
+		else if (entity->hasComponent<icpPrimitiveRendererComponent>())
 		{
-			auto& primitive = entity->accessComponent<icpPrimitiveRendererComponment>();
+			auto& primitive = entity->accessComponent<icpPrimitiveRendererComponent>();
 			auto vertBuf = primitive.m_vertexBuffer;
 			std::vector<VkBuffer>vertexBuffers{ vertBuf };
 
@@ -557,10 +557,10 @@ void icpMainForwardPass::updateGlobalBuffers(uint32_t curFrame)
 	}
 
 	/*
-	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponment, icpXFormComponent>();
+	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponent, icpXFormComponent>();
 	for (auto entity: primitiveView)
 	{
-		auto& primitiveRender = primitiveView.get<icpPrimitiveRendererComponment>(entity);
+		auto& primitiveRender = primitiveView.get<icpPrimitiveRendererComponent>(entity);
 		ubo.model = glm::mat4(1.f);
 
 		void* data;

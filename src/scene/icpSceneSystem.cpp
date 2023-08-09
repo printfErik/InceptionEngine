@@ -18,14 +18,17 @@
 #include <fstream>
 #include <iostream>
 
+#include "../mesh/icpPrimitiveRendererComponent.h"
 #include "../render/icpRenderSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
-{
-	loadSceneFromMapPath("E:\\Development\\InceptionEngine\\test\\testflat");
 
+void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
+{
+	//loadSceneFromMapPath("E:\\Development\\InceptionEngine\\test\\testflat");
+	LoadDefaultScene();
 }
+
 
 icpGameEntity icpSceneSystem::createEntity(const std::string& name, bool isRoot)
 {
@@ -277,7 +280,7 @@ void icpSceneSystem::getRootEntityList(std::vector<std::shared_ptr<icpGameEntity
 	list = m_sceneRoots;
 }
 
-void icpSceneSystem::createMeshEnityFromResource(std::shared_ptr<icpResourceBase> meshRes)
+void icpSceneSystem::createMeshEntityFromResource(std::shared_ptr<icpResourceBase> meshRes)
 {
 	icpGameEntity entity;
 	entity.initializeEntity(m_registry.create(), this, true);
@@ -300,6 +303,45 @@ void icpSceneSystem::createMeshEnityFromResource(std::shared_ptr<icpResourceBase
 	material->setupMaterialRenderResources();
 }
 
+void icpSceneSystem::LoadDefaultScene()
+{
+	// plane
+	{
+		icpGameEntity entity;
+		entity.initializeEntity(m_registry.create(), this, true);
 
+		auto&& entityData = entity.installComponent<icpEntityDataComponent>();
+		entityData.m_name = "FloorPlane";
+		entityData.m_guid = icpGuid();
+
+		auto&& xform = entity.installComponent<icpXFormComponent>();
+		xform.m_scale = glm::vec3(20, 20, 0.2);
+
+		auto&& plane = entity.installComponent<icpPrimitiveRendererComponent>();
+
+		plane.m_primitive = ePrimitiveType::CUBE;
+		plane.m_primitive = ePrimitiveType::CUBE;
+
+		plane.createTextureImages();
+		plane.createTextureSampler();
+
+		plane.fillInPrimitiveData(glm::vec3(1, 0, 1));
+		plane.createVertexBuffers();
+		plane.createIndexBuffers();
+		plane.createUniformBuffers();
+
+		plane.allocateDescriptorSets();
+
+		auto&& material = plane.AddMaterial(eMaterialShadingModel::DEFAULT_LIT);
+
+		material->AddTexture("rustediron2_basecolor");
+		material->AddTexture("rustediron2_metallic");
+		material->AddTexture("rustediron2_normal");
+		material->AddTexture("rustediron2_roughness");
+		material->addShininess(0.1f);
+		material->setupMaterialRenderResources();
+	}
+	
+}
 
 INCEPTION_END_NAMESPACE

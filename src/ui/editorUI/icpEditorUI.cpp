@@ -259,7 +259,7 @@ void icpEditorUI::showEditorUI()
 				else
 				{
 					auto modelResource = g_system_container.m_resourceSystem->loadObjModelResource(Path,true);
-					g_system_container.m_sceneSystem->createMeshEnityFromResource(modelResource);
+					g_system_container.m_sceneSystem->createMeshEntityFromResource(modelResource);
 				}
 			}
 

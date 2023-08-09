@@ -132,9 +132,11 @@ void icpMaterialSubSystem::initializeMaterialSubSystem()
 std::shared_ptr<icpMaterialTemplate> icpMaterialSubSystem::createMaterialInstance(eMaterialShadingModel shadingModel)
 {
 	std::shared_ptr<icpMaterialTemplate> instance = std::make_shared<icpMaterialInstance>(shadingModel);
-	m_materials.push_back(instance);
+	m_vMaterialContainer.push_back(instance);
+	return instance;
 }
 
+/*
 void icpMaterialInstance::addDiffuseTexture(const std::string& texID)
 {
 	auto texRendeResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
@@ -156,6 +158,25 @@ void icpMaterialInstance::addSpecularTexture(const std::string& texID)
 	}
 	m_textureParameterValues.push_back(texID);
 }
+*/
+
+void icpMaterialInstance::AddTexture(const std::string& texID)
+{
+	auto texRendeResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
+
+	if(texRendeResMgr->m_textureRenderResurces.find(texID) == texRendeResMgr->m_textureRenderResurces.end()
+		|| texRendeResMgr->m_textureRenderResurces[texID].m_state == eTextureRenderResouceState::UNINITIALIZED)
+	{
+		texRendeResMgr->setupTextureRenderResources(texID);
+	}
+
+	icpTextureParameterInfo info{};
+	info.m_textureID = texID;
+	info.m_strTextureName = texID;
+
+	m_textureParameterValues.push_back(info);
+}
+
 
 void icpMaterialInstance::addShininess(float shininess)
 {
