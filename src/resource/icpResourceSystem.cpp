@@ -63,8 +63,7 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::loadImageResource(const std:
 	imgRes->m_mipmapLevel = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 	imgRes->m_resType = icpResourceType::TEXTURE;
 
-	auto resName = imgPath.stem().string();
-	resName = resName + "_img";
+	const auto& resName = imgPath.stem().string();
 	m_resources.m_allResources[icpResourceType::TEXTURE][resName] = imgRes;
 
 

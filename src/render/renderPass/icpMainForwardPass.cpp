@@ -391,7 +391,7 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 
 	for(auto materialInstance : materialSubSystem->m_vMaterialContainer)
 	{
-		vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 3, &materialInstance->m_perMaterialDSs[curFrame], 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, materialInstance->GetSRVNumber(), &materialInstance->m_perMaterialDSs[curFrame], 0, nullptr);
 	}
 
 	std::vector<std::shared_ptr<icpGameEntity>> rootList;
@@ -415,7 +415,6 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshRes->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
-		/*
 		else if (entity->hasComponent<icpPrimitiveRendererComponent>())
 		{
 			auto& primitive = entity->accessComponent<icpPrimitiveRendererComponent>();
@@ -425,11 +424,10 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
 			vkCmdBindIndexBuffer(commandBuffer, primitive.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-			auto descriptorSets = primitive.m_descriptorSets;
-			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
+			auto& descriptorSets = primitive.m_descriptorSets;
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &descriptorSets[curFrame], 0, nullptr);
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(primitive.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
-		*/
 	}
 
 	vkCmdEndRenderPass(commandBuffer);
@@ -621,7 +619,21 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 		perMaterialSpecularSamplerLayoutBinding.pImmutableSamplers = nullptr;
 		perMaterialSpecularSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-		std::array<VkDescriptorSetLayoutBinding, 3> bindings{ perMaterialUBOBinding, perMaterialDiffuseSamplerLayoutBinding, perMaterialSpecularSamplerLayoutBinding };
+		VkDescriptorSetLayoutBinding perMaterialNormalSamplerLayoutBinding{};
+		perMaterialNormalSamplerLayoutBinding.binding = 3;
+		perMaterialNormalSamplerLayoutBinding.descriptorCount = 1;
+		perMaterialNormalSamplerLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		perMaterialNormalSamplerLayoutBinding.pImmutableSamplers = nullptr;
+		perMaterialNormalSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		VkDescriptorSetLayoutBinding perMaterialRoughnessSamplerLayoutBinding{};
+		perMaterialRoughnessSamplerLayoutBinding.binding = 4;
+		perMaterialRoughnessSamplerLayoutBinding.descriptorCount = 1;
+		perMaterialRoughnessSamplerLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		perMaterialRoughnessSamplerLayoutBinding.pImmutableSamplers = nullptr;
+		perMaterialRoughnessSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		
+		std::array<VkDescriptorSetLayoutBinding, 4> bindings{ perMaterialUBOBinding, perMaterialDiffuseSamplerLayoutBinding, perMaterialNormalSamplerLayoutBinding, perMaterialRoughnessSamplerLayoutBinding};
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -636,14 +648,14 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 
 	// perFrame
 	{
-		VkDescriptorSetLayoutBinding perFrameSSBOBinding{};
-		perFrameSSBOBinding.binding = 0;
-		perFrameSSBOBinding.descriptorCount = 1;
-		perFrameSSBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		perFrameSSBOBinding.pImmutableSamplers = nullptr;
-		perFrameSSBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		VkDescriptorSetLayoutBinding perFrameUBOBinding{};
+		perFrameUBOBinding.binding = 0;
+		perFrameUBOBinding.descriptorCount = 1;
+		perFrameUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		perFrameUBOBinding.pImmutableSamplers = nullptr;
+		perFrameUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perFrameSSBOBinding };
+		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perFrameUBOBinding };
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());

@@ -22,10 +22,16 @@ enum class eMaterialModel
 */
 // pipeline: import img resource -->
 
+struct icpScalaMaterialParameterInfo
+{
+	std::string m_strScalaName;
+	float m_fValue = 0.f;
+};
+
 // todo: replace string with real guid
 typedef std::string TextureID;
 
-struct icpTextureParameterInfo
+struct icpTextureMaterialParameterInfo
 {
 	std::string m_strTextureName;
 	TextureID m_textureID;
@@ -51,11 +57,12 @@ public:
 	//virtual void addDiffuseTexture(const std::string& texID) = 0;
 	//virtual void addSpecularTexture(const std::string& texID) = 0;
 	virtual void AddTexture(const std::string& texID) = 0;
-	virtual void addShininess(float shininess) = 0;
-	virtual void setupMaterialRenderResources() = 0;
+	virtual void AddScalaValue(const icpScalaMaterialParameterInfo& value) = 0;
+	virtual void SetupMaterialRenderResources() = 0;
 
 	// return a mapped CPU address
 	virtual void* MapUniformBuffer(int index) = 0;
+	virtual uint32_t GetSRVNumber() const = 0;
 
 
 	eMaterialShadingModel m_shadingModel = eMaterialShadingModel::SHADING_MODEL_COUNT;
@@ -78,17 +85,20 @@ public:
 	//void addDiffuseTexture(const std::string& texID) override;
 	//void addSpecularTexture(const std::string& texID) override;
 	void AddTexture(const std::string& texID) override;
-	void addShininess(float shininess) override;
-	void setupMaterialRenderResources() override;
+	void AddScalaValue(const icpScalaMaterialParameterInfo& value) override;
+	void SetupMaterialRenderResources() override;
 	void* MapUniformBuffer(int index) override;
 	uint64_t ComputeUBOSize();
 
+	uint32_t GetSRVNumber() const override;
 private:
 	
-	std::vector<float> m_scalarParameterValues;
-	std::vector<bool> m_boolParameterValues;
-	std::vector<glm::vec4> m_vectorParameterValues;
-	std::vector<icpTextureParameterInfo> m_textureParameterValues;
+	std::vector<icpScalaMaterialParameterInfo> m_vScalarParameterValues;
+	std::vector<bool> m_vBoolParameterValues;
+	std::vector<glm::vec4> m_vVectorParameterValues;
+	std::vector<icpTextureMaterialParameterInfo> m_vTextureParameterValues;
+
+	uint32_t m_nSRVs = 0;
 };
 
 /*

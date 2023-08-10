@@ -80,7 +80,7 @@ void icpMaterialInstance::AllocateDescriptorSets()
 		auto texRenderResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
 
 		std::vector<VkDescriptorImageInfo> imageInfos;
-		for (auto& texture : m_textureParameterValues)
+		for (auto& texture : m_vTextureParameterValues)
 		{
 			auto& info = texRenderResMgr->m_textureRenderResurces[texture.m_textureID];
 
@@ -92,7 +92,9 @@ void icpMaterialInstance::AllocateDescriptorSets()
 			imageInfos.push_back(imageInfo);
 		}
 
-		uint32_t bindingNumber = (UBOSize > 0 ? 1u : 0u) + m_textureParameterValues.size();
+		uint32_t bindingNumber = (UBOSize > 0 ? 1u : 0u) + m_vTextureParameterValues.size();
+
+		m_nSRVs = bindingNumber;
 
 		std::vector<VkWriteDescriptorSet> descriptorWrites(bindingNumber);
 
@@ -118,6 +120,7 @@ void icpMaterialInstance::AllocateDescriptorSets()
 			descriptorWrites[index].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			descriptorWrites[index].descriptorCount = 1;
 			descriptorWrites[index].pImageInfo = &info;
+			index++;
 		}
 
 		vkUpdateDescriptorSets(vulkanRHI->m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
@@ -161,6 +164,12 @@ void icpMaterialInstance::addSpecularTexture(const std::string& texID)
 }
 */
 
+void icpMaterialInstance::AddScalaValue(const icpScalaMaterialParameterInfo& value)
+{
+	m_vScalarParameterValues.push_back(value);
+}
+
+
 void icpMaterialInstance::AddTexture(const std::string& texID)
 {
 	auto texRendeResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
@@ -176,33 +185,28 @@ void icpMaterialInstance::AddTexture(const std::string& texID)
 		texRendeResMgr->setupTextureRenderResources(texID);
 	}
 
-	icpTextureParameterInfo info{};
+	icpTextureMaterialParameterInfo info{};
 	info.m_textureID = texID;
 	info.m_strTextureName = texID;
 
-	m_textureParameterValues.push_back(info);
+	m_vTextureParameterValues.push_back(info);
 }
 
-
-void icpMaterialInstance::addShininess(float shininess)
-{
-	//m_ubo.shininess = shininess;
-}
 
 uint64_t icpMaterialInstance::ComputeUBOSize()
 {
 	uint64_t totalSize = 0;
-	for (auto bVal : m_boolParameterValues)
+	for (auto bVal : m_vBoolParameterValues)
 	{
 		totalSize += sizeof(float);
 	}
 
-	for (auto fVal : m_scalarParameterValues)
+	for (auto fVal : m_vScalarParameterValues)
 	{
 		totalSize += sizeof(float);
 	}
 
-	for (auto vVal : m_vectorParameterValues)
+	for (auto vVal : m_vVectorParameterValues)
 	{
 		totalSize += sizeof(glm::vec4);
 	}
@@ -210,8 +214,12 @@ uint64_t icpMaterialInstance::ComputeUBOSize()
 	return totalSize;
 }
 
+uint32_t icpMaterialInstance::GetSRVNumber() const
+{
+	return m_nSRVs;
+}
 
-void icpMaterialInstance::setupMaterialRenderResources()
+void icpMaterialInstance::SetupMaterialRenderResources()
 {
 	CreateUniformBuffers();
 	AllocateDescriptorSets();

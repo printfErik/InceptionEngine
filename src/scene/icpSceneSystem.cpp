@@ -302,8 +302,8 @@ void icpSceneSystem::createMeshEntityFromResource(std::shared_ptr<icpResourceBas
 
 	material->AddTexture(meshRes->m_id);
 
-	material->addShininess(0.1f);
-	material->setupMaterialRenderResources();
+	material->AddScalaValue({"Shininess", 0.1f});
+	material->SetupMaterialRenderResources();
 }
 
 void icpSceneSystem::LoadDefaultScene()
@@ -327,11 +327,10 @@ void icpSceneSystem::LoadDefaultScene()
 		//plane.createTextureSampler();
 
 		plane.fillInPrimitiveData(glm::vec3(1, 0, 1));
-		//plane.createVertexBuffers();
-		//plane.createIndexBuffers();
-		//plane.createUniformBuffers();
-
-		//plane.allocateDescriptorSets();
+		plane.createVertexBuffers();
+		plane.createIndexBuffers();
+		plane.createUniformBuffers();
+		plane.allocateDescriptorSets();
 
 		auto&& material = plane.AddMaterial(eMaterialShadingModel::DEFAULT_LIT);
 
@@ -339,8 +338,8 @@ void icpSceneSystem::LoadDefaultScene()
 		material->AddTexture("rustediron2_metallic");
 		material->AddTexture("rustediron2_normal");
 		material->AddTexture("rustediron2_roughness");
-		material->addShininess(0.1f);
-		//material->setupMaterialRenderResources();
+		material->AddScalaValue({ "Shininess", 0.1f });
+		material->SetupMaterialRenderResources();
 	}
 	
 }

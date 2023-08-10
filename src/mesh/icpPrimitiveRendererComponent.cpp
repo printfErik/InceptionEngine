@@ -5,7 +5,7 @@
 #include "../render/RHI/Vulkan/icpVulkanUtility.h"
 #include "../mesh/icpMeshData.h"
 #include "../render/RHI/Vulkan/vk_mem_alloc.h"
-#include "../render/RHI/Vulkan/vk_mem_alloc.h"
+#include "../render/renderPass/icpMainForwardPass.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -135,9 +135,11 @@ void icpPrimitiveRendererComponent::createIndexBuffers()
 
 void icpPrimitiveRendererComponent::allocateDescriptorSets()
 {
-	/*
+	
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, vulkanRHI->m_meshDSLayout);
+
+	auto& layout = g_system_container.m_renderSystem->m_renderPassManager->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
 
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -157,15 +159,9 @@ void icpPrimitiveRendererComponent::allocateDescriptorSets()
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = m_uniformBuffers[i];
 		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UniformBufferObject);
+		bufferInfo.range = sizeof(UBOMeshRenderResource);
 
-		VkDescriptorImageInfo imageInfo{};
-
-		imageInfo.imageView = m_textureImageView;
-		imageInfo.sampler = m_textureSampler;
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-		std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+		std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
 		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[0].dstSet = m_descriptorSets[i];
 		descriptorWrites[0].dstBinding = 0;
@@ -174,17 +170,9 @@ void icpPrimitiveRendererComponent::allocateDescriptorSets()
 		descriptorWrites[0].descriptorCount = 1;
 		descriptorWrites[0].pBufferInfo = &bufferInfo;
 
-		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[1].dstSet = m_descriptorSets[i];
-		descriptorWrites[1].dstBinding = 1;
-		descriptorWrites[1].dstArrayElement = 0;
-		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrites[1].descriptorCount = 1;
-		descriptorWrites[1].pImageInfo = &imageInfo;
-
 		vkUpdateDescriptorSets(vulkanRHI->m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
-	*/
+	
 }
 
 void icpPrimitiveRendererComponent::createUniformBuffers()
