@@ -101,6 +101,4 @@ void icpRenderSystem::createDirLight()
 }
 
 
-
-
 INCEPTION_END_NAMESPACE

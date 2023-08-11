@@ -323,8 +323,6 @@ void icpSceneSystem::LoadDefaultScene()
 		auto&& plane = entity.installComponent<icpPrimitiveRendererComponent>();
 
 		plane.m_primitive = ePrimitiveType::CUBE;
-		//plane.createTextureImages();
-		//plane.createTextureSampler();
 
 		plane.fillInPrimitiveData(glm::vec3(1, 0, 1));
 		plane.createVertexBuffers();

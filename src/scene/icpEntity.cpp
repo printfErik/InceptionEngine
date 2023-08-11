@@ -1,19 +1,30 @@
 #include "icpEntity.h"
 
+#include "icpXFormComponent.h"
+#include "../core/icpSystemContainer.h"
 INCEPTION_BEGIN_NAMESPACE
 
 icpGameEntity::icpGameEntity()
 {
-	
+	m_pSceneSystem = g_system_container.m_sceneSystem;
 }
 
-void icpGameEntity::initializeEntity(entt::entity entityHandle, icpSceneSystem* sceneSystem, bool isRoot)
+void icpGameEntity::InitializeEntity(entt::entity entityHandle, std::shared_ptr<icpGameEntity> parent)
 {
 	m_entityHandle = entityHandle;
-	m_sceneSystem = sceneSystem;
+	const auto pSceneSys = m_pSceneSystem.lock();
+	if (!parent)
+	{
+		pSceneSys->m_sceneRoots.push_back(GetSharedFromThis());
+	}
 
-	if (isRoot) 
-		m_sceneSystem->m_sceneRoots.push_back(std::make_shared<icpGameEntity>(*this));
+	auto&& parentXForm = parent->accessComponent<icpXFormComponent>();
+
+	auto ptr = GetSharedFromThis();
+	auto&& xform = ptr->installComponent<icpXFormComponent>();
+	xform.m_parent = std::make_shared<icpXFormComponent>(parentXForm);
+
+	parentXForm.m_children.push_back(std::make_shared<icpXFormComponent>(xform));
 }
 
 

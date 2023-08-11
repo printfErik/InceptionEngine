@@ -8,19 +8,20 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-class icpGameEntity
+class icpGameEntity : public std::enable_shared_from_this<icpGameEntity>
 {
 public:
 	icpGameEntity();
 	virtual ~icpGameEntity() = default;
 
-	void initializeEntity(entt::entity entityHandle, icpSceneSystem* sceneSystem, bool isRoot = false);
+	void InitializeEntity(entt::entity entityHandle, std::shared_ptr<icpGameEntity> parent);
 
 	template<typename T, typename... Args>
 	T& installComponent(Args&&... args)
 	{
 		assert(!hasComponent<T>());
-		T& component = m_sceneSystem->m_registry.emplace<T>(m_entityHandle, std::forward<Args>(args)...);
+		const auto ptr = m_pSceneSystem.lock();
+		T& component = ptr->m_registry.emplace<T>(m_entityHandle, std::forward<Args>(args)...);
 		component.m_possessor = this;
 		return component;
 	}
@@ -28,29 +29,36 @@ public:
 	template<typename T>
 	bool hasComponent()
 	{
-		return m_sceneSystem->m_registry.any_of<T>(m_entityHandle);
+		const auto ptr = m_pSceneSystem.lock();
+		return ptr->m_registry.any_of<T>(m_entityHandle);
 	}
 
 	template<typename T>
 	T& accessComponent()
 	{
 		assert(hasComponent<T>());
-		return m_sceneSystem->m_registry.get<T>(m_entityHandle);
+		const auto ptr = m_pSceneSystem.lock();
+		return ptr->m_registry.get<T>(m_entityHandle);
 	}
 
 	template<typename T>
 	void uninstallComponent()
 	{
 		assert(hasComponent<T>());
-		m_sceneSystem->m_registry.remove<T>(m_entityHandle);
+		const auto ptr = m_pSceneSystem.lock();
+		ptr->m_registry.remove<T>(m_entityHandle);
+	}
+
+	std::shared_ptr<icpGameEntity> GetSharedFromThis()
+	{
+		return shared_from_this();
 	}
 
 private:
 
-	entt::entity m_entityHandle;
+	entt::entity m_entityHandle{};
 
-	icpSceneSystem* m_sceneSystem;
-
+	std::weak_ptr<icpSceneSystem> m_pSceneSystem;
 };
 
 
