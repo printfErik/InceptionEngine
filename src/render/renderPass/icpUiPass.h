@@ -12,7 +12,7 @@ public:
 
 	void cleanup() override;
 	void render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) override;
-	void initializeRenderPass(RendePassInitInfo initInfo) override;
+	void initializeRenderPass(RenderPassInitInfo initInfo) override;
 	void setupPipeline() override;
 	void recreateSwapChain() override;
 

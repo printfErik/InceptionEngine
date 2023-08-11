@@ -12,7 +12,7 @@ class icpRenderPassBase
 {
 public:
 
-	struct RendePassInitInfo
+	struct RenderPassInitInfo
 	{
 		std::shared_ptr<icpVulkanRHI> rhi{ nullptr };
 		eRenderPass passType;
@@ -20,7 +20,7 @@ public:
 		std::shared_ptr<icpEditorUI> editorUi{ nullptr };
 	};
 
-	struct RenederPipelineInfo
+	struct RenderPipelineInfo
 	{
 		VkPipeline m_pipeline;
 		VkPipelineLayout m_pipelineLayout;
@@ -30,7 +30,7 @@ public:
 	icpRenderPassBase() = default;
 	virtual ~icpRenderPassBase() {}
 
-	virtual void initializeRenderPass(RendePassInitInfo initInfo) = 0;
+	virtual void initializeRenderPass(RenderPassInitInfo initInfo) = 0;
 	virtual void setupPipeline() = 0;
 	virtual void cleanup() = 0;
 	virtual void render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) = 0;
@@ -41,7 +41,7 @@ public:
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 	VkRenderPass m_renderPassObj{ VK_NULL_HANDLE };
 
-	RenederPipelineInfo m_pipelineInfo{};
+	RenderPipelineInfo m_pipelineInfo{};
 	std::vector<VkDescriptorSetLayout> m_DSLayouts;
 
 	std::shared_ptr<icpRenderPassBase> m_dependency{ nullptr };

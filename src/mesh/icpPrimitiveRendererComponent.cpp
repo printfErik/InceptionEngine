@@ -178,7 +178,7 @@ void icpPrimitiveRendererComponent::allocateDescriptorSets()
 void icpPrimitiveRendererComponent::createUniformBuffers()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-	auto bufferSize = 0;// sizeof(UniformBufferObject);
+	auto bufferSize = sizeof(UBOMeshRenderResource);
 
 	m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 	m_uniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);

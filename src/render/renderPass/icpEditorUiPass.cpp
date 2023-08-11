@@ -18,7 +18,7 @@ icpEditorUiPass::~icpEditorUiPass()
 
 }
 
-void icpEditorUiPass::initializeRenderPass(RendePassInitInfo initInfo)
+void icpEditorUiPass::initializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.rhi;
 

@@ -25,7 +25,7 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 {
 	m_rhi = vulkanRHI;
 
-	icpRenderPassBase::RendePassInitInfo mainPassCreateInfo;
+	icpRenderPassBase::RenderPassInitInfo mainPassCreateInfo;
 	mainPassCreateInfo.rhi = m_rhi;
 	mainPassCreateInfo.passType = eRenderPass::MAIN_FORWARD_PASS;
 	std::shared_ptr<icpRenderPassBase> mainForwordPass = std::make_shared<icpMainForwardPass>();
@@ -43,7 +43,7 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
 	m_renderPasses.push_back(copyPass);*/
 	
 
-	icpRenderPassBase::RendePassInitInfo editorUIInfo;
+	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
 	editorUIInfo.rhi = m_rhi;
 	editorUIInfo.passType = eRenderPass::EDITOR_UI_PASS;
 	editorUIInfo.editorUi = std::make_shared<icpEditorUI>();

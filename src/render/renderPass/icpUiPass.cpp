@@ -19,7 +19,7 @@ INCEPTION_BEGIN_NAMESPACE
 }
 
 
-void icpUiPass::initializeRenderPass(RendePassInitInfo initInfo)
+void icpUiPass::initializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.rhi;
 

@@ -20,7 +20,7 @@ icpMainForwardPass::~icpMainForwardPass()
 	
 }
 
-void icpMainForwardPass::initializeRenderPass(RendePassInitInfo initInfo)
+void icpMainForwardPass::initializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.rhi;
 
@@ -391,7 +391,7 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 
 	for(auto materialInstance : materialSubSystem->m_vMaterialContainer)
 	{
-		vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, materialInstance->GetSRVNumber(), &materialInstance->m_perMaterialDSs[curFrame], 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(materialInstance->m_perMaterialDSs[curFrame]), 0, nullptr);
 	}
 
 	std::vector<std::shared_ptr<icpGameEntity>> rootList;
@@ -598,6 +598,7 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 
 	// per Material
 	{
+		// set 1, binding 0 
 		VkDescriptorSetLayoutBinding perMaterialUBOBinding{};
 		perMaterialUBOBinding.binding = 0;
 		perMaterialUBOBinding.descriptorCount = 1;
@@ -605,6 +606,7 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 		perMaterialUBOBinding.pImmutableSamplers = nullptr;
 		perMaterialUBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 
+		// set 1, binding 1
 		VkDescriptorSetLayoutBinding perMaterialDiffuseSamplerLayoutBinding{};
 		perMaterialDiffuseSamplerLayoutBinding.binding = 1;
 		perMaterialDiffuseSamplerLayoutBinding.descriptorCount = 1;
@@ -612,6 +614,7 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 		perMaterialDiffuseSamplerLayoutBinding.pImmutableSamplers = nullptr;
 		perMaterialDiffuseSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+		// set 1, binding 2
 		VkDescriptorSetLayoutBinding perMaterialSpecularSamplerLayoutBinding{};
 		perMaterialSpecularSamplerLayoutBinding.binding = 2;
 		perMaterialSpecularSamplerLayoutBinding.descriptorCount = 1;
@@ -619,6 +622,7 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 		perMaterialSpecularSamplerLayoutBinding.pImmutableSamplers = nullptr;
 		perMaterialSpecularSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+		// set 1, binding 3
 		VkDescriptorSetLayoutBinding perMaterialNormalSamplerLayoutBinding{};
 		perMaterialNormalSamplerLayoutBinding.binding = 3;
 		perMaterialNormalSamplerLayoutBinding.descriptorCount = 1;
@@ -626,6 +630,7 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 		perMaterialNormalSamplerLayoutBinding.pImmutableSamplers = nullptr;
 		perMaterialNormalSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+		// set 1, binding 4
 		VkDescriptorSetLayoutBinding perMaterialRoughnessSamplerLayoutBinding{};
 		perMaterialRoughnessSamplerLayoutBinding.binding = 4;
 		perMaterialRoughnessSamplerLayoutBinding.descriptorCount = 1;
@@ -633,7 +638,7 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 		perMaterialRoughnessSamplerLayoutBinding.pImmutableSamplers = nullptr;
 		perMaterialRoughnessSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		
-		std::array<VkDescriptorSetLayoutBinding, 4> bindings{ perMaterialUBOBinding, perMaterialDiffuseSamplerLayoutBinding, perMaterialNormalSamplerLayoutBinding, perMaterialRoughnessSamplerLayoutBinding};
+		std::array<VkDescriptorSetLayoutBinding, 5> bindings{ perMaterialUBOBinding, perMaterialSpecularSamplerLayoutBinding, perMaterialDiffuseSamplerLayoutBinding, perMaterialNormalSamplerLayoutBinding, perMaterialRoughnessSamplerLayoutBinding};
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -648,6 +653,7 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 
 	// perFrame
 	{
+		// set 2, binding 0 
 		VkDescriptorSetLayoutBinding perFrameUBOBinding{};
 		perFrameUBOBinding.binding = 0;
 		perFrameUBOBinding.descriptorCount = 1;
