@@ -20,6 +20,7 @@
 
 #include "../mesh/icpPrimitiveRendererComponent.h"
 #include "../render/icpRenderSystem.h"
+#include "../render/light/icpLightComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -311,7 +312,7 @@ void icpSceneSystem::LoadDefaultScene()
 	// plane
 	{
 		icpGameEntity entity;
-		entity.initializeEntity(m_registry.create(), this, true);
+		entity.InitializeEntity(m_registry.create(), nullptr);
 
 		auto&& entityData = entity.installComponent<icpEntityDataComponent>();
 		entityData.m_name = "FloorPlane";
@@ -339,7 +340,55 @@ void icpSceneSystem::LoadDefaultScene()
 		material->AddScalaValue({ "Shininess", 0.1f });
 		material->SetupMaterialRenderResources();
 	}
-	
+
+	// Cube
+	{
+		icpGameEntity entity;
+		entity.InitializeEntity(m_registry.create(), nullptr);
+
+		auto&& entityData = entity.installComponent<icpEntityDataComponent>();
+		entityData.m_name = "FloorPlane";
+		entityData.m_guid = icpGuid();
+
+		auto&& xform = entity.installComponent<icpXFormComponent>();
+		xform.m_translation = glm::vec3(0.f, 5.f, 0.f);
+		xform.m_scale = glm::vec3(2.f, 2.f, 2.f);
+
+		auto&& plane = entity.installComponent<icpPrimitiveRendererComponent>();
+
+		plane.m_primitive = ePrimitiveType::CUBE;
+
+		plane.fillInPrimitiveData(glm::vec3(1, 0, 1));
+		plane.createVertexBuffers();
+		plane.createIndexBuffers();
+		plane.createUniformBuffers();
+		plane.allocateDescriptorSets();
+
+		auto&& material = plane.AddMaterial(eMaterialShadingModel::DEFAULT_LIT);
+
+		material->AddTexture("rustediron2_basecolor");
+		material->AddTexture("rustediron2_metallic");
+		material->AddTexture("rustediron2_normal");
+		material->AddTexture("rustediron2_roughness");
+		material->AddScalaValue({ "Shininess", 0.1f });
+		material->SetupMaterialRenderResources();
+	}
+
+	// Directional Light 
+	{
+		icpGameEntity entity;
+		entity.InitializeEntity(m_registry.create(), nullptr);
+
+		auto&& entityData = entity.installComponent<icpEntityDataComponent>();
+		entityData.m_guid = icpGuid();
+		entityData.m_name = "DirectionalLight";
+
+		auto&& xform = entity.installComponent<icpXFormComponent>();
+		xform.m_translation = glm::vec3(0.f);
+
+		auto&& lightComp = entity.installComponent<icpDirectionalLightComponent>();
+		//lightComp.
+	}
 }
 
 INCEPTION_END_NAMESPACE

@@ -16,6 +16,7 @@ void icpGameEntity::InitializeEntity(entt::entity entityHandle, std::shared_ptr<
 	if (!parent)
 	{
 		pSceneSys->m_sceneRoots.push_back(GetSharedFromThis());
+		return;
 	}
 
 	auto&& parentXForm = parent->accessComponent<icpXFormComponent>();
