@@ -9,7 +9,7 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-void icpPrimitiveRendererComponent::fillInPrimitiveData(const glm::vec3& color)
+void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
 {
 	switch (m_primitive)
 	{
@@ -35,6 +35,51 @@ void icpPrimitiveRendererComponent::fillInPrimitiveData(const glm::vec3& color)
 		m_vertexIndices.assign(cubeIndex.begin(), cubeIndex.end());
 	}
 	break;
+	case ePrimitiveType::SPHERE:
+	{
+		const unsigned int X_SEGMENTS = 64;
+		const unsigned int Y_SEGMENTS = 64;
+		const float PI = 3.14159265359f;
+		std::vector<icpVertex> sphereVertices;
+		for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
+		{
+			for (unsigned int y = 0; y <= Y_SEGMENTS; ++y)
+			{
+				float xSegment = (float)x / (float)X_SEGMENTS;
+				float ySegment = (float)y / (float)Y_SEGMENTS;
+				float xPos = std::cos(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
+				float yPos = std::cos(ySegment * PI);
+				float zPos = std::sin(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
+
+				sphereVertices.push_back({ {xPos, yPos, zPos}, color, {xPos, yPos, zPos}, {xSegment, ySegment} });
+			}
+		}
+		m_vertices.assign(sphereVertices.begin(), sphereVertices.end());
+		std::vector<uint32_t> sphereIndex;
+
+		bool oddRow = false;
+		for (unsigned int y = 0; y < Y_SEGMENTS; ++y)
+		{
+			if (!oddRow) // even rows: y == 0, y == 2; and so on
+			{
+				for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
+				{
+					sphereIndex.push_back(y * (X_SEGMENTS + 1) + x);
+					sphereIndex.push_back((y + 1) * (X_SEGMENTS + 1) + x);
+				}
+			}
+			else
+			{
+				for (int x = X_SEGMENTS; x >= 0; --x)
+				{
+					sphereIndex.push_back((y + 1) * (X_SEGMENTS + 1) + x);
+					sphereIndex.push_back(y * (X_SEGMENTS + 1) + x);
+				}
+			}
+			oddRow = !oddRow;
+		}
+		m_vertexIndices.assign(sphereIndex.begin(), sphereIndex.end());
+	}
 	default:
 	{
 		ICP_LOG_WARING("no such primitive");
@@ -43,7 +88,7 @@ void icpPrimitiveRendererComponent::fillInPrimitiveData(const glm::vec3& color)
 	}
 }
 
-void icpPrimitiveRendererComponent::createVertexBuffers()
+void icpPrimitiveRendererComponent::CreateVertexBuffers()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 
@@ -89,7 +134,7 @@ void icpPrimitiveRendererComponent::createVertexBuffers()
 	
 }
 
-void icpPrimitiveRendererComponent::createIndexBuffers()
+void icpPrimitiveRendererComponent::CreateIndexBuffers()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 	VkDeviceSize bufferSize = sizeof(m_vertexIndices[0]) * m_vertexIndices.size();
@@ -133,7 +178,7 @@ void icpPrimitiveRendererComponent::createIndexBuffers()
 	vmaDestroyBuffer(vulkanRHI->m_vmaAllocator, stagingBuffer, stagingBufferAllocation);
 }
 
-void icpPrimitiveRendererComponent::allocateDescriptorSets()
+void icpPrimitiveRendererComponent::AllocateDescriptorSets()
 {
 	
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
@@ -175,7 +220,7 @@ void icpPrimitiveRendererComponent::allocateDescriptorSets()
 	
 }
 
-void icpPrimitiveRendererComponent::createUniformBuffers()
+void icpPrimitiveRendererComponent::CreateUniformBuffers()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 	auto bufferSize = sizeof(UBOMeshRenderResource);
@@ -198,7 +243,7 @@ void icpPrimitiveRendererComponent::createUniformBuffers()
 	}
 }
 
-void icpPrimitiveRendererComponent::createTextureImages()
+void icpPrimitiveRendererComponent::CreateTextureImages()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 
@@ -239,16 +284,16 @@ void icpPrimitiveRendererComponent::createTextureImages()
 
 	vmaDestroyBuffer(vulkanRHI->m_vmaAllocator, stagingBuffer, stagingBufferAllocation);
 
-	createTextureImageViews();
+	CreateTextureImageViews();
 }
 
-void icpPrimitiveRendererComponent::createTextureImageViews()
+void icpPrimitiveRendererComponent::CreateTextureImageViews()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 	m_textureImageView = icpVulkanUtility::CreateGPUImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, 1, vulkanRHI->m_device);
 }
 
-void icpPrimitiveRendererComponent::createTextureSampler()
+void icpPrimitiveRendererComponent::CreateTextureSampler()
 {
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 

@@ -26,18 +26,18 @@ public:
 
 	ePrimitiveType m_primitive = ePrimitiveType::PRIMITIVE_TYPE_MAX;
 
-	void createVertexBuffers();
-	void createIndexBuffers();
-	void createUniformBuffers();
+	void CreateVertexBuffers();
+	void CreateIndexBuffers();
+	void CreateUniformBuffers();
 
-	void allocateDescriptorSets();
+	void AllocateDescriptorSets();
 
-	void fillInPrimitiveData(const glm::vec3& color);
+	void FillInPrimitiveData(const glm::vec3& color);
 
-	void createTextureImages();
+	void CreateTextureImages();
 
-	void createTextureImageViews();
-	void createTextureSampler();
+	void CreateTextureImageViews();
+	void CreateTextureSampler();
 
 	std::shared_ptr<icpMaterialTemplate> AddMaterial(eMaterialShadingModel shading_model);
 
