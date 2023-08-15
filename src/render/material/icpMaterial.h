@@ -60,8 +60,6 @@ public:
 	virtual void AddScalaValue(const icpScalaMaterialParameterInfo& value) = 0;
 	virtual void SetupMaterialRenderResources() = 0;
 
-	// return a mapped CPU address
-	virtual void* MapUniformBuffer(int index) = 0;
 	virtual uint32_t GetSRVNumber() const = 0;
 
 
@@ -87,7 +85,6 @@ public:
 	void AddTexture(const std::string& texID) override;
 	void AddScalaValue(const icpScalaMaterialParameterInfo& value) override;
 	void SetupMaterialRenderResources() override;
-	void* MapUniformBuffer(int index) override;
 	uint64_t ComputeUBOSize();
 
 	uint32_t GetSRVNumber() const override;

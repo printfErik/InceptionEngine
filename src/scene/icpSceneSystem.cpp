@@ -34,7 +34,7 @@ void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
 icpGameEntity icpSceneSystem::createEntity(const std::string& name, bool isRoot)
 {
 	icpGameEntity entity;
-	entity.initializeEntity(m_registry.create(), this, isRoot);
+	entity.InitializeEntity(m_registry.create(), nullptr);
 	auto&& entityData = entity.installComponent<icpEntityDataComponent>();
 	entityData.m_name = name;
 	entityData.m_guid = icpGuid();
@@ -225,7 +225,7 @@ icpGameEntity icpSceneSystem::createEntityFromMap(const fb::flatbufferTreeNode* 
 	auto entityFB = node->m_entity();
 
 	icpGameEntity entity;
-	entity.initializeEntity(m_registry.create(), this);
+	entity.InitializeEntity(m_registry.create(), nullptr);
 
 	auto compUnionTypes = entityFB->m_components_type();
 	auto comps = entityFB->m_components();
@@ -284,7 +284,7 @@ void icpSceneSystem::getRootEntityList(std::vector<std::shared_ptr<icpGameEntity
 void icpSceneSystem::createMeshEntityFromResource(std::shared_ptr<icpResourceBase> meshRes)
 {
 	icpGameEntity entity;
-	entity.initializeEntity(m_registry.create(), this, true);
+	entity.InitializeEntity(m_registry.create(), nullptr);
 
 	auto&& entityData = entity.installComponent<icpEntityDataComponent>();
 	entityData.m_name = meshRes->m_id;
@@ -325,11 +325,11 @@ void icpSceneSystem::LoadDefaultScene()
 
 		plane.m_primitive = ePrimitiveType::CUBE;
 
-		plane.fillInPrimitiveData(glm::vec3(1, 0, 1));
-		plane.createVertexBuffers();
-		plane.createIndexBuffers();
-		plane.createUniformBuffers();
-		plane.allocateDescriptorSets();
+		plane.FillInPrimitiveData(glm::vec3(1, 0, 1));
+		plane.CreateVertexBuffers();
+		plane.CreateIndexBuffers();
+		plane.CreateUniformBuffers();
+		plane.AllocateDescriptorSets();
 
 		auto&& material = plane.AddMaterial(eMaterialShadingModel::DEFAULT_LIT);
 
@@ -347,7 +347,7 @@ void icpSceneSystem::LoadDefaultScene()
 		entity.InitializeEntity(m_registry.create(), nullptr);
 
 		auto&& entityData = entity.installComponent<icpEntityDataComponent>();
-		entityData.m_name = "FloorPlane";
+		entityData.m_name = "Cube";
 		entityData.m_guid = icpGuid();
 
 		auto&& xform = entity.installComponent<icpXFormComponent>();
@@ -358,11 +358,11 @@ void icpSceneSystem::LoadDefaultScene()
 
 		plane.m_primitive = ePrimitiveType::CUBE;
 
-		plane.fillInPrimitiveData(glm::vec3(1, 0, 1));
-		plane.createVertexBuffers();
-		plane.createIndexBuffers();
-		plane.createUniformBuffers();
-		plane.allocateDescriptorSets();
+		plane.FillInPrimitiveData(glm::vec3(1, 0, 1));
+		plane.CreateVertexBuffers();
+		plane.CreateIndexBuffers();
+		plane.CreateUniformBuffers();
+		plane.AllocateDescriptorSets();
 
 		auto&& material = plane.AddMaterial(eMaterialShadingModel::DEFAULT_LIT);
 
@@ -387,7 +387,8 @@ void icpSceneSystem::LoadDefaultScene()
 		xform.m_translation = glm::vec3(0.f);
 
 		auto&& lightComp = entity.installComponent<icpDirectionalLightComponent>();
-		//lightComp.
+		lightComp.m_direction = glm::vec3(-1.f, -1.f, -1.f);
+		lightComp.m_color = glm::vec3(0.1f, 1.f, 0.0f);
 	}
 }
 

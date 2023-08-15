@@ -9,9 +9,7 @@ INCEPTION_BEGIN_NAMESPACE
 struct DirectionalLightRenderResource
 {
 	glm::vec3 direction;
-	glm::vec3 ambient;
-	glm::vec3 diffuse;
-	glm::vec3 specular;
+	glm::vec3 color;
 };
 
 struct PointLightRenderResource
@@ -20,9 +18,9 @@ struct PointLightRenderResource
 	glm::vec3 ambient;
 	glm::vec3 diffuse;
 	glm::vec3 specular;
-	float constant;
-	float linear;
-	float quadratic;
+	float constant = 0.f;
+	float linear = 0.f;
+	float quadratic = 0.f;
 };
 
 struct perFrameCB
@@ -79,7 +77,7 @@ public:
 
 private:
 
-	void updateGlobalBuffers(uint32_t curFrame);
+	void UpdateGlobalBuffers(uint32_t curFrame);
 };
 
 INCEPTION_END_NAMESPACE

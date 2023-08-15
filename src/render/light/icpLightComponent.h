@@ -29,9 +29,7 @@ public:
 
 	eLightType m_type = eLightType::NULL_LIGHT;
 
-	glm::vec3 m_ambient{};
-	glm::vec3 m_diffuse{};
-	glm::vec3 m_specular{};
+	glm::vec3 m_color{};
 };
 
 class icpDirectionalLightComponent : public icpLightComponent

@@ -225,13 +225,5 @@ void icpMaterialInstance::SetupMaterialRenderResources()
 	AllocateDescriptorSets();
 }
 
-void* icpMaterialInstance::MapUniformBuffer(int index)
-{
-	void* materialData;
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
-	vmaMapMemory(vulkanRHI->m_vmaAllocator, m_perMaterialUniformBufferAllocations[index], &materialData);
-	return materialData;
-}
-
 
 INCEPTION_END_NAMESPACE

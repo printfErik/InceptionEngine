@@ -180,7 +180,6 @@ void icpPrimitiveRendererComponent::CreateIndexBuffers()
 
 void icpPrimitiveRendererComponent::AllocateDescriptorSets()
 {
-	
 	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
 
 	auto& layout = g_system_container.m_renderSystem->m_renderPassManager->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];

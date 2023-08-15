@@ -322,7 +322,7 @@ void icpMainForwardPass::render(uint32_t frameBufferIndex, uint32_t currentFrame
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 
-	updateGlobalBuffers(currentFrame);
+	UpdateGlobalBuffers(currentFrame);
 
 	m_rhi->resetCommandBuffer(currentFrame);
 	recordCommandBuffer(m_rhi->m_graphicsCommandBuffers[currentFrame], frameBufferIndex, currentFrame);
@@ -460,16 +460,16 @@ void icpMainForwardPass::recreateSwapChain() {
 }
 
 
-void icpMainForwardPass::updateGlobalBuffers(uint32_t curFrame)
+void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 {
 	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
 
-	perFrameCB ssbo{};
+	perFrameCB CBPerFrame{};
 
-	ssbo.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
+	CBPerFrame.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
 	auto aspectRatio = (float)m_rhi->m_swapChainExtent.width / (float)m_rhi->m_swapChainExtent.height;
-	ssbo.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
-	ssbo.projection[1][1] *= -1;
+	CBPerFrame.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
+	CBPerFrame.projection[1][1] *= -1;
 
 	auto lightView = g_system_container.m_sceneSystem->m_registry.view<icpLightComponent>();
 
@@ -482,24 +482,19 @@ void icpMainForwardPass::updateGlobalBuffers(uint32_t curFrame)
 			case eLightType::DIRECTIONAL_LIGHT:
 			{
 				auto dirL = dynamic_cast<icpDirectionalLightComponent&>(lightComp);
-				ssbo.dirLight.ambient = lightComp.m_ambient;
-				ssbo.dirLight.diffuse = lightComp.m_diffuse;
-				ssbo.dirLight.direction = dirL.m_direction;
-				ssbo.dirLight.specular = lightComp.m_specular;
+				CBPerFrame.dirLight.color = dirL.m_color;
+				CBPerFrame.dirLight.direction = dirL.m_direction;
 			}
 			break;
 			case eLightType::POINT_LIGHT:
 			{
 				auto pointLight = dynamic_cast<icpPointLightComponent&>(lightComp);
 				PointLightRenderResource point{};
-				point.ambient = pointLight.m_ambient;
-				point.diffuse = pointLight.m_diffuse;
-				point.specular = pointLight.m_specular;
 				point.position = pointLight.m_position;
 				point.constant = pointLight.constant;
 				point.linear = pointLight.linear;
 				point.quadratic = pointLight.quadratic;
-				ssbo.pointLight[index] = point;
+				CBPerFrame.pointLight[index] = point;
 				index++;
 			}
 			break;
@@ -512,7 +507,7 @@ void icpMainForwardPass::updateGlobalBuffers(uint32_t curFrame)
 	{
 		void* data;
 		vmaMapMemory(m_rhi->m_vmaAllocator, m_perFrameCBAllocations[curFrame], &data);
-		memcpy(data, &ssbo, sizeof(ssbo));
+		memcpy(data, &CBPerFrame, sizeof(CBPerFrame));
 		vmaUnmapMemory(m_rhi->m_vmaAllocator, m_perFrameCBAllocations[curFrame]);
 	}
 
@@ -539,34 +534,36 @@ void icpMainForwardPass::updateGlobalBuffers(uint32_t curFrame)
 		// todo classify different materialInstance
 		for (auto& material : meshRenderer.m_materials)
 		{
-			void* pConst = material->MapUniformBuffer(curFrame);
-			/*
-			icpBlinnPhongMaterialInstance::UBOPerMaterial perMaterialCB{};
-
-			perMaterialCB.shininess = 1.f;
-
+			float fShininess = 1.f;
 			void* materialData;
-			vmaMapMemory(m_rhi->m_vmaAllocator, material->m_perMaterialUniformBufferAllocations[curFrame], &data);
-			memcpy(materialData, &perMaterialCB, sizeof(perMaterialCB));
+			vmaMapMemory(m_rhi->m_vmaAllocator, material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
+			memcpy(materialData, &fShininess, sizeof(float));
 			vmaUnmapMemory(m_rhi->m_vmaAllocator, material->m_perMaterialUniformBufferAllocations[curFrame]);
-			*/
 		}
-
 	}
 
-	/*
 	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponent, icpXFormComponent>();
 	for (auto entity: primitiveView)
 	{
 		auto& primitiveRender = primitiveView.get<icpPrimitiveRendererComponent>(entity);
+		UBOMeshRenderResource ubo{};
 		ubo.model = glm::mat4(1.f);
 
 		void* data;
-		vkMapMemory(m_rhi->m_device, primitiveRender.m_uniformBufferMem[curFrame], 0, sizeof(ubo), 0, &data);
+		vmaMapMemory(m_rhi->m_vmaAllocator, primitiveRender.m_uniformBufferAllocations[curFrame], &data);
 		memcpy(data, &ubo, sizeof(ubo));
-		vkUnmapMemory(m_rhi->m_device, primitiveRender.m_uniformBufferMem[curFrame]);
+		vmaUnmapMemory(m_rhi->m_vmaAllocator, primitiveRender.m_uniformBufferAllocations[curFrame]);
+
+		// todo classify different materialInstance
+		for (auto& material : primitiveRender.m_vMaterials)
+		{
+			float fShininess = 1.f;
+			void* materialData;
+			vmaMapMemory(m_rhi->m_vmaAllocator, material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
+			memcpy(materialData, &fShininess, sizeof(float));
+			vmaUnmapMemory(m_rhi->m_vmaAllocator, material->m_perMaterialUniformBufferAllocations[curFrame]);
+		}
 	}
-	*/
 }
 
 

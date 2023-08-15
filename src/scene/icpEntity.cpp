@@ -15,7 +15,7 @@ void icpGameEntity::InitializeEntity(entt::entity entityHandle, std::shared_ptr<
 	const auto pSceneSys = m_pSceneSystem.lock();
 	if (!parent)
 	{
-		pSceneSys->m_sceneRoots.push_back(GetSharedFromThis());
+		pSceneSys->m_sceneRoots.push_back(std::make_shared<icpGameEntity>(*this));
 		return;
 	}
 

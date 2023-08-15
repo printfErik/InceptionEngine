@@ -76,15 +76,15 @@ void icpRenderSystem::drawCube()
 	// todo: implicit doing following steps
 	primitive.m_primitive = ePrimitiveType::CUBE;
 
-	primitive.createTextureImages();
-	primitive.createTextureSampler();
+	primitive.CreateTextureImages();
+	primitive.CreateTextureSampler();
 
-	primitive.fillInPrimitiveData(glm::vec3(1,0,1));
-	primitive.createVertexBuffers();
-	primitive.createIndexBuffers();
-	primitive.createUniformBuffers();
+	primitive.FillInPrimitiveData(glm::vec3(1,0,1));
+	primitive.CreateVertexBuffers();
+	primitive.CreateIndexBuffers();
+	primitive.CreateUniformBuffers();
 
-	primitive.allocateDescriptorSets();
+	primitive.AllocateDescriptorSets();
 }
 
 void icpRenderSystem::createDirLight()
@@ -95,9 +95,7 @@ void icpRenderSystem::createDirLight()
 	light.m_type = eLightType::DIRECTIONAL_LIGHT;
 
 	light.m_direction = glm::vec3(-1, -1, 1);
-	light.m_ambient = glm::vec3(1, 0, 1);
-	light.m_diffuse = glm::vec3(1, 1, 1);
-	light.m_specular = glm::vec3(1, 1, 1);
+	light.m_color = glm::vec3(1, 1, 1);
 }
 
 
