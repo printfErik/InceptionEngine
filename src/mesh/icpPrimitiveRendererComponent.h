@@ -34,11 +34,6 @@ public:
 
 	void FillInPrimitiveData(const glm::vec3& color);
 
-	void CreateTextureImages();
-
-	void CreateTextureImageViews();
-	void CreateTextureSampler();
-
 	std::shared_ptr<icpMaterialTemplate> AddMaterial(eMaterialShadingModel shading_model);
 
 	std::vector<VkDescriptorSet> m_descriptorSets;
@@ -54,14 +49,6 @@ public:
 
 	std::vector<icpVertex> m_vertices;
 	std::vector<uint32_t> m_vertexIndices;
-
-	// just one pixel texture as empty texture
-	// this method will be slower than creating an another pipeline
-	// so todo: use different pipelines
-	VkImage m_textureImage;
-	VmaAllocation m_textureBufferAllocation;
-	VkImageView m_textureImageView;
-	VkSampler m_textureSampler;
 
 	std::vector<std::shared_ptr<icpMaterialTemplate>> m_vMaterials;
 
