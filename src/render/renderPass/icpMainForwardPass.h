@@ -27,7 +27,8 @@ struct perFrameCB
 {
 	glm::mat4 view;
 	glm::mat4 projection;
-	uint32_t pointLightNumber = 0;
+	glm::vec3 camPos;
+	float pointLightNumber = 0.f;
 	DirectionalLightRenderResource dirLight;
 	PointLightRenderResource pointLight[MAX_POINT_LIGHT_COUNT];
 };

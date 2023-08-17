@@ -82,7 +82,7 @@ void icpMaterialInstance::AllocateDescriptorSets()
 		std::vector<VkDescriptorImageInfo> imageInfos;
 		for (auto& texture : m_vTextureParameterValues)
 		{
-			auto& info = texRenderResMgr->m_textureRenderResurces[texture.m_textureID];
+			auto& info = texRenderResMgr->m_textureRenderResources[texture.m_textureID];
 
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageView = info.m_texImageView;
@@ -174,13 +174,13 @@ void icpMaterialInstance::AddTexture(const std::string& texID)
 {
 	auto texRendeResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
 
-	if(texRendeResMgr->m_textureRenderResurces.find(texID) == texRendeResMgr->m_textureRenderResurces.end())
+	if(texRendeResMgr->m_textureRenderResources.find(texID) == texRendeResMgr->m_textureRenderResources.end())
 	{
 		auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / (texID + ".png");
 		g_system_container.m_resourceSystem->loadImageResource(imgPath);
 	}
 
-	if (texRendeResMgr->m_textureRenderResurces[texID].m_state == eTextureRenderResouceState::UNINITIALIZED)
+	if (texRendeResMgr->m_textureRenderResources[texID].m_state == eTextureRenderResouceState::UNINITIALIZED)
 	{
 		texRendeResMgr->setupTextureRenderResources(texID);
 	}

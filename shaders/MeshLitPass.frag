@@ -1,5 +1,7 @@
 #version 450
 
+#define max_point_light_count 4
+
 struct DirectionalLightRenderResource
 {
     vec3 direction;
@@ -17,25 +19,17 @@ struct PointLightRenderResource
 	float quadratic;
 };
 
-struct PBRMaterialInstance
-{
-    vec3 albedo;
-    float metallic;
-    float roughness;
-    float ao;
-};
-
-layout(set = 1, binding = 0) uniform sampler2D BaseColorSampler;
-layout(set = 1, binding = 1) uniform sampler2D MetallicSampler;
-layout(set = 1, binding = 2) uniform sampler2D NormalSampler;
-layout(set = 1, binding = 3) uniform sampler2D RoughnessSampler;
+layout(set = 1, binding = 1) uniform sampler2D BaseColorSampler;
+layout(set = 1, binding = 2) uniform sampler2D MetallicSampler;
+layout(set = 1, binding = 3) uniform sampler2D NormalSampler;
+layout(set = 1, binding = 4) uniform sampler2D RoughnessSampler;
 
 layout(set = 2, binding = 0) uniform PerFrameCB
 {
     mat4 viewMatrix;
     mat4 projMatrix;
     vec3 camPos;
-
+    float pointLightNumber;
     DirectionalLightRenderResource directionalLit;
     PointLightRenderResource pointLight[max_point_light_count];
 } uboPerFrame;
@@ -48,6 +42,23 @@ layout(location = 3) in vec3 worldPos;
 layout(location = 0) out vec4 outColor;
 
 const float PI = 3.14159265359;
+
+vec3 getNormalFromMap()
+{
+    vec3 tangentNormal = texture(NormalSampler, fragTexCoord).xyz * 2.0 - 1.0;
+
+    vec3 Q1  = dFdx(worldPos);
+    vec3 Q2  = dFdy(worldPos);
+    vec2 st1 = dFdx(fragTexCoord);
+    vec2 st2 = dFdy(fragTexCoord);
+
+    vec3 N   = normalize(fragNormal);
+    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+    vec3 B  = -normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
+
+    return normalize(TBN * tangentNormal);
+}
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
@@ -90,24 +101,24 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 }
 
 void main() 
-{     
-    vec3 Normal = texture(NormalSample, fragTexCoord);
-    vec3 N = normalize(Normal);
-    vec3 V = normalize(camPos - WorldPos)
+{   
+    vec3 Albedo = pow(texture(BaseColorSampler, fragTexCoord).rgb, vec3(2.2));
 
+    vec3 N = getNormalFromMap();
+    vec3 V = normalize(uboPerFrame.camPos - worldPos);
     vec3 F0 = vec3(0.04);
-    float Metallic = texture(MetallicSampler, fragTexCoord) 
-    F0 = mix(F0, albedo, metallic);
+    float Metallic = texture(MetallicSampler, fragTexCoord).r;
+    F0 = mix(F0, Albedo, Metallic);
 
     vec3 L = normalize(uboPerFrame.directionalLit.direction);
     vec3 H = normalize(V + L);
     vec3 radiance = uboPerFrame.directionalLit.color;
 
     // Cook-Torrance BRDF
-    float Roughness = texture(RoughnessSampler, fragTexCoord)
+    float Roughness = texture(RoughnessSampler, fragTexCoord).r;
     float NDF = DistributionGGX(N, H, Roughness);
     float G = GeometrySmith(N, V, L, Roughness);
-    vec3 F = fresnelSchlick(clmap(dot(H, V), 0.0, 1.0), F0);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
     vec3 numerator = NDF * G * F; 
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
@@ -115,14 +126,15 @@ void main()
 
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - metallic;
+    kD *= 1.0 - Metallic;
 
     float NdotL = max(dot(N, L), 0.0); 
 
-    vec3 Albedo = texture(BaseColorSampler, fragTexCoord);
+    
     vec3 Lo = (kD * Albedo / PI + specular) * radiance * NdotL;
 
-    vec3 ambient = vec3(0.03) * Albedo * ao;
+    float AO = 1.f;
+    vec3 ambient = vec3(0.03) * Albedo * AO;
 
     vec3 color = ambient + Lo;
 

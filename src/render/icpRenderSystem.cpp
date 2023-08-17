@@ -76,9 +76,6 @@ void icpRenderSystem::drawCube()
 	// todo: implicit doing following steps
 	primitive.m_primitive = ePrimitiveType::CUBE;
 
-	primitive.CreateTextureImages();
-	primitive.CreateTextureSampler();
-
 	primitive.FillInPrimitiveData(glm::vec3(1,0,1));
 	primitive.CreateVertexBuffers();
 	primitive.CreateIndexBuffers();

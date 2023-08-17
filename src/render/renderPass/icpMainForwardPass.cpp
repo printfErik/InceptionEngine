@@ -103,13 +103,13 @@ void icpMainForwardPass::setupPipeline()
 	VkPipelineShaderStageCreateInfo fragShader{};
 
 	vertShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	auto vertShaderPath = g_system_container.m_configSystem->m_shaderFolderPath / "verttest.spv";
+	auto vertShaderPath = g_system_container.m_configSystem->m_shaderFolderPath / "VertPBR.spv";
 	vertShader.module = icpVulkanUtility::createShaderModule(vertShaderPath.generic_string().c_str(), m_rhi->m_device);
 	vertShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 	vertShader.pName = "main";
 
 	fragShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	auto fragShaderPath = g_system_container.m_configSystem->m_shaderFolderPath / "fragmenttest.spv";
+	auto fragShaderPath = g_system_container.m_configSystem->m_shaderFolderPath / "FragPBR.spv";
 	fragShader.module = icpVulkanUtility::createShaderModule(fragShaderPath.generic_string().c_str(), m_rhi->m_device);
 	fragShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 	fragShader.pName = "main";
@@ -471,6 +471,8 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 	CBPerFrame.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
 	CBPerFrame.projection[1][1] *= -1;
 
+	CBPerFrame.camPos = camera->m_position;
+
 	auto lightView = g_system_container.m_sceneSystem->m_registry.view<icpLightComponent>();
 
 	int index = 0;
@@ -503,6 +505,8 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 		}
 	}
 
+	CBPerFrame.pointLightNumber = 0.f;
+
 	if (!lightView.empty())
 	{
 		void* data;
@@ -525,10 +529,11 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 
 		UBOMeshRenderResource ubo{};
 		ubo.model = secondRotate * firstRotate;
+		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 
 		void* data;
 		vmaMapMemory(m_rhi->m_vmaAllocator, meshRenderer.m_perMeshUniformBufferAllocations[curFrame], &data);
-		memcpy(data, &ubo, sizeof(ubo));
+		memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
 		vmaUnmapMemory(m_rhi->m_vmaAllocator, meshRenderer.m_perMeshUniformBufferAllocations[curFrame]);
 
 		// todo classify different materialInstance
@@ -548,10 +553,11 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 		auto& primitiveRender = primitiveView.get<icpPrimitiveRendererComponent>(entity);
 		UBOMeshRenderResource ubo{};
 		ubo.model = glm::mat4(1.f);
+		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 
 		void* data;
 		vmaMapMemory(m_rhi->m_vmaAllocator, primitiveRender.m_uniformBufferAllocations[curFrame], &data);
-		memcpy(data, &ubo, sizeof(ubo));
+		memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
 		vmaUnmapMemory(m_rhi->m_vmaAllocator, primitiveRender.m_uniformBufferAllocations[curFrame]);
 
 		// todo classify different materialInstance
@@ -656,7 +662,7 @@ void icpMainForwardPass::createDescriptorSetLayouts()
 		perFrameUBOBinding.descriptorCount = 1;
 		perFrameUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		perFrameUBOBinding.pImmutableSamplers = nullptr;
-		perFrameUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		perFrameUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
 		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perFrameUBOBinding };
 

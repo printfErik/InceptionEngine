@@ -97,13 +97,13 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 	}
 
 	info.m_state = eTextureRenderResouceState::READY;
-	m_textureRenderResurces[info.m_texId] = info;
+	m_textureRenderResources[info.m_texId] = info;
 
 }
 
 void icpTextureRenderResourceManager::checkAndcleanAllDiscardedRenderResources()
 {
-	for (auto& renderRes : m_textureRenderResurces)
+	for (auto& renderRes : m_textureRenderResources)
 	{
 		auto& name = renderRes.first;
 		auto& info = renderRes.second;
@@ -114,14 +114,14 @@ void icpTextureRenderResourceManager::checkAndcleanAllDiscardedRenderResources()
 			vkDestroyImageView(m_rhi->m_device, info.m_texImageView, nullptr);
 			vmaDestroyImage(m_rhi->m_vmaAllocator, info.m_texImage, info.m_texBufferAllocation);
 
-			m_textureRenderResurces.erase(name);
+			m_textureRenderResources.erase(name);
 		}
 	}
 }
 
 void icpTextureRenderResourceManager::deleteTexture(const std::string& texId)
 {
-	auto& info = m_textureRenderResurces[texId];
+	auto& info = m_textureRenderResources[texId];
 
 	info.m_state = eTextureRenderResouceState::DISCARD;
 }

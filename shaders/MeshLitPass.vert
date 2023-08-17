@@ -24,6 +24,7 @@ struct PointLightRenderResource
 layout(set = 0, binding = 0) uniform UBOMeshRenderResource
 {
     mat4 modelMatrix;
+    mat3 normalMatrix;
 } uboPerMesh;
 
 layout(set = 1, binding = 0) uniform UBOPerMaterial
@@ -35,6 +36,8 @@ layout(set = 2, binding = 0) uniform PerFrameCB
 {
     mat4 viewMatrix;
     mat4 projMatrix;
+    vec3 cameraPos;
+    float pointLightNumber;
     DirectionalLightRenderResource directionalLit;
     PointLightRenderResource pointLight[max_point_light_count];
 } uboPerFrame;
@@ -51,11 +54,10 @@ layout(location = 3) out vec3 worldPos;
 
 void main()
 {
-    gl_Position = uboPerFrame.projMatrix *  uboPerFrame.viewMatrix * uboPerMesh.modelMatrix * vec4(inPosition, 1.0);
     fragColor = inColor;
     fragTexCoord = inTexCoord;
-
-    mat3 tangentMatrix = mat3(uboPerMesh.modelMatrix[0].xyz, uboPerMesh.modelMatrix[1].xyz, uboPerMesh.modelMatrix[2].xyz);
-
-    fragNormal = normalize(tangentMatrix * inNormal);
+    fragNormal = normalize(uboPerMesh.normalMatrix * inNormal);
+    vec4 worldPosV4 = uboPerMesh.modelMatrix * vec4(inPosition, 1.0);
+    worldPos = worldPosV4.rgb;
+    gl_Position = uboPerFrame.projMatrix *  uboPerFrame.viewMatrix * worldPosV4;
 }

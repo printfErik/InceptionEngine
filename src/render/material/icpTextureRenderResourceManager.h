@@ -45,7 +45,7 @@ public:
 	void deleteTexture(const std::string& texId);
 
 	std::shared_ptr<icpVulkanRHI> m_rhi = nullptr;
-	std::map<std::string, icpTextureRenderResourceInfo> m_textureRenderResurces;
+	std::map<std::string, icpTextureRenderResourceInfo> m_textureRenderResources;
 
 };
 
