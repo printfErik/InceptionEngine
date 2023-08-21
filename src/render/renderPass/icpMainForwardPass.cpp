@@ -188,7 +188,7 @@ void icpMainForwardPass::setupPipeline()
 	rastInfo.depthClampEnable = VK_FALSE;
 	rastInfo.depthBiasEnable = VK_FALSE;
 	rastInfo.lineWidth = 1.f;
-	rastInfo.cullMode = VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT;
+	rastInfo.cullMode = VkCullModeFlagBits::VK_CULL_MODE_NONE;
 	rastInfo.frontFace = VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rastInfo.polygonMode = VkPolygonMode::VK_POLYGON_MODE_FILL;
 
@@ -512,6 +512,7 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 		vmaUnmapMemory(m_rhi->m_vmaAllocator, m_perFrameCBAllocations[curFrame]);
 	}
 
+	/*
 	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
 
 	for (auto& entity: view)
@@ -543,13 +544,19 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 			vmaUnmapMemory(m_rhi->m_vmaAllocator, material->m_perMaterialUniformBufferAllocations[curFrame]);
 		}
 	}
-
+	*/
 	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponent, icpXFormComponent>();
-	for (auto entity: primitiveView)
+	for (auto& primitive: primitiveView)
 	{
-		auto& primitiveRender = primitiveView.get<icpPrimitiveRendererComponent>(entity);
+		auto& primitiveRender = primitiveView.get<icpPrimitiveRendererComponent>(primitive);
+
+		auto& xfom = primitiveRender.m_possessor->accessComponent<icpXFormComponent>();
+
 		UBOMeshRenderResource ubo{};
 		ubo.model = glm::mat4(1.f);
+
+		ubo.model = glm::translate(ubo.model, xfom.m_translation);
+		ubo.model = glm::scale(ubo.model, xfom.m_scale);
 		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 
 		void* data;

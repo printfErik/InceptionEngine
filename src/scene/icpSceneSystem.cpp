@@ -321,7 +321,8 @@ void icpSceneSystem::LoadDefaultScene()
 		auto planeEntity = CreateEntity("Plane", nullptr);
 
 		auto&& xform = planeEntity->accessComponent<icpXFormComponent>();
-		xform.m_scale = glm::vec3(20, 20, 0.2);
+		xform.m_translation = glm::vec3(0.f, -5.f, -5.f);
+		xform.m_scale = glm::vec3(10, 0.2, 10);
 
 		auto&& plane = planeEntity->installComponent<icpPrimitiveRendererComponent>();
 
