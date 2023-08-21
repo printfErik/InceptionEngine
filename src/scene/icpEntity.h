@@ -12,6 +12,7 @@ class icpGameEntity : public std::enable_shared_from_this<icpGameEntity>
 {
 public:
 	icpGameEntity();
+	icpGameEntity(entt::entity enttHandler);
 	virtual ~icpGameEntity() = default;
 
 	void InitializeEntity(entt::entity entityHandle, std::shared_ptr<icpGameEntity> parent);

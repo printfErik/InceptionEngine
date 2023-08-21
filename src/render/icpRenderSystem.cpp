@@ -67,11 +67,12 @@ void icpRenderSystem::getAllStaticMeshRenderers()
 	
 }
 
+
 void icpRenderSystem::drawCube()
 {
-	auto cubeEntity = g_system_container.m_sceneSystem->createEntity("Cube", true);
+	auto cubeEntity = g_system_container.m_sceneSystem->CreateEntity("Cube", nullptr);
 
-	auto& primitive = cubeEntity.installComponent<icpPrimitiveRendererComponent>();
+	auto& primitive = cubeEntity->installComponent<icpPrimitiveRendererComponent>();
 
 	// todo: implicit doing following steps
 	primitive.m_primitive = ePrimitiveType::CUBE;
@@ -86,9 +87,9 @@ void icpRenderSystem::drawCube()
 
 void icpRenderSystem::createDirLight()
 {
-	auto dirLightEntity = g_system_container.m_sceneSystem->createEntity("DirLight", true);
+	auto dirLightEntity = g_system_container.m_sceneSystem->CreateEntity("DirLight", nullptr);
 
-	auto& light = dirLightEntity.installComponent<icpDirectionalLightComponent>();
+	auto& light = dirLightEntity->installComponent<icpDirectionalLightComponent>();
 	light.m_type = eLightType::DIRECTIONAL_LIGHT;
 
 	light.m_direction = glm::vec3(-1, -1, 1);

@@ -385,7 +385,7 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 
 	std::vector<VkDeviceSize> offsets{ 0 };
 
-	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &m_perFrameDSs[curFrame], 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &m_perFrameDSs[curFrame], 0, nullptr);
 
 	auto materialSubSystem = g_system_container.m_renderSystem->m_materialSystem;
 
@@ -412,7 +412,7 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
 			vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshRes->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
 		else if (entity->hasComponent<icpPrimitiveRendererComponent>())
@@ -425,7 +425,7 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 			vkCmdBindIndexBuffer(commandBuffer, primitive.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 			auto& descriptorSets = primitive.m_descriptorSets;
-			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &descriptorSets[curFrame], 0, nullptr);
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(primitive.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
 	}
@@ -473,21 +473,17 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 
 	CBPerFrame.camPos = camera->m_position;
 
-	auto lightView = g_system_container.m_sceneSystem->m_registry.view<icpLightComponent>();
+	auto lightView = g_system_container.m_sceneSystem->m_registry.view<icpDirectionalLightComponent>();
 
 	int index = 0;
 	for (auto& light : lightView)
 	{
-		auto& lightComp = lightView.get<icpLightComponent>(light);
-		switch (lightComp.m_type)
-		{
-			case eLightType::DIRECTIONAL_LIGHT:
-			{
-				auto dirL = dynamic_cast<icpDirectionalLightComponent&>(lightComp);
-				CBPerFrame.dirLight.color = dirL.m_color;
-				CBPerFrame.dirLight.direction = dirL.m_direction;
-			}
-			break;
+		auto& lightComp = lightView.get<icpDirectionalLightComponent>(light);
+		auto dirL = dynamic_cast<icpDirectionalLightComponent&>(lightComp);
+		CBPerFrame.dirLight.color = dirL.m_color;
+		CBPerFrame.dirLight.direction = dirL.m_direction;
+
+		/*
 			case eLightType::POINT_LIGHT:
 			{
 				auto pointLight = dynamic_cast<icpPointLightComponent&>(lightComp);
@@ -503,6 +499,7 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 			default:
 				break;
 		}
+		*/
 	}
 
 	CBPerFrame.pointLightNumber = 0.f;
@@ -511,7 +508,7 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 	{
 		void* data;
 		vmaMapMemory(m_rhi->m_vmaAllocator, m_perFrameCBAllocations[curFrame], &data);
-		memcpy(data, &CBPerFrame, sizeof(CBPerFrame));
+		memcpy(data, &CBPerFrame, sizeof(perFrameCB));
 		vmaUnmapMemory(m_rhi->m_vmaAllocator, m_perFrameCBAllocations[curFrame]);
 	}
 

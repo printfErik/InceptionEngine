@@ -31,16 +31,23 @@ void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
 }
 
 
-icpGameEntity icpSceneSystem::createEntity(const std::string& name, bool isRoot)
+std::shared_ptr<icpGameEntity> icpSceneSystem::CreateEntity(const std::string& name, std::shared_ptr<icpGameEntity> parent)
 {
-	icpGameEntity entity;
-	entity.InitializeEntity(m_registry.create(), nullptr);
-	auto&& entityData = entity.installComponent<icpEntityDataComponent>();
+	std::shared_ptr<icpGameEntity> entity = std::make_shared<icpGameEntity>(m_registry.create());
+	auto&& entityData = entity->installComponent<icpEntityDataComponent>();
 	entityData.m_name = name;
 	entityData.m_guid = icpGuid();
+	auto&& entityXForm = entity->installComponent<icpXFormComponent>();
+	if (!parent)
+	{
+		m_sceneRoots.push_back(entity);
+		return entity;
+	}
 
-	auto&& entityXForm = entity.installComponent<icpXFormComponent>();
-
+	auto&& parentXForm = parent->accessComponent<icpXFormComponent>();
+	
+	entityXForm.m_parent = std::make_shared<icpXFormComponent>(parentXForm);
+	parentXForm.m_children.push_back(std::make_shared<icpXFormComponent>(entityXForm));
 
 	return entity;
 }
@@ -311,17 +318,12 @@ void icpSceneSystem::LoadDefaultScene()
 {
 	// plane
 	{
-		icpGameEntity entity;
-		entity.InitializeEntity(m_registry.create(), nullptr);
+		auto planeEntity = CreateEntity("Plane", nullptr);
 
-		auto&& entityData = entity.installComponent<icpEntityDataComponent>();
-		entityData.m_name = "FloorPlane";
-		entityData.m_guid = icpGuid();
-
-		auto&& xform = entity.installComponent<icpXFormComponent>();
+		auto&& xform = planeEntity->accessComponent<icpXFormComponent>();
 		xform.m_scale = glm::vec3(20, 20, 0.2);
 
-		auto&& plane = entity.installComponent<icpPrimitiveRendererComponent>();
+		auto&& plane = planeEntity->installComponent<icpPrimitiveRendererComponent>();
 
 		plane.m_primitive = ePrimitiveType::CUBE;
 
@@ -343,18 +345,13 @@ void icpSceneSystem::LoadDefaultScene()
 
 	// Cube
 	{
-		icpGameEntity entity;
-		entity.InitializeEntity(m_registry.create(), nullptr);
+		auto cubeEntity = CreateEntity("Cube", nullptr);
 
-		auto&& entityData = entity.installComponent<icpEntityDataComponent>();
-		entityData.m_name = "Cube";
-		entityData.m_guid = icpGuid();
-
-		auto&& xform = entity.installComponent<icpXFormComponent>();
+		auto&& xform = cubeEntity->accessComponent<icpXFormComponent>();
 		xform.m_translation = glm::vec3(0.f, 5.f, 0.f);
 		xform.m_scale = glm::vec3(2.f, 2.f, 2.f);
 
-		auto&& plane = entity.installComponent<icpPrimitiveRendererComponent>();
+		auto&& plane = cubeEntity->installComponent<icpPrimitiveRendererComponent>();
 
 		plane.m_primitive = ePrimitiveType::CUBE;
 
@@ -376,17 +373,12 @@ void icpSceneSystem::LoadDefaultScene()
 
 	// Directional Light 
 	{
-		icpGameEntity entity;
-		entity.InitializeEntity(m_registry.create(), nullptr);
+		auto lightEntity = CreateEntity("DirectionalLight", nullptr);
 
-		auto&& entityData = entity.installComponent<icpEntityDataComponent>();
-		entityData.m_guid = icpGuid();
-		entityData.m_name = "DirectionalLight";
-
-		auto&& xform = entity.installComponent<icpXFormComponent>();
+		auto&& xform = lightEntity->accessComponent<icpXFormComponent>();
 		xform.m_translation = glm::vec3(0.f);
 
-		auto&& lightComp = entity.installComponent<icpDirectionalLightComponent>();
+		auto&& lightComp = lightEntity->installComponent<icpDirectionalLightComponent>();
 		lightComp.m_direction = glm::vec3(-1.f, -1.f, -1.f);
 		lightComp.m_color = glm::vec3(0.1f, 1.f, 0.0f);
 	}

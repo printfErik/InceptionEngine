@@ -9,6 +9,14 @@ icpGameEntity::icpGameEntity()
 	m_pSceneSystem = g_system_container.m_sceneSystem;
 }
 
+icpGameEntity::icpGameEntity(entt::entity enttHandler)
+{
+	m_pSceneSystem = g_system_container.m_sceneSystem;
+
+	m_entityHandle = enttHandler;
+}
+
+
 void icpGameEntity::InitializeEntity(entt::entity entityHandle, std::shared_ptr<icpGameEntity> parent)
 {
 	m_entityHandle = entityHandle;

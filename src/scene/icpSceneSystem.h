@@ -20,7 +20,7 @@ public:
 
 	void initializeScene(const std::filesystem::path& mapPath);
 
-	icpGameEntity createEntity(const std::string& name, bool isRoot = false);
+	std::shared_ptr<icpGameEntity> CreateEntity(const std::string& name, std::shared_ptr<icpGameEntity> parent);
 
 	void saveScene(const std::filesystem::path& outPath);
 
