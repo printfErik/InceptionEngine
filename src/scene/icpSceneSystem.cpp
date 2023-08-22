@@ -352,17 +352,17 @@ void icpSceneSystem::LoadDefaultScene()
 		xform.m_translation = glm::vec3(0.f, 5.f, 0.f);
 		xform.m_scale = glm::vec3(2.f, 2.f, 2.f);
 
-		auto&& plane = cubeEntity->installComponent<icpPrimitiveRendererComponent>();
+		auto&& cube = cubeEntity->installComponent<icpPrimitiveRendererComponent>();
 
-		plane.m_primitive = ePrimitiveType::CUBE;
+		cube.m_primitive = ePrimitiveType::CUBE;
 
-		plane.FillInPrimitiveData(glm::vec3(1, 0, 1));
-		plane.CreateVertexBuffers();
-		plane.CreateIndexBuffers();
-		plane.CreateUniformBuffers();
-		plane.AllocateDescriptorSets();
+		cube.FillInPrimitiveData(glm::vec3(1, 0, 1));
+		cube.CreateVertexBuffers();
+		cube.CreateIndexBuffers();
+		cube.CreateUniformBuffers();
+		cube.AllocateDescriptorSets();
 
-		auto&& material = plane.AddMaterial(eMaterialShadingModel::DEFAULT_LIT);
+		auto&& material = cube.AddMaterial(eMaterialShadingModel::DEFAULT_LIT);
 
 		material->AddTexture("rustediron2_basecolor");
 		material->AddTexture("rustediron2_metallic");
@@ -372,6 +372,35 @@ void icpSceneSystem::LoadDefaultScene()
 		material->SetupMaterialRenderResources();
 	}
 
+	/*
+	// Sphere
+	{
+		auto sphereEntity = CreateEntity("Sphere", nullptr);
+
+		auto&& xform = sphereEntity->accessComponent<icpXFormComponent>();
+		xform.m_translation = glm::vec3(0.f, 3.f, 0.f);
+		xform.m_scale = glm::vec3(1.f, 1.f, 1.f);
+
+		auto&& sphere = sphereEntity->installComponent<icpPrimitiveRendererComponent>();
+
+		sphere.m_primitive = ePrimitiveType::SPHERE;
+
+		sphere.FillInPrimitiveData(glm::vec3(1, 0, 1));
+		sphere.CreateVertexBuffers();
+		sphere.CreateIndexBuffers();
+		sphere.CreateUniformBuffers();
+		sphere.AllocateDescriptorSets();
+
+		auto&& material = sphere.AddMaterial(eMaterialShadingModel::DEFAULT_LIT);
+
+		material->AddTexture("rustediron2_basecolor");
+		material->AddTexture("rustediron2_metallic");
+		material->AddTexture("rustediron2_normal");
+		material->AddTexture("rustediron2_roughness");
+		material->AddScalaValue({ "Shininess", 0.1f });
+		material->SetupMaterialRenderResources();
+	}
+	*/
 	// Directional Light 
 	{
 		auto lightEntity = CreateEntity("DirectionalLight", nullptr);

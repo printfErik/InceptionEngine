@@ -16,14 +16,14 @@ void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
 	case ePrimitiveType::CUBE:
 	{
 		std::vector<icpVertex> cubeVertices{
-		{{1,1,1}, color ,{1, 1, 1 }, {-1,-1}},
-		{{-1,1,1},color,{-1, 1, 1 }, {-1,-1}},
-		{{-1,1,-1},color,{-1,1,-1},{-1,-1}},
-		{{1,1,-1},color,{1,1,-1},{-1,-1}},
-		{{1,-1,1},color,{1,-1,1},{-1,-1}},
-		{{-1,-1,1},color,{-1,-1,1},{-1,-1}},
-		{{-1,-1,-1},color,{-1,-1,-1},{-1,-1}},
-		{{1,-1,-1},color,{-1,-1,-1},{-1,-1}},
+		{{1,1,1}, color ,{1, 1, 1 }, {0,0}},
+		{{-1,1,1},color,{-1, 1, 1 }, {0,1}},
+		{{-1,1,-1},color,{-1,1,-1},{1,1}},
+		{{1,1,-1},color,{1,1,-1},{1,0}},
+		{{1,-1,1},color,{1,-1,1},{0,0}},
+		{{-1,-1,1},color,{-1,-1,1},{0,1}},
+		{{-1,-1,-1},color,{-1,-1,-1},{1,1}},
+		{{1,-1,-1},color,{-1,-1,-1},{1,0}},
 		};
 
 		m_vertices.assign(cubeVertices.begin(), cubeVertices.end());
@@ -80,6 +80,7 @@ void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
 		}
 		m_vertexIndices.assign(sphereIndex.begin(), sphereIndex.end());
 	}
+	break;
 	default:
 	{
 		ICP_LOG_WARING("no such primitive");
