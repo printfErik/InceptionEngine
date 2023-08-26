@@ -23,7 +23,7 @@ class icpImageResource;
 struct UBOMeshRenderResource
 {
 	glm::mat4 model;
-	glm::mat3 normalMatrix;
+	glm::mat4 normalMatrix;
 };
 
 

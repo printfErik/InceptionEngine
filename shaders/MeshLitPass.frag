@@ -110,9 +110,9 @@ void main()
     float Metallic = texture(MetallicSampler, fragTexCoord).r;
     F0 = mix(F0, Albedo, Metallic);
 
-    vec3 L = normalize(uboPerFrame.directionalLit.direction);
+    vec3 L = normalize(uboPerFrame.directionalLit.direction.xyz);
     vec3 H = normalize(V + L);
-    vec3 radiance = uboPerFrame.directionalLit.color;
+    vec3 radiance = uboPerFrame.directionalLit.color.xyz;
 
     // Cook-Torrance BRDF
     float Roughness = texture(RoughnessSampler, fragTexCoord).r;

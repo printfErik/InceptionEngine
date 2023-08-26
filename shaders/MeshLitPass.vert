@@ -4,10 +4,8 @@
 
 struct DirectionalLightRenderResource
 {
-    vec3 direction;
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+    vec4 direction;
+    vec4 ambient;
 };
 
 struct PointLightRenderResource
@@ -24,7 +22,7 @@ struct PointLightRenderResource
 layout(set = 0, binding = 0) uniform UBOMeshRenderResource
 {
     mat4 modelMatrix;
-    mat3 normalMatrix;
+    mat4 normalMatrix;
 } uboPerMesh;
 
 layout(set = 1, binding = 0) uniform UBOPerMaterial
@@ -56,7 +54,7 @@ void main()
 {
     fragColor = inColor;
     fragTexCoord = inTexCoord;
-    fragNormal = normalize(uboPerMesh.normalMatrix * inNormal);
+    fragNormal = normalize(mat3(uboPerMesh.normalMatrix) * inNormal);
     vec4 worldPosV4 = uboPerMesh.modelMatrix * vec4(inPosition, 1.0);
     worldPos = worldPosV4.rgb;
     gl_Position = uboPerFrame.projMatrix *  uboPerFrame.viewMatrix * worldPosV4;
