@@ -4,8 +4,8 @@
 
 struct DirectionalLightRenderResource
 {
-    vec3 direction;
-    vec3 color;
+    vec4 direction;
+    vec4 color;
 };
 
 struct PointLightRenderResource
@@ -129,7 +129,6 @@ void main()
     kD *= 1.0 - Metallic;
 
     float NdotL = max(dot(N, L), 0.0); 
-
     
     vec3 Lo = (kD * Albedo / PI + specular) * radiance * NdotL;
 

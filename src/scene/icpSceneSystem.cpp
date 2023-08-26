@@ -316,6 +316,7 @@ void icpSceneSystem::createMeshEntityFromResource(std::shared_ptr<icpResourceBas
 
 void icpSceneSystem::LoadDefaultScene()
 {
+	/*
 	// plane
 	{
 		auto planeEntity = CreateEntity("Plane", nullptr);
@@ -371,8 +372,8 @@ void icpSceneSystem::LoadDefaultScene()
 		material->AddScalaValue({ "Shininess", 0.1f });
 		material->SetupMaterialRenderResources();
 	}
-
-	/*
+	*/
+	
 	// Sphere
 	{
 		auto sphereEntity = CreateEntity("Sphere", nullptr);
@@ -400,7 +401,7 @@ void icpSceneSystem::LoadDefaultScene()
 		material->AddScalaValue({ "Shininess", 0.1f });
 		material->SetupMaterialRenderResources();
 	}
-	*/
+	
 	// Directional Light 
 	{
 		auto lightEntity = CreateEntity("DirectionalLight", nullptr);
@@ -409,8 +410,8 @@ void icpSceneSystem::LoadDefaultScene()
 		xform.m_translation = glm::vec3(0.f);
 
 		auto&& lightComp = lightEntity->installComponent<icpDirectionalLightComponent>();
-		lightComp.m_direction = glm::vec3(-1.f, -1.f, -1.f);
-		lightComp.m_color = glm::vec3(0.1f, 1.f, 0.0f);
+		lightComp.m_direction = glm::vec3(1.f, 1.f, 1.f);
+		lightComp.m_color = glm::vec3(10.f, 10.f, 10.f);
 	}
 }
 

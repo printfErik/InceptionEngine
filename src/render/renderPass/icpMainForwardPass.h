@@ -8,8 +8,8 @@ INCEPTION_BEGIN_NAMESPACE
 
 struct DirectionalLightRenderResource
 {
-	glm::vec3 direction;
-	glm::vec3 color;
+	glm::vec4 direction;
+	glm::vec4 color;
 };
 
 struct PointLightRenderResource

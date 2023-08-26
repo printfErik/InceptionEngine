@@ -139,7 +139,7 @@ void icpMainForwardPass::setupPipeline()
 	VkPipelineInputAssemblyStateCreateInfo inputAsm{};
 	inputAsm.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	inputAsm.primitiveRestartEnable = VK_FALSE;
-	inputAsm.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	inputAsm.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 
 	info.pInputAssemblyState = &inputAsm;
 
@@ -188,7 +188,7 @@ void icpMainForwardPass::setupPipeline()
 	rastInfo.depthClampEnable = VK_FALSE;
 	rastInfo.depthBiasEnable = VK_FALSE;
 	rastInfo.lineWidth = 1.f;
-	rastInfo.cullMode = VkCullModeFlagBits::VK_CULL_MODE_NONE;
+	rastInfo.cullMode = VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT;
 	rastInfo.frontFace = VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rastInfo.polygonMode = VkPolygonMode::VK_POLYGON_MODE_FILL;
 
@@ -480,8 +480,8 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 	{
 		auto& lightComp = lightView.get<icpDirectionalLightComponent>(light);
 		auto dirL = dynamic_cast<icpDirectionalLightComponent&>(lightComp);
-		CBPerFrame.dirLight.color = dirL.m_color;
-		CBPerFrame.dirLight.direction = dirL.m_direction;
+		CBPerFrame.dirLight.color = glm::vec4(dirL.m_color,1.f);
+		CBPerFrame.dirLight.direction = glm::vec4(dirL.m_direction, 0.f);
 
 		/*
 			case eLightType::POINT_LIGHT:
@@ -557,6 +557,7 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 
 		ubo.model = glm::translate(ubo.model, xfom.m_translation);
 		ubo.model = glm::scale(ubo.model, xfom.m_scale);
+		auto mat = glm::mat3(ubo.model);
 		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 
 		void* data;
