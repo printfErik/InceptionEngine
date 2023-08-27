@@ -6,7 +6,9 @@
 #include "../core/icpLogSystem.h"
 #include "../resource/icpResourceSystem.h"
 #include "icpMeshResource.h"
+#include "../render/renderPass/icpEditorUiPass.h"
 #include "../render/renderPass/icpMainForwardPass.h"
+#include "../render/RHI/icpDescirptorSet.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -21,47 +23,20 @@ void icpMeshRendererComponent::prepareRenderResourceForMesh()
 
 void icpMeshRendererComponent::allocateDescriptorSets()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+	auto pGPUDevice = g_system_container.m_renderSystem->GetGPUDevice();
 
-	auto& layout = g_system_container.m_renderSystem->m_renderPassManager->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
+	auto& layout = g_system_container.m_renderSystem->GetRenderPassManager()->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
 
-	VkDescriptorSetAllocateInfo allocateInfo{};
-	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
-	allocateInfo.descriptorPool = vulkanRHI->m_descriptorPool;
-	allocateInfo.pSetLayouts = layouts.data();
+	icpDescriptorSetCreation creation;
 
-	m_perMeshDSs.resize(MAX_FRAMES_IN_FLIGHT);
-
-	if (vkAllocateDescriptorSets(vulkanRHI->m_device, &allocateInfo, m_perMeshDSs.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate descriptor sets!");
-	}
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = m_perMeshUniformBuffers[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UBOMeshRenderResource);
-
-		std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
-		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet = m_perMeshDSs[i];
-		descriptorWrites[0].dstBinding = 0;
-		descriptorWrites[0].dstArrayElement = 0;
-		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount = 1;
-		descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-		vkUpdateDescriptorSets(vulkanRHI->m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-	}
+	creation.layout = layout;
+	pGPUDevice->CreateDescriptorSet(creation, m_perMeshDSs);
 }
 
 void icpMeshRendererComponent::createUniformBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
 
 	auto perMeshSize = sizeof(UBOMeshRenderResource);
 
@@ -85,7 +60,7 @@ void icpMeshRendererComponent::createUniformBuffers()
 
 void icpMeshRendererComponent::createVertexBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
 
 	const auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH][m_meshResId]);
 
@@ -132,7 +107,7 @@ void icpMeshRendererComponent::createVertexBuffers()
 
 void icpMeshRendererComponent::createIndexBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
 
 	const auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH][m_meshResId]);
 	VkDeviceSize bufferSize = sizeof(meshRes->m_meshData.m_vertexIndices[0]) * meshRes->m_meshData.m_vertexIndices.size();

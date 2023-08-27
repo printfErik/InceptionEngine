@@ -1,5 +1,5 @@
 #include "icpRenderPassManager.h"
-#include "RHI/Vulkan/icpVulkanRHI.h"
+#include "RHI/Vulkan/icpVkGPUDevice.h"
 #include "RHI/Vulkan/icpVulkanUtility.h"
 #include "renderPass/icpMainForwardPass.h"
 #include "renderPass/icpEditorUiPass.h"
@@ -21,7 +21,7 @@ icpRenderPassManager::~icpRenderPassManager()
 	cleanup();
 }
 
-bool icpRenderPassManager::initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI)
+bool icpRenderPassManager::initialize(std::shared_ptr<icpVkGPUDevice> vulkanRHI)
 {
 	m_rhi = vulkanRHI;
 

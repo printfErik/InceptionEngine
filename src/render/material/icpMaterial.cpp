@@ -1,7 +1,7 @@
 #include "icpMaterial.h"
 
 #include "icpTextureRenderResourceManager.h"
-#include "../RHI/Vulkan/icpVulkanRHI.h"
+#include "../RHI/Vulkan/icpVkGPUDevice.h"
 #include "../RHI/Vulkan/icpVulkanUtility.h"
 #include "../icpRenderSystem.h"
 #include "../../core/icpSystemContainer.h"
@@ -21,7 +21,7 @@ icpMaterialInstance::icpMaterialInstance(eMaterialShadingModel shading_model)
 
 void icpMaterialInstance::CreateUniformBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
 
 	uint32_t UBOSize = ComputeUBOSize();
 
@@ -48,7 +48,7 @@ void icpMaterialInstance::CreateUniformBuffers()
 
 void icpMaterialInstance::AllocateDescriptorSets()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
 
 	auto& layout = g_system_container.m_renderSystem->m_renderPassManager->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MATERIAL];
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);

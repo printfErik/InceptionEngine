@@ -2,7 +2,7 @@
 #include "../core/icpMacros.h"
 #include "../mesh/icpMeshRendererComponent.h"
 
-#include "RHI/icpRHI.h"
+#include "RHI/icpGPUDevice.h"
 #include "icpRenderPassManager.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -22,8 +22,12 @@ public:
 	void drawCube();
 	void createDirLight();
 
-	std::shared_ptr<icpRHIBase> m_rhi;
-	std::shared_ptr<icpRenderPassManager> m_renderPassManager;
+	std::shared_ptr<icpGPUDevice> GetGPUDevice();
+	std::shared_ptr<icpRenderPassManager> GetRenderPassManager();
+
+private:
+	std::shared_ptr<icpGPUDevice> m_pGPUDevice;
+	std::shared_ptr<icpRenderPassManager> m_pRenderPassManager;
 	std::shared_ptr<icpTextureRenderResourceManager> m_textureRenderResourceManager;
 	std::shared_ptr<icpMaterialSubSystem> m_materialSystem;
 

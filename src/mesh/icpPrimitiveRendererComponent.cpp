@@ -109,7 +109,7 @@ void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
 
 void icpPrimitiveRendererComponent::CreateVertexBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
 
 	auto bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
 
@@ -155,7 +155,7 @@ void icpPrimitiveRendererComponent::CreateVertexBuffers()
 
 void icpPrimitiveRendererComponent::CreateIndexBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
 	VkDeviceSize bufferSize = sizeof(m_vertexIndices[0]) * m_vertexIndices.size();
 
 	VkBuffer stagingBuffer{ VK_NULL_HANDLE };
@@ -199,7 +199,7 @@ void icpPrimitiveRendererComponent::CreateIndexBuffers()
 
 void icpPrimitiveRendererComponent::AllocateDescriptorSets()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
 
 	auto& layout = g_system_container.m_renderSystem->m_renderPassManager->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
@@ -240,7 +240,7 @@ void icpPrimitiveRendererComponent::AllocateDescriptorSets()
 
 void icpPrimitiveRendererComponent::CreateUniformBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVulkanRHI>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
 	auto bufferSize = sizeof(UBOMeshRenderResource);
 
 	m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);

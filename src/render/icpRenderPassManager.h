@@ -1,7 +1,7 @@
 #pragma once
 #include "../core/icpMacros.h"
 #include <vulkan/vulkan.hpp>
-#include "RHI/Vulkan/icpVulkanRHI.h"
+#include "RHI/Vulkan/icpVkGPUDevice.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -21,7 +21,7 @@ public:
 	icpRenderPassManager();
 	~icpRenderPassManager();
 
-	bool initialize(std::shared_ptr<icpVulkanRHI> vulkanRHI);
+	bool initialize(std::shared_ptr<icpVkGPUDevice> vulkanRHI);
 	void cleanup();
 
 	void render();
@@ -30,7 +30,7 @@ public:
 
 private:
 
-	std::shared_ptr<icpVulkanRHI> m_rhi = nullptr;
+	std::shared_ptr<icpVkGPUDevice> m_rhi = nullptr;
 
 	std::vector<std::shared_ptr<icpRenderPassBase>> m_renderPasses;
 

@@ -11,7 +11,7 @@
 INCEPTION_BEGIN_NAMESPACE
 
 class icpImageResource;
-class icpVulkanRHI;
+class icpVkGPUDevice;
 
 enum class eTextureRenderResouceState
 {
@@ -36,7 +36,7 @@ struct icpTextureRenderResourceInfo
 class icpTextureRenderResourceManager
 {
 public:
-	icpTextureRenderResourceManager(std::shared_ptr<icpVulkanRHI> rhi);
+	icpTextureRenderResourceManager(std::shared_ptr<icpVkGPUDevice> rhi);
 	virtual ~icpTextureRenderResourceManager() = default;
 
 	void setupTextureRenderResources(const std::string& texId);
@@ -44,7 +44,7 @@ public:
 
 	void deleteTexture(const std::string& texId);
 
-	std::shared_ptr<icpVulkanRHI> m_rhi = nullptr;
+	std::shared_ptr<icpVkGPUDevice> m_rhi = nullptr;
 	std::map<std::string, icpTextureRenderResourceInfo> m_textureRenderResources;
 
 };

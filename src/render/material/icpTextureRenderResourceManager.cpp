@@ -1,12 +1,12 @@
 #include "icpTextureRenderResourceManager.h"
-#include "../RHI/Vulkan/icpVulkanRHI.h"
+#include "../RHI/Vulkan/icpVkGPUDevice.h"
 #include "../RHI/Vulkan/icpVulkanUtility.h"
 #include "../../core/icpLogSystem.h"
 #include "../icpImageResource.h"
 #include "../RHI/Vulkan/vk_mem_alloc.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	icpTextureRenderResourceManager::icpTextureRenderResourceManager(std::shared_ptr<icpVulkanRHI> rhi)
+	icpTextureRenderResourceManager::icpTextureRenderResourceManager(std::shared_ptr<icpVkGPUDevice> rhi)
 	: m_rhi(rhi)
 {
 	

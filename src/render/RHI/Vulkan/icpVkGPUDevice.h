@@ -3,7 +3,7 @@
 #include <vector>
 #include <chrono>
 
-#include "../icpRHI.h"
+#include "../icpGPUDevice.h"
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
 
@@ -39,13 +39,14 @@ struct SwapChainSupportDetails
 	std::vector<VkPresentModeKHR>   m_presentModes;
 };
 
-class icpVulkanRHI : public icpRHIBase
+class icpVkGPUDevice : public icpGPUDevice
 {
 public:
-	icpVulkanRHI() = default;
-	~icpVulkanRHI() override;
+	icpVkGPUDevice() = default;
+	~icpVkGPUDevice() override;
 
-	bool initialize(std::shared_ptr<icpWindowSystem> window_system) override;
+	bool Initialize(std::shared_ptr<icpWindowSystem> window_system) override;
+
 	void cleanup();
 	void cleanupSwapChain();
 
@@ -62,6 +63,10 @@ public:
 	void allocateCommandBuffers();
 
 	void createVmaAllocator();
+
+	VkDevice GetLogicalDevice() override;
+
+	void CreateDescriptorSet(const icpDescriptorSetCreation& creation, std::vector<VkDescriptorSet>& DSs) override;
 
 private:
 	void createInstance();

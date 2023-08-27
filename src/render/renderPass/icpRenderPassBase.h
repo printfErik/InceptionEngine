@@ -1,6 +1,6 @@
 #pragma once
 #include "../../core/icpMacros.h"
-#include "../RHI/Vulkan/icpVulkanRHI.h"
+#include "../RHI/Vulkan/icpVkGPUDevice.h"
 
 #include <vulkan/vulkan.hpp>
 
@@ -14,7 +14,7 @@ public:
 
 	struct RenderPassInitInfo
 	{
-		std::shared_ptr<icpVulkanRHI> rhi{ nullptr };
+		std::shared_ptr<icpVkGPUDevice> rhi{ nullptr };
 		eRenderPass passType;
 		std::shared_ptr<icpRenderPassBase> dependency{ nullptr };
 		std::shared_ptr<icpEditorUI> editorUi{ nullptr };
@@ -47,7 +47,7 @@ public:
 	std::shared_ptr<icpRenderPassBase> m_dependency{ nullptr };
 
 protected:
-	std::shared_ptr<icpVulkanRHI> m_rhi;
+	std::shared_ptr<icpVkGPUDevice> m_rhi;
 };
 
 INCEPTION_END_NAMESPACE

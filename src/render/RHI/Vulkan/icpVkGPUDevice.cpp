@@ -1,6 +1,6 @@
 #define VMA_IMPLEMENTATION
 
-#include "icpVulkanRHI.h"
+#include "icpVkGPUDevice.h"
 #include "../../../core/icpSystemContainer.h"
 #include "../../../resource/icpResourceSystem.h"
 #include "../../../mesh/icpMeshResource.h"
@@ -14,17 +14,18 @@
 #include <algorithm>
 #include <cstdint>
 
+#include "../icpDescirptorSet.h"
 #include "../../../core/icpConfigSystem.h"
 
 
 INCEPTION_BEGIN_NAMESPACE
 
-icpVulkanRHI::~icpVulkanRHI()
+icpVkGPUDevice::~icpVkGPUDevice()
 {
 	cleanup();
 }
 
-bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
+bool icpVkGPUDevice::Initialize(std::shared_ptr<icpWindowSystem> window_system)
 {
 	m_window = window_system->getWindow();
 
@@ -49,7 +50,7 @@ bool icpVulkanRHI::initialize(std::shared_ptr<icpWindowSystem> window_system)
 	return true;
 }
 
-void icpVulkanRHI::createVmaAllocator()
+void icpVkGPUDevice::createVmaAllocator()
 {
 	VmaAllocatorCreateInfo vma_create_info{};
 	vma_create_info.vulkanApiVersion = VK_API_VERSION_1_3;
@@ -60,8 +61,7 @@ void icpVulkanRHI::createVmaAllocator()
 	VkResult result = vmaCreateAllocator(&vma_create_info, &m_vmaAllocator);
 }
 
-
-void icpVulkanRHI::createInstance()
+void icpVkGPUDevice::createInstance()
 {
 	if (!checkValidationLayerSupport())
 	{
@@ -121,7 +121,7 @@ void icpVulkanRHI::createInstance()
 	}
 }
 
-void icpVulkanRHI::cleanup()
+void icpVkGPUDevice::cleanup()
 {
 	cleanupSwapChain();
 
@@ -149,7 +149,7 @@ void icpVulkanRHI::cleanup()
 	vkDestroyInstance(m_instance, nullptr);
 }
 
-void icpVulkanRHI::cleanupSwapChain()
+void icpVkGPUDevice::cleanupSwapChain()
 {
 	vkDestroyImageView(m_device, m_depthImageView, nullptr);
 	vmaDestroyImage(m_vmaAllocator, m_depthImage, m_depthBufferAllocation);
@@ -171,7 +171,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
 	return VK_FALSE;
 }
 
-void icpVulkanRHI::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+void icpVkGPUDevice::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {
 	createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -185,7 +185,7 @@ void icpVulkanRHI::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateI
 	createInfo.pfnUserCallback = debugCallback;
 }
 
-bool icpVulkanRHI::checkValidationLayerSupport()
+bool icpVkGPUDevice::checkValidationLayerSupport()
 {
 	uint32_t layersCount;
 	vkEnumerateInstanceLayerProperties(&layersCount, nullptr);
@@ -211,7 +211,7 @@ bool icpVulkanRHI::checkValidationLayerSupport()
 	return true;
 }
 
-void icpVulkanRHI::initializeDebugMessenger()
+void icpVkGPUDevice::initializeDebugMessenger()
 {
 	if (m_enableValidationLayers)
 	{
@@ -233,7 +233,7 @@ void icpVulkanRHI::initializeDebugMessenger()
 	}
 }
 
-VkResult icpVulkanRHI::createDebugUtilsMessengerEXT(VkInstance instance,
+VkResult icpVkGPUDevice::createDebugUtilsMessengerEXT(VkInstance instance,
 	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
 	const VkAllocationCallbacks* pAllocator,
 	VkDebugUtilsMessengerEXT* pDebugMessenger)
@@ -250,7 +250,7 @@ VkResult icpVulkanRHI::createDebugUtilsMessengerEXT(VkInstance instance,
 	}
 }
 
-void icpVulkanRHI::destroyDebugUtilsMessengerEXT(VkInstance instance,
+void icpVkGPUDevice::destroyDebugUtilsMessengerEXT(VkInstance instance,
 	VkDebugUtilsMessengerEXT     debugMessenger,
 	const VkAllocationCallbacks* pAllocator)
 {
@@ -262,7 +262,7 @@ void icpVulkanRHI::destroyDebugUtilsMessengerEXT(VkInstance instance,
 	}
 }
 
-void icpVulkanRHI::createWindowSurface()
+void icpVkGPUDevice::createWindowSurface()
 {
 	if (glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface) != VK_SUCCESS)
 	{
@@ -270,7 +270,7 @@ void icpVulkanRHI::createWindowSurface()
 	}
 }
 
-void icpVulkanRHI::initializePhysicalDevice()
+void icpVkGPUDevice::initializePhysicalDevice()
 {
 	uint32_t physicalDeviceCount = 0;
 	vkEnumeratePhysicalDevices(m_instance, &physicalDeviceCount, nullptr);
@@ -325,7 +325,7 @@ void icpVulkanRHI::initializePhysicalDevice()
 
 }
 
-bool icpVulkanRHI::isDeviceSuitable(VkPhysicalDevice device)
+bool icpVkGPUDevice::isDeviceSuitable(VkPhysicalDevice device)
 {
 	auto queueIndices = findQueueFamilies(device);
 	bool isExtensionsSupported = checkDeviceExtensionSupport(device);
@@ -343,7 +343,7 @@ bool icpVulkanRHI::isDeviceSuitable(VkPhysicalDevice device)
 	return queueIndices.isComplete() && isSwapchainAdequate && physical_device_features.samplerAnisotropy;
 }
 
-bool icpVulkanRHI::checkDeviceExtensionSupport(VkPhysicalDevice device)
+bool icpVkGPUDevice::checkDeviceExtensionSupport(VkPhysicalDevice device)
 {
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -361,7 +361,7 @@ bool icpVulkanRHI::checkDeviceExtensionSupport(VkPhysicalDevice device)
 }
 
 
-QueueFamilyIndices icpVulkanRHI::findQueueFamilies(VkPhysicalDevice device)
+QueueFamilyIndices icpVkGPUDevice::findQueueFamilies(VkPhysicalDevice device)
 {
 	QueueFamilyIndices indices;
 	uint32_t indicesCount = 0;
@@ -398,7 +398,7 @@ QueueFamilyIndices icpVulkanRHI::findQueueFamilies(VkPhysicalDevice device)
 	return indices;
 }
 
-void icpVulkanRHI::createLogicalDevice()
+void icpVkGPUDevice::createLogicalDevice()
 {
 	m_queueIndices = findQueueFamilies(m_physicalDevice);
 
@@ -441,7 +441,7 @@ void icpVulkanRHI::createLogicalDevice()
 	vkGetDeviceQueue(m_device, m_queueIndices.m_transferFamily.value(), 0, &m_transferQueue);
 }
 
-SwapChainSupportDetails icpVulkanRHI::querySwapChainSupport(VkPhysicalDevice device)
+SwapChainSupportDetails icpVkGPUDevice::querySwapChainSupport(VkPhysicalDevice device)
 {
 	SwapChainSupportDetails details_result;
 
@@ -471,7 +471,7 @@ SwapChainSupportDetails icpVulkanRHI::querySwapChainSupport(VkPhysicalDevice dev
 	return details_result;
 }
 
-VkSurfaceFormatKHR icpVulkanRHI::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+VkSurfaceFormatKHR icpVkGPUDevice::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
 	for (const auto& format : availableFormats)
 	{
@@ -483,7 +483,7 @@ VkSurfaceFormatKHR icpVulkanRHI::chooseSwapSurfaceFormat(const std::vector<VkSur
 	return availableFormats[0];
 }
 
-VkPresentModeKHR icpVulkanRHI::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+VkPresentModeKHR icpVkGPUDevice::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
 	for (const auto& mode : availablePresentModes)
 	{
@@ -495,7 +495,7 @@ VkPresentModeKHR icpVulkanRHI::chooseSwapPresentMode(const std::vector<VkPresent
 	return availablePresentModes[0];
 }
 
-VkExtent2D icpVulkanRHI::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+VkExtent2D icpVkGPUDevice::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 {
 	if (capabilities.currentExtent.width != UINT32_MAX)
 	{
@@ -514,7 +514,7 @@ VkExtent2D icpVulkanRHI::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
 	}
 }
 
-void icpVulkanRHI::createSwapChain()
+void icpVkGPUDevice::createSwapChain()
 {
 	SwapChainSupportDetails swapInfo = querySwapChainSupport(m_physicalDevice);
 
@@ -580,7 +580,7 @@ void icpVulkanRHI::createSwapChain()
 	m_swapChainExtent = swapExtent;
 }
 
-void icpVulkanRHI::createSwapChainImageViews()
+void icpVkGPUDevice::createSwapChainImageViews()
 {
 	m_swapChainImageViews.resize(m_swapChainImages.size());
 
@@ -589,7 +589,7 @@ void icpVulkanRHI::createSwapChainImageViews()
 	}
 }
 
-void icpVulkanRHI::createCommandPools()
+void icpVkGPUDevice::createCommandPools()
 {
 	VkCommandPoolCreateInfo gCreateInfo{};
 	gCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -621,7 +621,7 @@ void icpVulkanRHI::createCommandPools()
 	}
 }
 
-void icpVulkanRHI::createDepthResources() {
+void icpVkGPUDevice::createDepthResources() {
 	VkFormat depthFormat = icpVulkanUtility::findDepthFormat(m_physicalDevice);
 
 	icpVulkanUtility::CreateGPUImage(
@@ -642,7 +642,7 @@ bool hasStencilComponent(VkFormat format) {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void icpVulkanRHI::createDescriptorPools()
+void icpVkGPUDevice::createDescriptorPools()
 {
 	std::array<VkDescriptorPoolSize, 3> poolSize{};
 	poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -665,7 +665,7 @@ void icpVulkanRHI::createDescriptorPools()
 	}
 }
 
-void icpVulkanRHI::allocateCommandBuffers()
+void icpVkGPUDevice::allocateCommandBuffers()
 {
 	m_graphicsCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -707,7 +707,7 @@ void icpVulkanRHI::allocateCommandBuffers()
 	}
 }
 
-void icpVulkanRHI::createSyncObjects()
+void icpVkGPUDevice::createSyncObjects()
 {
 	m_imageAvailableForRenderingSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	m_renderFinishedForPresentationSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -732,7 +732,7 @@ void icpVulkanRHI::createSyncObjects()
 	}
 }
 
-void icpVulkanRHI::waitForFence(uint32_t _currentFrame)
+void icpVkGPUDevice::waitForFence(uint32_t _currentFrame)
 {
 	if (vkWaitForFences(m_device, 1, &m_inFlightFences[_currentFrame], VK_TRUE, UINT64_MAX) != VK_SUCCESS)
 	{
@@ -741,7 +741,7 @@ void icpVulkanRHI::waitForFence(uint32_t _currentFrame)
 	vkResetFences(m_device, 1, &m_inFlightFences[_currentFrame]);
 }
 
-uint32_t icpVulkanRHI::acquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result)
+uint32_t icpVkGPUDevice::acquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result)
 {
 	uint32_t imageIndex;
 	_result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableForRenderingSemaphores[_currentFrame], VK_NULL_HANDLE, &imageIndex);
@@ -749,9 +749,47 @@ uint32_t icpVulkanRHI::acquireNextImageFromSwapchain(uint32_t _currentFrame, VkR
 	return imageIndex;
 }
 
-void icpVulkanRHI::resetCommandBuffer(uint32_t _currentFrame)
+void icpVkGPUDevice::resetCommandBuffer(uint32_t _currentFrame)
 {
 	vkResetCommandBuffer(m_graphicsCommandBuffers[_currentFrame], 0);
 }
+
+void icpVkGPUDevice::CreateDescriptorSet(const icpDescriptorSetCreation& creation, std::vector<VkDescriptorSet>& DSs)
+{
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, creation.layout);
+
+	VkDescriptorSetAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+	allocateInfo.descriptorPool = m_descriptorPool;
+	allocateInfo.pSetLayouts = layouts.data();
+
+	DSs.resize(MAX_FRAMES_IN_FLIGHT);
+
+	if (vkAllocateDescriptorSets(m_device, &allocateInfo, DSs.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate descriptor sets!");
+	}
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = m_perMeshUniformBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(UBOMeshRenderResource);
+
+		std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[0].dstSet = m_perMeshDSs[i];
+		descriptorWrites[0].dstBinding = 0;
+		descriptorWrites[0].dstArrayElement = 0;
+		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrites[0].descriptorCount = 1;
+		descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+		vkUpdateDescriptorSets(vulkanRHI->m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+	}
+}
+
 
 INCEPTION_END_NAMESPACE
