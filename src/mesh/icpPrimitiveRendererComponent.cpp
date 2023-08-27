@@ -6,10 +6,11 @@
 #include "../mesh/icpMeshData.h"
 #include "../render/RHI/Vulkan/vk_mem_alloc.h"
 #include "../render/renderPass/icpMainForwardPass.h"
+#include "../render/RHI/icpDescirptorSet.h"
+#include "../render/RHI/icpGPUBuffer.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
+	void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
 {
 	switch (m_primitive)
 	{
@@ -109,7 +110,7 @@ void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
 
 void icpPrimitiveRendererComponent::CreateVertexBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 
 	auto bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
 
@@ -199,43 +200,26 @@ void icpPrimitiveRendererComponent::CreateIndexBuffers()
 
 void icpPrimitiveRendererComponent::AllocateDescriptorSets()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
+	auto gpuDevice = g_system_container.m_renderSystem->GetGPUDevice();
 
-	auto& layout = g_system_container.m_renderSystem->m_renderPassManager->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
+	auto layout = g_system_container.m_renderSystem->GetRenderPassManager()->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
 
-	VkDescriptorSetAllocateInfo allocateInfo{};
-	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
-	allocateInfo.descriptorPool = vulkanRHI->m_descriptorPool;
-	allocateInfo.pSetLayouts = layouts.data();
+	icpDescriptorSetCreation creation{};
+	creation.layout = layout;
 
-	m_descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-
-	if (vkAllocateDescriptorSets(vulkanRHI->m_device, &allocateInfo, m_descriptorSets.data()) != VK_SUCCESS)
+	std::vector<icpBufferRenderResourceInfo> bufferInfos;
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		throw std::runtime_error("failed to allocate descriptor sets!");
-	}
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		VkDescriptorBufferInfo bufferInfo{};
+		icpBufferRenderResourceInfo bufferInfo{};
 		bufferInfo.buffer = m_uniformBuffers[i];
 		bufferInfo.offset = 0;
 		bufferInfo.range = sizeof(UBOMeshRenderResource);
-
-		std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
-		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet = m_descriptorSets[i];
-		descriptorWrites[0].dstBinding = 0;
-		descriptorWrites[0].dstArrayElement = 0;
-		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount = 1;
-		descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-		vkUpdateDescriptorSets(vulkanRHI->m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+		bufferInfos.push_back(bufferInfo);
 	}
-	
+
+	creation.SetUniformBuffer(0, bufferInfos);
+	gpuDevice->CreateDescriptorSet(creation, m_descriptorSets);
 }
 
 void icpPrimitiveRendererComponent::CreateUniformBuffers()
