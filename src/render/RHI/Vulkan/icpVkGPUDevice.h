@@ -16,22 +16,6 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
-
-struct QueueFamilyIndices
-{
-	std::optional<uint32_t> m_graphicsFamily;
-	std::optional<uint32_t> m_presentFamily;
-	std::optional<uint32_t> m_transferFamily;
-
-	bool isComplete() const 
-	{ 
-		return m_graphicsFamily.has_value() 
-			&& m_presentFamily.has_value()
-			&& m_transferFamily.has_value();
-	}
-};
-
 struct SwapChainSupportDetails
 {
 	VkSurfaceCapabilitiesKHR        m_capabilities{};
@@ -48,16 +32,16 @@ public:
 	bool Initialize(std::shared_ptr<icpWindowSystem> window_system) override;
 
 	void cleanup();
-	void cleanupSwapChain();
+	void CleanUpSwapChain() override;
 
 	void waitForFence(uint32_t _currentFrame);
 	uint32_t acquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result);
 	void resetCommandBuffer(uint32_t _currentFrame);
 
-	void createSwapChain();
-	void createSwapChainImageViews();
+	void CreateSwapChain() override;
+	void CreateSwapChainImageViews() override;
 
-	void createDepthResources();
+	void CreateDepthResources() override;
 	void createDescriptorPools();
 
 	void allocateCommandBuffers();
@@ -153,7 +137,6 @@ private:
 	// debug utilities label
 	PFN_vkCmdBeginDebugUtilsLabelEXT m_vk_cmd_begin_debug_utils_label_ext = nullptr;
 	PFN_vkCmdEndDebugUtilsLabelEXT   m_vk_cmd_end_debug_utils_label_ext = nullptr;
-
 
 	const std::vector<const char*> m_validationLayers{ "VK_LAYER_KHRONOS_validation" };
 	std::vector<char const*> m_requiredDeviceExtensions = {

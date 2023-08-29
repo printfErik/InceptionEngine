@@ -61,8 +61,8 @@ public:
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
 	void recreateSwapChain() override;
 
-	void createDescriptorSetLayouts() override;
-	void allocateDescriptorSets() override;
+	void CreateDescriptorSetLayouts() override;
+	void AllocateDescriptorSets() override;
 
 	void CreateSceneCB();
 

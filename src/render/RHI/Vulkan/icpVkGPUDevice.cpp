@@ -7,6 +7,8 @@
 #include "../../icpCameraSystem.h"
 #include "icpVulkanUtility.h"
 #include "../../icpImageResource.h"
+#include "../../../core/icpLogSystem.h"
+
 #include <iostream>
 #include <map>
 #include <set>
@@ -15,12 +17,13 @@
 #include <cstdint>
 
 #include "../icpDescirptorSet.h"
+#include "../icpGPUBuffer.h"
 #include "../../../core/icpConfigSystem.h"
+#include "../../material/icpTextureRenderResourceManager.h"
 
 
 INCEPTION_BEGIN_NAMESPACE
-
-icpVkGPUDevice::~icpVkGPUDevice()
+	icpVkGPUDevice::~icpVkGPUDevice()
 {
 	cleanup();
 }
@@ -35,11 +38,11 @@ bool icpVkGPUDevice::Initialize(std::shared_ptr<icpWindowSystem> window_system)
 	initializePhysicalDevice();
 	createLogicalDevice();
 	createVmaAllocator();
-	createSwapChain();
-	createSwapChainImageViews();
+	CreateSwapChain();
+	CreateSwapChainImageViews();
 
 	createCommandPools();
-	createDepthResources();
+	CreateDepthResources();
 
 	createDescriptorPools();
 	
@@ -123,7 +126,7 @@ void icpVkGPUDevice::createInstance()
 
 void icpVkGPUDevice::cleanup()
 {
-	cleanupSwapChain();
+	CleanUpSwapChain();
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -149,7 +152,7 @@ void icpVkGPUDevice::cleanup()
 	vkDestroyInstance(m_instance, nullptr);
 }
 
-void icpVkGPUDevice::cleanupSwapChain()
+void icpVkGPUDevice::CleanUpSwapChain()
 {
 	vkDestroyImageView(m_device, m_depthImageView, nullptr);
 	vmaDestroyImage(m_vmaAllocator, m_depthImage, m_depthBufferAllocation);
@@ -514,7 +517,7 @@ VkExtent2D icpVkGPUDevice::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capa
 	}
 }
 
-void icpVkGPUDevice::createSwapChain()
+void icpVkGPUDevice::CreateSwapChain()
 {
 	SwapChainSupportDetails swapInfo = querySwapChainSupport(m_physicalDevice);
 
@@ -580,7 +583,7 @@ void icpVkGPUDevice::createSwapChain()
 	m_swapChainExtent = swapExtent;
 }
 
-void icpVkGPUDevice::createSwapChainImageViews()
+void icpVkGPUDevice::CreateSwapChainImageViews()
 {
 	m_swapChainImageViews.resize(m_swapChainImages.size());
 
@@ -621,7 +624,7 @@ void icpVkGPUDevice::createCommandPools()
 	}
 }
 
-void icpVkGPUDevice::createDepthResources() {
+void icpVkGPUDevice::CreateDepthResources() {
 	VkFormat depthFormat = icpVulkanUtility::findDepthFormat(m_physicalDevice);
 
 	icpVulkanUtility::CreateGPUImage(
@@ -756,7 +759,7 @@ void icpVkGPUDevice::resetCommandBuffer(uint32_t _currentFrame)
 
 void icpVkGPUDevice::CreateDescriptorSet(const icpDescriptorSetCreation& creation, std::vector<VkDescriptorSet>& DSs)
 {
-	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, creation.layout);
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, creation.layoutInfo.layout);
 
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -771,68 +774,65 @@ void icpVkGPUDevice::CreateDescriptorSet(const icpDescriptorSetCreation& creatio
 		throw std::runtime_error("failed to allocate descriptor sets!");
 	}
 
-	for (int i = 0; i < creation.resources.size(); i + 3)
+	auto bindingSize = creation.resources.size() / 3;
+
+	for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
 	{
-		for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
+		std::vector<VkWriteDescriptorSet> descriptorWrites(bindingSize);
+		for (int i = 0; i < bindingSize; i ++)
 		{
-			auto layout = creation.resources[i * 3 + frame]
+			auto layout = creation.layoutInfo.bindings[i];
 
+			switch (layout.type)
+			{
+			case VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+				{
+				VkDescriptorBufferInfo bufferInfo{};
+				auto bufferRes = std::get<icpBufferRenderResourceInfo>(creation.resources[i * 3 + frame]);
+				bufferInfo.buffer = bufferRes.buffer;
+				bufferInfo.offset = bufferRes.offset;
+				bufferInfo.range = bufferRes.range;
+				descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[i].dstSet = DSs[frame];
+				descriptorWrites[i].dstBinding = i;
+				descriptorWrites[i].dstArrayElement = 0;
+				descriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				descriptorWrites[i].descriptorCount = 1;
+				descriptorWrites[i].pBufferInfo = &bufferInfo;
+				}
+				break;
+			case VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+				{
+				VkDescriptorImageInfo imageInfo{};
+				auto imageRes = std::get<icpTextureRenderResourceInfo>(creation.resources[i * 3 + frame]);
+				imageInfo.sampler = imageRes.m_texSampler;
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo.imageView = imageRes.m_texImageView;
+				descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[i].dstSet = DSs[frame];
+				descriptorWrites[i].dstBinding = i;
+				descriptorWrites[i].dstArrayElement = 0;
+				descriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				descriptorWrites[i].descriptorCount = 1;
+				descriptorWrites[i].pImageInfo = &imageInfo;
+				}
+				break;
+			default:
+				{
+				ICP_LOG_WARING("not implemented yet");
+				}
+				break;
+			}
 		}
-	}
 
-	
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = m_perMeshUniformBuffers[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UBOMeshRenderResource);
-
-		std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
-		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet = m_perMeshDSs[i];
-		descriptorWrites[0].dstBinding = 0;
-		descriptorWrites[0].dstArrayElement = 0;
-		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount = 1;
-		descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-		vkUpdateDescriptorSets(vulkanRHI->m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-	}
-
-	VkDescriptorSetAllocateInfo allocateInfo{};
-	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
-	allocateInfo.descriptorPool = vulkanRHI->m_descriptorPool;
-	allocateInfo.pSetLayouts = layouts.data();
-
-	m_descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-
-	if (vkAllocateDescriptorSets(vulkanRHI->m_device, &allocateInfo, m_descriptorSets.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate descriptor sets!");
-	}
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = m_uniformBuffers[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UBOMeshRenderResource);
-
-		std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
-		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet = m_descriptorSets[i];
-		descriptorWrites[0].dstBinding = 0;
-		descriptorWrites[0].dstArrayElement = 0;
-		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount = 1;
-		descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-		vkUpdateDescriptorSets(vulkanRHI->m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+		vkUpdateDescriptorSets(GetLogicalDevice(), descriptorWrites.size(), descriptorWrites.data(),
+			0, nullptr);
 	}
 }
 
+VkDevice icpVkGPUDevice::GetLogicalDevice()
+{
+	return m_device;
+}
 
 INCEPTION_END_NAMESPACE

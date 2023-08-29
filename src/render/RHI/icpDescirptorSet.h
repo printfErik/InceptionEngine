@@ -10,13 +10,25 @@ struct icpTextureRenderResourceInfo;
 
 struct icpBufferRenderResourceInfo;
 
+struct icpDescriptorSetBindingInfo
+{
+	VkDescriptorType type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+};
+
+struct icpDescriptorSetLayoutInfo
+{
+	VkDescriptorSetLayout layout{ VK_NULL_HANDLE };
+	std::vector<icpDescriptorSetBindingInfo> bindings;
+};
+
 struct icpDescriptorSetCreation
 {
-	VkDescriptorSetLayout layout{VK_NULL_HANDLE};
+	icpDescriptorSetLayoutInfo layoutInfo{};
 
 	std::vector<std::variant<icpBufferRenderResourceInfo, icpTextureRenderResourceInfo>> resources;
 	std::vector<uint16_t> bindings;
 
+	uint32_t setIndex = 0;
 	icpDescriptorSetCreation& SetUniformBuffer(uint16_t binding, const std::vector<icpBufferRenderResourceInfo>& ub);
 };
 

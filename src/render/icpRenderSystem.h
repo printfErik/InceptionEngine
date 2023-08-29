@@ -24,6 +24,7 @@ public:
 
 	std::shared_ptr<icpGPUDevice> GetGPUDevice();
 	std::shared_ptr<icpRenderPassManager> GetRenderPassManager();
+	std::shared_ptr<icpMaterialSubSystem> GetMaterialSubSystem();
 
 private:
 	std::shared_ptr<icpGPUDevice> m_pGPUDevice;

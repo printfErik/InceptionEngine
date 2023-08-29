@@ -22,8 +22,8 @@ public:
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex);
 	void recreateSwapChain() override;
 
-	void allocateDescriptorSets() override {}
-	void createDescriptorSetLayouts() override {}
+	void AllocateDescriptorSets() override {}
+	void CreateDescriptorSetLayouts() override {}
 
 private:
 	std::shared_ptr<icpEditorUI> m_editorUI;

@@ -107,6 +107,10 @@ std::shared_ptr<icpRenderPassManager> icpRenderSystem::GetRenderPassManager()
 	return m_pRenderPassManager;
 }
 
+std::shared_ptr<icpMaterialSubSystem> icpRenderSystem::GetMaterialSubSystem()
+{
+	return m_materialSystem;
+}
 
 
 INCEPTION_END_NAMESPACE

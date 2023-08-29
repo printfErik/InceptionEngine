@@ -5,7 +5,9 @@
 #include <vulkan/vulkan.hpp>
 
 INCEPTION_BEGIN_NAMESPACE
+struct icpDescriptorSetLayoutInfo;
 enum class eRenderPass;
+
 class icpEditorUI;
 
 class icpRenderPassBase
@@ -14,7 +16,7 @@ public:
 
 	struct RenderPassInitInfo
 	{
-		std::shared_ptr<icpVkGPUDevice> rhi{ nullptr };
+		std::shared_ptr<icpVkGPUDevice> device{ nullptr };
 		eRenderPass passType;
 		std::shared_ptr<icpRenderPassBase> dependency{ nullptr };
 		std::shared_ptr<icpEditorUI> editorUi{ nullptr };
@@ -35,19 +37,19 @@ public:
 	virtual void cleanup() = 0;
 	virtual void render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) = 0;
 	virtual void recreateSwapChain() = 0;
-	virtual void createDescriptorSetLayouts() = 0;
-	virtual void allocateDescriptorSets() = 0;
+	virtual void CreateDescriptorSetLayouts() = 0;
+	virtual void AllocateDescriptorSets() = 0;
 
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 	VkRenderPass m_renderPassObj{ VK_NULL_HANDLE };
 
 	RenderPipelineInfo m_pipelineInfo{};
-	std::vector<VkDescriptorSetLayout> m_DSLayouts;
+	std::vector<icpDescriptorSetLayoutInfo> m_DSLayouts;
 
 	std::shared_ptr<icpRenderPassBase> m_dependency{ nullptr };
 
 protected:
-	std::shared_ptr<icpVkGPUDevice> m_rhi;
+	std::shared_ptr<icpGPUDevice> m_rhi;
 };
 
 INCEPTION_END_NAMESPACE

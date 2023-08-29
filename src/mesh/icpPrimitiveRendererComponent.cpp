@@ -202,11 +202,9 @@ void icpPrimitiveRendererComponent::AllocateDescriptorSets()
 {
 	auto gpuDevice = g_system_container.m_renderSystem->GetGPUDevice();
 
-	auto layout = g_system_container.m_renderSystem->GetRenderPassManager()->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
-	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
-
 	icpDescriptorSetCreation creation{};
-	creation.layout = layout;
+	auto layout = g_system_container.m_renderSystem->GetRenderPassManager()->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
+	creation.layoutInfo = layout;
 
 	std::vector<icpBufferRenderResourceInfo> bufferInfos;
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -224,13 +222,13 @@ void icpPrimitiveRendererComponent::AllocateDescriptorSets()
 
 void icpPrimitiveRendererComponent::CreateUniformBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
+	auto gpuDevice = g_system_container.m_renderSystem->GetGPUDevice();
 	auto bufferSize = sizeof(UBOMeshRenderResource);
 
 	m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 	m_uniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
 
-	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+	VkSharingMode mode = gpuDevice->m_queueIndices.m_graphicsFamily.value() == gpuDevice->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -238,7 +236,7 @@ void icpPrimitiveRendererComponent::CreateUniformBuffers()
 			bufferSize,
 			mode,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			vulkanRHI->m_vmaAllocator,
+			gpuDevice->m_vmaAllocator,
 			m_uniformBufferAllocations[i],
 			m_uniformBuffers[i]
 		);
