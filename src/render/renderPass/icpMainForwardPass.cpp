@@ -415,7 +415,7 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 			const auto& meshRender = entity->accessComponent<icpMeshRendererComponent>();
 			auto& meshResId = meshRender.m_meshResId;
 			auto res = g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH][meshResId];
-			auto meshRes = dynamic_pointer_cast<icpMeshResource>(res);
+			auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(res);
 
 			auto vertBuf = meshRender.m_vertexBuffer;
 			std::vector<VkBuffer>vertexBuffers{ vertBuf };

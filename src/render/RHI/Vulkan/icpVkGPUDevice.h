@@ -34,8 +34,8 @@ public:
 	void cleanup();
 	void CleanUpSwapChain() override;
 
-	void waitForFence(uint32_t _currentFrame);
-	uint32_t acquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result);
+	void WaitForFence(uint32_t _currentFrame) override;
+	uint32_t AcquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result) override;
 	void resetCommandBuffer(uint32_t _currentFrame);
 
 	void CreateSwapChain() override;
@@ -48,10 +48,28 @@ public:
 
 	void createVmaAllocator();
 
-	VkDevice GetLogicalDevice() override;
-
+	VkDevice& GetLogicalDevice() override;
+	VkPhysicalDevice& GetPhysicalDevice() override;
 	void CreateDescriptorSet(const icpDescriptorSetCreation& creation, std::vector<VkDescriptorSet>& DSs) override;
 
+	VmaAllocator& GetVmaAllocator() override;
+	QueueFamilyIndices& GetQueueFamilyIndices() override;
+
+	VkQueue& GetTransferQueue() override;
+	VkCommandPool& GetTransferCommandPool() override;
+
+	VkCommandPool& GetGraphicsCommandPool() override;
+	VkQueue& GetGraphicsQueue() override;
+
+	VkCommandPool& GetPresentCommandPool() override;
+	VkQueue& GetPresentQueue() override;
+
+	VkSwapchainKHR& GetSwapChain() override;
+
+	std::vector<VkSemaphore>& GetRenderFinishedForPresentationSemaphores() override;
+	std::vector<VkFence>& GetInFlightFences() override;
+
+	VkDescriptorPool& GetDescriptorPool() override;
 private:
 	void createInstance();
 	void initializeDebugMessenger();
@@ -126,8 +144,6 @@ public:
 	VkDescriptorPool m_descriptorPool{ VK_NULL_HANDLE };
 
 	VmaAllocator m_vmaAllocator{ VK_NULL_HANDLE };
-
-	bool m_framebufferResized = false;
 
 private:
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };

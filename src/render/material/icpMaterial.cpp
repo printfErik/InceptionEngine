@@ -21,7 +21,7 @@ icpMaterialInstance::icpMaterialInstance(eMaterialShadingModel shading_model)
 
 void icpMaterialInstance::CreateUniformBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 
 	uint32_t UBOSize = ComputeUBOSize();
 
@@ -30,7 +30,7 @@ void icpMaterialInstance::CreateUniformBuffers()
 		m_perMaterialUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 		m_perMaterialUniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
 
-		VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+		VkSharingMode mode = vulkanRHI->GetQueueFamilyIndices().m_graphicsFamily.value() == vulkanRHI->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
@@ -38,7 +38,7 @@ void icpMaterialInstance::CreateUniformBuffers()
 				UBOSize,
 				mode,
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				vulkanRHI->m_vmaAllocator,
+				vulkanRHI->GetVmaAllocator(),
 				m_perMaterialUniformBufferAllocations[i],
 				m_perMaterialUniformBuffers[i]
 			);
@@ -48,20 +48,20 @@ void icpMaterialInstance::CreateUniformBuffers()
 
 void icpMaterialInstance::AllocateDescriptorSets()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 
-	auto& layout = g_system_container.m_renderSystem->m_renderPassManager->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MATERIAL];
+	auto& layout = g_system_container.m_renderSystem->GetRenderPassManager()->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MATERIAL];
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
 
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
-	allocateInfo.descriptorPool = vulkanRHI->m_descriptorPool;
+	allocateInfo.descriptorPool = vulkanRHI->GetDescriptorPool();
 	allocateInfo.pSetLayouts = layouts.data();
 
 	m_perMaterialDSs.resize(MAX_FRAMES_IN_FLIGHT);
 
-	if (vkAllocateDescriptorSets(vulkanRHI->m_device, &allocateInfo, m_perMaterialDSs.data()) != VK_SUCCESS)
+	if (vkAllocateDescriptorSets(vulkanRHI->GetLogicalDevice(), &allocateInfo, m_perMaterialDSs.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate descriptor sets!");
 	}
@@ -77,7 +77,7 @@ void icpMaterialInstance::AllocateDescriptorSets()
 			bufferInfo.range = UBOSize;
 		}
 		
-		auto texRenderResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
+		auto texRenderResMgr = g_system_container.m_renderSystem->GetTextureRenderResourceManager();
 
 		std::vector<VkDescriptorImageInfo> imageInfos;
 		for (auto& texture : m_vTextureParameterValues)
@@ -172,7 +172,7 @@ void icpMaterialInstance::AddScalaValue(const icpScalaMaterialParameterInfo& val
 
 void icpMaterialInstance::AddTexture(const std::string& texID)
 {
-	auto texRendeResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
+	auto texRendeResMgr = g_system_container.m_renderSystem->GetTextureRenderResourceManager();
 
 	if(texRendeResMgr->m_textureRenderResources.find(texID) == texRendeResMgr->m_textureRenderResources.end())
 	{

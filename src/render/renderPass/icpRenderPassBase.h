@@ -1,11 +1,10 @@
 #pragma once
 #include "../../core/icpMacros.h"
 #include "../RHI/Vulkan/icpVkGPUDevice.h"
-
-#include <vulkan/vulkan.hpp>
+#include "../RHI/icpDescirptorSet.h"
 
 INCEPTION_BEGIN_NAMESPACE
-struct icpDescriptorSetLayoutInfo;
+
 enum class eRenderPass;
 
 class icpEditorUI;
@@ -16,7 +15,7 @@ public:
 
 	struct RenderPassInitInfo
 	{
-		std::shared_ptr<icpVkGPUDevice> device{ nullptr };
+		std::shared_ptr<icpGPUDevice> device{ nullptr };
 		eRenderPass passType;
 		std::shared_ptr<icpRenderPassBase> dependency{ nullptr };
 		std::shared_ptr<icpEditorUI> editorUi{ nullptr };

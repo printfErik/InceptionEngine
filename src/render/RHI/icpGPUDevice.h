@@ -32,20 +32,33 @@ public:
 
 	virtual bool Initialize(std::shared_ptr<icpWindowSystem> window_system) = 0;
 
-	virtual VkDevice GetLogicalDevice() = 0;
+	virtual VkDevice& GetLogicalDevice() = 0;
+	virtual VkPhysicalDevice& GetPhysicalDevice() = 0;
 	virtual VkFormat GetSwapChainImageFormat() = 0;
-	virtual VkPhysicalDevice GetPhysicalDevice() = 0;
 	virtual VkExtent2D& GetSwapChainExtent() = 0;
 	virtual std::vector<VkImageView>& GetSwapChainImageViews() = 0;
 	virtual std::vector<VkImage>& GetSwapChainImages() = 0;
+	virtual VkSwapchainKHR& GetSwapChain() = 0;
 	virtual VkImageView GetDepthImageView() = 0;
 	virtual QueueFamilyIndices& GetQueueFamilyIndices() = 0;
 	virtual std::vector<VkSemaphore>& GetImageAvailableForRenderingSemaphores() = 0;
 	virtual std::vector<VkSemaphore>& GetRenderFinishedForPresentationSemaphores() = 0;
 	virtual std::vector<VkFence>& GetInFlightFences() = 0;
+	virtual std::vector<VkCommandBuffer>& GetGraphicsCommandBuffers() = 0;
+	virtual std::vector<VkCommandBuffer>& GetComputeCommandBuffers() = 0;
+	virtual std::vector<VkCommandBuffer>& GetTransferCommandBuffers() = 0;
 	virtual GLFWwindow* GetWindow() = 0;
-	virtual VmaAllocator GetVmaAllocator() = 0;
+	virtual VmaAllocator& GetVmaAllocator() = 0;
+	virtual VkQueue& GetGraphicsQueue() = 0;
+	virtual VkCommandPool& GetGraphicsCommandPool() = 0;
+	virtual VkQueue& GetPresentQueue() = 0;
+	virtual VkCommandPool& GetPresentCommandPool() = 0;
+	virtual VkQueue& GetTransferQueue() = 0;
+	virtual VkCommandPool& GetTransferCommandPool() = 0;
+	virtual VkDescriptorPool& GetDescriptorPool() = 0;
 
+	virtual void WaitForFence(uint32_t _currentFrame) = 0;
+	virtual uint32_t AcquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result) = 0;
 
 	virtual void CleanUpSwapChain() = 0;
 	virtual void CreateSwapChain() = 0;
@@ -53,6 +66,8 @@ public:
 	virtual void CreateDepthResources() = 0;
 
 	virtual void CreateDescriptorSet(const icpDescriptorSetCreation& creation, std::vector<VkDescriptorSet>& DSs) = 0;
+
+	bool m_framebufferResized = false;
 };
 
 inline icpGPUDevice::~icpGPUDevice() = default;

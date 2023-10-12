@@ -21,12 +21,12 @@ icpRenderPassManager::~icpRenderPassManager()
 	cleanup();
 }
 
-bool icpRenderPassManager::initialize(std::shared_ptr<icpVkGPUDevice> vulkanRHI)
+bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 {
-	m_rhi = vulkanRHI;
+	m_pDevice = vulkanRHI;
 
 	icpRenderPassBase::RenderPassInitInfo mainPassCreateInfo;
-	mainPassCreateInfo.rhi = m_rhi;
+	mainPassCreateInfo.device = m_pDevice;
 	mainPassCreateInfo.passType = eRenderPass::MAIN_FORWARD_PASS;
 	std::shared_ptr<icpRenderPassBase> mainForwordPass = std::make_shared<icpMainForwardPass>();
 	mainForwordPass->initializeRenderPass(mainPassCreateInfo);
@@ -44,7 +44,7 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpVkGPUDevice> vulkanRHI)
 	
 
 	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
-	editorUIInfo.rhi = m_rhi;
+	editorUIInfo.device = m_pDevice;
 	editorUIInfo.passType = eRenderPass::EDITOR_UI_PASS;
 	editorUIInfo.editorUi = std::make_shared<icpEditorUI>();
 	std::shared_ptr<icpRenderPassBase> editorUIPass = std::make_shared<icpEditorUiPass>();
@@ -65,10 +65,10 @@ void icpRenderPassManager::cleanup()
 
 void icpRenderPassManager::render()
 {
-	m_rhi->waitForFence(m_currentFrame);
+	m_pDevice->WaitForFence(m_currentFrame);
 
 	VkResult result;
-	auto index = m_rhi->acquireNextImageFromSwapchain(m_currentFrame, result);
+	auto index = m_pDevice->AcquireNextImageFromSwapchain(m_currentFrame, result);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
@@ -84,29 +84,33 @@ void icpRenderPassManager::render()
 		infos.push_back(submitInfo);
 	}
 
-	result = vkQueueSubmit(m_rhi->m_graphicsQueue, static_cast<uint32_t>(infos.size()), infos.data(), m_rhi->m_inFlightFences[m_currentFrame]);
+	auto& fences = m_pDevice->GetInFlightFences();
+
+	result = vkQueueSubmit(m_pDevice->GetGraphicsQueue(), static_cast<uint32_t>(infos.size()), infos.data(), fences[m_currentFrame]);
 
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &m_rhi->m_renderFinishedForPresentationSemaphores[m_currentFrame];
 
-	VkSwapchainKHR swapChains[] = { m_rhi->m_swapChain };
+	auto& RenderFinishedForPresentationSemaphores = m_pDevice->GetRenderFinishedForPresentationSemaphores();
+	presentInfo.pWaitSemaphores = &RenderFinishedForPresentationSemaphores[m_currentFrame];
+
+	VkSwapchainKHR swapChains[] = { m_pDevice->GetSwapChain() };
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 
 	presentInfo.pImageIndices = &index;
 
-	vkQueuePresentKHR(m_rhi->m_presentQueue, &presentInfo);
+	vkQueuePresentKHR(m_pDevice->GetPresentQueue(), &presentInfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_rhi->m_framebufferResized) 
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_pDevice->m_framebufferResized)
 	{
 		for (const auto renderPass : m_renderPasses)
 		{
 			renderPass->recreateSwapChain();
 		}
-		m_rhi->m_framebufferResized = false;
+		m_pDevice->m_framebufferResized = false;
 	}
 	else if (result != VK_SUCCESS) 
 	{

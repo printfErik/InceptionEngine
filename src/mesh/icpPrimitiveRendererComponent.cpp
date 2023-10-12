@@ -110,34 +110,34 @@ INCEPTION_BEGIN_NAMESPACE
 
 void icpPrimitiveRendererComponent::CreateVertexBuffers()
 {
-	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
+	auto gpuDevice = g_system_container.m_renderSystem->GetGPUDevice();
 
 	auto bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
 
 	VkBuffer stagingBuffer;
 	VmaAllocation stagingBufferAllocation;
 
-	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+	VkSharingMode mode = gpuDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == gpuDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		vulkanRHI->m_vmaAllocator,
+		gpuDevice->GetVmaAllocator(),
 		stagingBufferAllocation,
 		stagingBuffer
 	);
 
 	void* data;
-	vmaMapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation, &data);
+	vmaMapMemory(gpuDevice->GetVmaAllocator(), stagingBufferAllocation, &data);
 	memcpy(data, m_vertices.data(), (size_t)bufferSize);
-	vmaUnmapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation);
+	vmaUnmapMemory(gpuDevice->GetVmaAllocator(), stagingBufferAllocation);
 
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		vulkanRHI->m_vmaAllocator,
+		gpuDevice->GetVmaAllocator(),
 		m_vertexBufferAllocation,
 		m_vertexBuffer
 	);
@@ -145,44 +145,44 @@ void icpPrimitiveRendererComponent::CreateVertexBuffers()
 	icpVulkanUtility::copyBuffer(stagingBuffer,
 		m_vertexBuffer,
 		bufferSize,
-		vulkanRHI->m_device,
-		vulkanRHI->m_transferCommandPool,
-		vulkanRHI->m_transferQueue
+		gpuDevice->GetLogicalDevice(),
+		gpuDevice->GetTransferCommandPool(),
+		gpuDevice->GetTransferQueue()
 	);
 
-	vmaDestroyBuffer(vulkanRHI->m_vmaAllocator, stagingBuffer, stagingBufferAllocation);
+	vmaDestroyBuffer(gpuDevice->GetVmaAllocator(), stagingBuffer, stagingBufferAllocation);
 	
 }
 
 void icpPrimitiveRendererComponent::CreateIndexBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
+	auto gpuDevice = g_system_container.m_renderSystem->GetGPUDevice();
 	VkDeviceSize bufferSize = sizeof(m_vertexIndices[0]) * m_vertexIndices.size();
 
 	VkBuffer stagingBuffer{ VK_NULL_HANDLE };
 	VmaAllocation stagingBufferAllocation{ VK_NULL_HANDLE };
 
-	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+	VkSharingMode mode = gpuDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == gpuDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		vulkanRHI->m_vmaAllocator,
+		gpuDevice->GetVmaAllocator(),
 		stagingBufferAllocation,
 		stagingBuffer
 	);
 
 	void* data;
-	vmaMapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation, &data);
+	vmaMapMemory(gpuDevice->GetVmaAllocator(), stagingBufferAllocation, &data);
 	memcpy(data, m_vertexIndices.data(), (size_t)bufferSize);
-	vmaUnmapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation);
+	vmaUnmapMemory(gpuDevice->GetVmaAllocator(), stagingBufferAllocation);
 
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		vulkanRHI->m_vmaAllocator,
+		gpuDevice->GetVmaAllocator(),
 		m_indexBufferAllocation,
 		m_indexBuffer
 	);
@@ -190,12 +190,12 @@ void icpPrimitiveRendererComponent::CreateIndexBuffers()
 	icpVulkanUtility::copyBuffer(stagingBuffer,
 		m_indexBuffer,
 		bufferSize,
-		vulkanRHI->m_device,
-		vulkanRHI->m_transferCommandPool,
-		vulkanRHI->m_transferQueue
+		gpuDevice->GetLogicalDevice(),
+		gpuDevice->GetTransferCommandPool(),
+		gpuDevice->GetTransferQueue()
 	);
 
-	vmaDestroyBuffer(vulkanRHI->m_vmaAllocator, stagingBuffer, stagingBufferAllocation);
+	vmaDestroyBuffer(gpuDevice->GetVmaAllocator(), stagingBuffer, stagingBufferAllocation);
 }
 
 void icpPrimitiveRendererComponent::AllocateDescriptorSets()
@@ -228,7 +228,7 @@ void icpPrimitiveRendererComponent::CreateUniformBuffers()
 	m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 	m_uniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
 
-	VkSharingMode mode = gpuDevice->m_queueIndices.m_graphicsFamily.value() == gpuDevice->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+	VkSharingMode mode = gpuDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == gpuDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -236,7 +236,7 @@ void icpPrimitiveRendererComponent::CreateUniformBuffers()
 			bufferSize,
 			mode,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			gpuDevice->m_vmaAllocator,
+			gpuDevice->GetVmaAllocator(),
 			m_uniformBufferAllocations[i],
 			m_uniformBuffers[i]
 		);
@@ -245,7 +245,7 @@ void icpPrimitiveRendererComponent::CreateUniformBuffers()
 
 std::shared_ptr<icpMaterialTemplate> icpPrimitiveRendererComponent::AddMaterial(eMaterialShadingModel shading_model)
 {
-	auto& materialSystem = g_system_container.m_renderSystem->m_materialSystem;
+	auto materialSystem = g_system_container.m_renderSystem->GetMaterialSubSystem();
 	auto instance = materialSystem->createMaterialInstance(shading_model);
 	m_vMaterials.push_back(instance);
 

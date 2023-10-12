@@ -15,20 +15,19 @@ icpRenderSystem::icpRenderSystem()
 
 icpRenderSystem::~icpRenderSystem()
 {
-	m_renderPassManager.reset();
-	m_rhi.reset();
+	m_pRenderPassManager.reset();
+	m_pGPUDevice.reset();
 }
 
 bool icpRenderSystem::initializeRenderSystem()
 {
-	m_rhi = std::make_shared<icpVkGPUDevice>();
-	m_rhi->initialize(g_system_container.m_windowSystem);
+	m_pGPUDevice = std::make_shared<icpVkGPUDevice>();
+	m_pGPUDevice->Initialize(g_system_container.m_windowSystem);
 
-	auto vulkanRHI = std::dynamic_pointer_cast<icpVkGPUDevice>(m_rhi);
-	m_renderPassManager = std::make_shared<icpRenderPassManager>();
-	m_renderPassManager->initialize(vulkanRHI);
+	m_pRenderPassManager = std::make_shared<icpRenderPassManager>();
+	m_pRenderPassManager->initialize(m_pGPUDevice);
 
-	m_textureRenderResourceManager = std::make_shared<icpTextureRenderResourceManager>(vulkanRHI);
+	m_textureRenderResourceManager = std::make_shared<icpTextureRenderResourceManager>(m_pGPUDevice);
 
 	m_materialSystem = std::make_shared<icpMaterialSubSystem>();
 	m_materialSystem->initializeMaterialSubSystem();
@@ -54,13 +53,13 @@ for each view{
 */
 void icpRenderSystem::drawFrame()
 {
-	m_renderPassManager->render();
+	m_pRenderPassManager->render();
 	m_textureRenderResourceManager->checkAndcleanAllDiscardedRenderResources();
 }
 
 void icpRenderSystem::setFrameBufferResized(bool _isResized)
 {
-	std::dynamic_pointer_cast<icpVkGPUDevice>(m_rhi)->m_framebufferResized = _isResized;
+	m_pGPUDevice->m_framebufferResized = _isResized;
 }
 
 void icpRenderSystem::getAllStaticMeshRenderers()
@@ -110,6 +109,11 @@ std::shared_ptr<icpRenderPassManager> icpRenderSystem::GetRenderPassManager()
 std::shared_ptr<icpMaterialSubSystem> icpRenderSystem::GetMaterialSubSystem()
 {
 	return m_materialSystem;
+}
+
+std::shared_ptr<icpTextureRenderResourceManager> icpRenderSystem::GetTextureRenderResourceManager()
+{
+	return m_textureRenderResourceManager;
 }
 
 

@@ -21,7 +21,7 @@ public:
 	icpRenderPassManager();
 	~icpRenderPassManager();
 
-	bool initialize(std::shared_ptr<icpVkGPUDevice> vulkanRHI);
+	bool initialize(std::shared_ptr<icpGPUDevice> vulkanRHI);
 	void cleanup();
 
 	void render();
@@ -30,7 +30,7 @@ public:
 
 private:
 
-	std::shared_ptr<icpVkGPUDevice> m_rhi = nullptr;
+	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
 
 	std::vector<std::shared_ptr<icpRenderPassBase>> m_renderPasses;
 

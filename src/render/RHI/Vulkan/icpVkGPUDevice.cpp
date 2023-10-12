@@ -735,7 +735,7 @@ void icpVkGPUDevice::createSyncObjects()
 	}
 }
 
-void icpVkGPUDevice::waitForFence(uint32_t _currentFrame)
+void icpVkGPUDevice::WaitForFence(uint32_t _currentFrame)
 {
 	if (vkWaitForFences(m_device, 1, &m_inFlightFences[_currentFrame], VK_TRUE, UINT64_MAX) != VK_SUCCESS)
 	{
@@ -744,7 +744,7 @@ void icpVkGPUDevice::waitForFence(uint32_t _currentFrame)
 	vkResetFences(m_device, 1, &m_inFlightFences[_currentFrame]);
 }
 
-uint32_t icpVkGPUDevice::acquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result)
+uint32_t icpVkGPUDevice::AcquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result)
 {
 	uint32_t imageIndex;
 	_result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableForRenderingSemaphores[_currentFrame], VK_NULL_HANDLE, &imageIndex);
@@ -830,9 +830,59 @@ void icpVkGPUDevice::CreateDescriptorSet(const icpDescriptorSetCreation& creatio
 	}
 }
 
-VkDevice icpVkGPUDevice::GetLogicalDevice()
+VkDevice& icpVkGPUDevice::GetLogicalDevice()
 {
 	return m_device;
 }
+
+VkPhysicalDevice& icpVkGPUDevice::GetPhysicalDevice()
+{
+	return m_physicalDevice;
+}
+VmaAllocator& icpVkGPUDevice::GetVmaAllocator()
+{
+	return m_vmaAllocator;
+}
+
+QueueFamilyIndices& icpVkGPUDevice::GetQueueFamilyIndices()
+{
+	return m_queueIndices;
+}
+
+VkCommandPool& icpVkGPUDevice::GetTransferCommandPool()
+{
+	return m_transferCommandPool;
+}
+
+VkQueue& icpVkGPUDevice::GetTransferQueue()
+{
+	return m_transferQueue;
+}
+
+VkQueue& icpVkGPUDevice::GetGraphicsQueue()
+{
+	return m_graphicsQueue;
+}
+
+VkQueue& icpVkGPUDevice::GetPresentQueue()
+{
+	return m_presentQueue;
+}
+
+std::vector<VkSemaphore>& icpVkGPUDevice::GetRenderFinishedForPresentationSemaphores()
+{
+	return m_renderFinishedForPresentationSemaphores;
+}
+
+std::vector<VkFence>& icpVkGPUDevice::GetInFlightFences()
+{
+	return m_inFlightFences;
+}
+VkDescriptorPool& icpVkGPUDevice::GetDescriptorPool()
+{
+	return m_descriptorPool;
+}
+
+
 
 INCEPTION_END_NAMESPACE
