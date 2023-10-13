@@ -191,7 +191,7 @@ void icpEditorUiPass::setupPipeline()
 	info.Device = m_rhi->GetLogicalDevice();
 	info.DescriptorPool = m_rhi->GetDescriptorPool();
 	info.ImageCount = 3;
-	info.Instance = m_rhi->m_instance;
+	info.Instance = m_rhi->GetInstance();
 	info.MinImageCount = 3;
 	info.PhysicalDevice = m_rhi->GetPhysicalDevice();
 	info.Queue = m_rhi->GetGraphicsQueue();

@@ -50,12 +50,12 @@ public:
 	virtual GLFWwindow* GetWindow() = 0;
 	virtual VmaAllocator& GetVmaAllocator() = 0;
 	virtual VkQueue& GetGraphicsQueue() = 0;
-	virtual VkCommandPool& GetGraphicsCommandPool() = 0;
 	virtual VkQueue& GetPresentQueue() = 0;
-	virtual VkCommandPool& GetPresentCommandPool() = 0;
 	virtual VkQueue& GetTransferQueue() = 0;
+	virtual VkCommandPool& GetGraphicsCommandPool() = 0;
 	virtual VkCommandPool& GetTransferCommandPool() = 0;
 	virtual VkDescriptorPool& GetDescriptorPool() = 0;
+	virtual VkInstance& GetInstance() = 0;
 
 	virtual void WaitForFence(uint32_t _currentFrame) = 0;
 	virtual uint32_t AcquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result) = 0;
@@ -67,7 +67,10 @@ public:
 
 	virtual void CreateDescriptorSet(const icpDescriptorSetCreation& creation, std::vector<VkDescriptorSet>& DSs) = 0;
 
+	virtual void ResetCommandBuffer(uint32_t _currentFrame) = 0;
+
 	bool m_framebufferResized = false;
+	GLFWwindow* m_window{ VK_NULL_HANDLE };
 };
 
 inline icpGPUDevice::~icpGPUDevice() = default;

@@ -50,81 +50,58 @@ void icpMaterialInstance::AllocateDescriptorSets()
 {
 	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 
-	auto& layout = g_system_container.m_renderSystem->GetRenderPassManager()->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MATERIAL];
-	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
+	icpDescriptorSetCreation creation{};
+	auto& layout = g_system_container.m_renderSystem->GetRenderPassManager()
+		->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)
+		->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MATERIAL];
 
-	VkDescriptorSetAllocateInfo allocateInfo{};
-	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
-	allocateInfo.descriptorPool = vulkanRHI->GetDescriptorPool();
-	allocateInfo.pSetLayouts = layouts.data();
+	creation.layoutInfo = layout;
 
-	m_perMaterialDSs.resize(MAX_FRAMES_IN_FLIGHT);
+	std::vector<icpBufferRenderResourceInfo> bufferInfos;
 
-	if (vkAllocateDescriptorSets(vulkanRHI->GetLogicalDevice(), &allocateInfo, m_perMaterialDSs.data()) != VK_SUCCESS)
+	uint64_t UBOSize = ComputeUBOSize();
+	if (UBOSize > 0)
 	{
-		throw std::runtime_error("failed to allocate descriptor sets!");
-	}
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		uint64_t UBOSize = ComputeUBOSize();
-		VkDescriptorBufferInfo bufferInfo{};
-		if (UBOSize > 0)
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
+			icpBufferRenderResourceInfo bufferInfo{};
 			bufferInfo.buffer = m_perMaterialUniformBuffers[i];
 			bufferInfo.offset = 0;
 			bufferInfo.range = UBOSize;
+
+			bufferInfos.push_back(bufferInfo);
 		}
-		
-		auto texRenderResMgr = g_system_container.m_renderSystem->GetTextureRenderResourceManager();
+	}
 
-		std::vector<VkDescriptorImageInfo> imageInfos;
-		for (auto& texture : m_vTextureParameterValues)
+	creation.SetUniformBuffer(0, bufferInfos);
+
+	std::vector<std::vector<icpTextureRenderResourceInfo>> imgInfosAllFrames;
+	auto texRenderResMgr = g_system_container.m_renderSystem->GetTextureRenderResourceManager();
+
+	std::vector<icpTextureRenderResourceInfo> imageInfos;
+	for (auto& texture : m_vTextureParameterValues)
+	{
+		auto& info = texRenderResMgr->m_textureRenderResources[texture.m_textureID];
+
+		icpTextureRenderResourceInfo imageInfo{};
+		imageInfo.m_texImageView = info.m_texImageView;
+		imageInfo.m_texSampler = info.m_texSampler;
+		imageInfo.m_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			auto& info = texRenderResMgr->m_textureRenderResources[texture.m_textureID];
-
-			VkDescriptorImageInfo imageInfo{};
-			imageInfo.imageView = info.m_texImageView;
-			imageInfo.sampler = info.m_texSampler;
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
 			imageInfos.push_back(imageInfo);
 		}
 
-		uint32_t bindingNumber = (UBOSize > 0 ? 1u : 0u) + m_vTextureParameterValues.size();
-
-		m_nSRVs = bindingNumber;
-
-		std::vector<VkWriteDescriptorSet> descriptorWrites(bindingNumber);
-
-		uint32_t index = 0;
-		if (UBOSize > 0)
-		{
-			descriptorWrites[index].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[index].dstSet = m_perMaterialDSs[i];
-			descriptorWrites[index].dstBinding = index;
-			descriptorWrites[index].dstArrayElement = 0;
-			descriptorWrites[index].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrites[index].descriptorCount = 1;
-			descriptorWrites[index].pBufferInfo = &bufferInfo;
-			index++;
-		}
-		
-		for (auto& info : imageInfos)
-		{
-			descriptorWrites[index].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[index].dstSet = m_perMaterialDSs[i];
-			descriptorWrites[index].dstBinding = index;
-			descriptorWrites[index].dstArrayElement = 0;
-			descriptorWrites[index].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrites[index].descriptorCount = 1;
-			descriptorWrites[index].pImageInfo = &info;
-			index++;
-		}
-
-		vkUpdateDescriptorSets(vulkanRHI->m_device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+		imgInfosAllFrames.push_back(imageInfos);
 	}
+
+	for (uint32_t i = 0; i < imgInfosAllFrames.size(); i++)
+	{
+		creation.SetCombinedImageSampler(i + 1, imgInfosAllFrames[i]);
+	}
+
+	vulkanRHI->CreateDescriptorSet(creation, m_perMaterialDSs);
 }
 
 void icpMaterialSubSystem::initializeMaterialSubSystem()

@@ -17,7 +17,6 @@ void icpMeshRendererComponent::prepareRenderResourceForMesh()
 	createVertexBuffers();
 	createIndexBuffers();
 	createUniformBuffers();
-
 	allocateDescriptorSets();
 }
 
@@ -25,25 +24,37 @@ void icpMeshRendererComponent::allocateDescriptorSets()
 {
 	auto pGPUDevice = g_system_container.m_renderSystem->GetGPUDevice();
 
-	auto& layout = g_system_container.m_renderSystem->GetRenderPassManager()->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
-	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
-
 	icpDescriptorSetCreation creation;
+	auto& layout = g_system_container.m_renderSystem->GetRenderPassManager()
+		->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)
+		->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
 
-	creation.layout = layout;
+	creation.layoutInfo = layout;
+
+	std::vector<icpBufferRenderResourceInfo> bufferInfos;
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpBufferRenderResourceInfo bufferInfo{};
+		bufferInfo.buffer = m_perMeshUniformBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(UBOMeshRenderResource);
+		bufferInfos.push_back(bufferInfo);
+	}
+
+	creation.SetUniformBuffer(0, bufferInfos);
 	pGPUDevice->CreateDescriptorSet(creation, m_perMeshDSs);
 }
 
 void icpMeshRendererComponent::createUniformBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 
 	auto perMeshSize = sizeof(UBOMeshRenderResource);
 
 	m_perMeshUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 	m_perMeshUniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
 
-	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+	VkSharingMode mode = vulkanRHI->GetQueueFamilyIndices().m_graphicsFamily.value() == vulkanRHI->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -51,7 +62,7 @@ void icpMeshRendererComponent::createUniformBuffers()
 			perMeshSize,
 			mode,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			vulkanRHI->m_vmaAllocator,
+			vulkanRHI->GetVmaAllocator(),
 			m_perMeshUniformBufferAllocations[i],
 			m_perMeshUniformBuffers[i]
 		);
@@ -60,7 +71,7 @@ void icpMeshRendererComponent::createUniformBuffers()
 
 void icpMeshRendererComponent::createVertexBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 
 	const auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH][m_meshResId]);
 
@@ -69,27 +80,27 @@ void icpMeshRendererComponent::createVertexBuffers()
 	VkBuffer stagingBuffer{ VK_NULL_HANDLE };
 	VmaAllocation stagingBufferAllocation{ VK_NULL_HANDLE };
 
-	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+	VkSharingMode mode = vulkanRHI->GetQueueFamilyIndices().m_graphicsFamily.value() == vulkanRHI->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		vulkanRHI->m_vmaAllocator,
+		vulkanRHI->GetVmaAllocator(),
 		stagingBufferAllocation,
 		stagingBuffer
 	);
 
 	void* data;
-	vmaMapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation, &data);
+	vmaMapMemory(vulkanRHI->GetVmaAllocator(), stagingBufferAllocation, &data);
 	memcpy(data, meshRes->m_meshData.m_vertices.data(), (size_t)bufferSize);
-	vmaUnmapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation);
+	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), stagingBufferAllocation);
 
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		vulkanRHI->m_vmaAllocator,
+		vulkanRHI->GetVmaAllocator(),
 		m_vertexBufferAllocation,
 		m_vertexBuffer
 	);
@@ -97,17 +108,17 @@ void icpMeshRendererComponent::createVertexBuffers()
 	icpVulkanUtility::copyBuffer(stagingBuffer,
 		m_vertexBuffer,
 		bufferSize,
-		vulkanRHI->m_device,
-		vulkanRHI->m_transferCommandPool,
-		vulkanRHI->m_transferQueue
+		vulkanRHI->GetLogicalDevice(),
+		vulkanRHI->GetTransferCommandPool(),
+		vulkanRHI->GetTransferQueue()
 	);
 
-	vmaDestroyBuffer(vulkanRHI->m_vmaAllocator, stagingBuffer, stagingBufferAllocation);
+	vmaDestroyBuffer(vulkanRHI->GetVmaAllocator(), stagingBuffer, stagingBufferAllocation);
 }
 
 void icpMeshRendererComponent::createIndexBuffers()
 {
-	auto vulkanRHI = dynamic_pointer_cast<icpVkGPUDevice>(g_system_container.m_renderSystem->m_rhi);
+	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 
 	const auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH][m_meshResId]);
 	VkDeviceSize bufferSize = sizeof(meshRes->m_meshData.m_vertexIndices[0]) * meshRes->m_meshData.m_vertexIndices.size();
@@ -115,27 +126,27 @@ void icpMeshRendererComponent::createIndexBuffers()
 	VkBuffer stagingBuffer{ VK_NULL_HANDLE };
 	VmaAllocation stagingBufferAllocation{ VK_NULL_HANDLE };
 
-	VkSharingMode mode = vulkanRHI->m_queueIndices.m_graphicsFamily.value() == vulkanRHI->m_queueIndices.m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+	VkSharingMode mode = vulkanRHI->GetQueueFamilyIndices().m_graphicsFamily.value() == vulkanRHI->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		vulkanRHI->m_vmaAllocator,
+		vulkanRHI->GetVmaAllocator(),
 		stagingBufferAllocation,
 		stagingBuffer
 	);
 
 	void* data;
-	vmaMapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation, &data);
+	vmaMapMemory(vulkanRHI->GetVmaAllocator(), stagingBufferAllocation, &data);
 	memcpy(data, meshRes->m_meshData.m_vertexIndices.data(), (size_t)bufferSize);
-	vmaUnmapMemory(vulkanRHI->m_vmaAllocator, stagingBufferAllocation);
+	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), stagingBufferAllocation);
 
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		vulkanRHI->m_vmaAllocator,
+		vulkanRHI->GetVmaAllocator(),
 		m_indexBufferAllocation,
 		m_indexBuffer
 	);
@@ -143,17 +154,17 @@ void icpMeshRendererComponent::createIndexBuffers()
 	icpVulkanUtility::copyBuffer(stagingBuffer,
 		m_indexBuffer,
 		bufferSize,
-		vulkanRHI->m_device,
-		vulkanRHI->m_transferCommandPool,
-		vulkanRHI->m_transferQueue
+		vulkanRHI->GetLogicalDevice(),
+		vulkanRHI->GetTransferCommandPool(),
+		vulkanRHI->GetTransferQueue()
 	);
 
-	vmaDestroyBuffer(vulkanRHI->m_vmaAllocator, stagingBuffer,stagingBufferAllocation);
+	vmaDestroyBuffer(vulkanRHI->GetVmaAllocator(), stagingBuffer,stagingBufferAllocation);
 }
 
 std::shared_ptr<icpMaterialTemplate> icpMeshRendererComponent::addMaterial(eMaterialShadingModel shadingModel)
 {
-	auto& materialSystem = g_system_container.m_renderSystem->m_materialSystem;
+	auto materialSystem = g_system_container.m_renderSystem->GetMaterialSubSystem();
 	auto instance = materialSystem->createMaterialInstance(shadingModel);
 	m_materials.push_back(instance);
 

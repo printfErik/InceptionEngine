@@ -752,7 +752,7 @@ uint32_t icpVkGPUDevice::AcquireNextImageFromSwapchain(uint32_t _currentFrame, V
 	return imageIndex;
 }
 
-void icpVkGPUDevice::resetCommandBuffer(uint32_t _currentFrame)
+void icpVkGPUDevice::ResetCommandBuffer(uint32_t _currentFrame)
 {
 	vkResetCommandBuffer(m_graphicsCommandBuffers[_currentFrame], 0);
 }
@@ -774,7 +774,7 @@ void icpVkGPUDevice::CreateDescriptorSet(const icpDescriptorSetCreation& creatio
 		throw std::runtime_error("failed to allocate descriptor sets!");
 	}
 
-	auto bindingSize = creation.resources.size() / 3;
+	auto bindingSize = creation.resources.size() / MAX_FRAMES_IN_FLIGHT;
 
 	for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
 	{
@@ -881,6 +881,71 @@ std::vector<VkFence>& icpVkGPUDevice::GetInFlightFences()
 VkDescriptorPool& icpVkGPUDevice::GetDescriptorPool()
 {
 	return m_descriptorPool;
+}
+
+VkInstance& icpVkGPUDevice::GetInstance()
+{
+	return m_instance;
+}
+
+VkSwapchainKHR& icpVkGPUDevice::GetSwapChain()
+{
+	return m_swapChain;
+}
+
+VkCommandPool& icpVkGPUDevice::GetGraphicsCommandPool()
+{
+	return m_graphicsCommandPool;
+}
+
+VkExtent2D& icpVkGPUDevice::GetSwapChainExtent()
+{
+	return m_swapChainExtent;
+}
+
+VkFormat icpVkGPUDevice::GetSwapChainImageFormat()
+{
+	return m_swapChainImageFormat;
+}
+
+std::vector<VkImageView>& icpVkGPUDevice::GetSwapChainImageViews()
+{
+	return m_swapChainImageViews;
+}
+
+std::vector<VkImage>& icpVkGPUDevice::GetSwapChainImages()
+{
+	return m_swapChainImages;
+}
+
+GLFWwindow* icpVkGPUDevice::GetWindow()
+{
+	return m_window;
+}
+
+VkImageView icpVkGPUDevice::GetDepthImageView()
+{
+	return m_depthImageView;
+}
+
+std::vector<VkSemaphore>& icpVkGPUDevice::GetImageAvailableForRenderingSemaphores()
+{
+	return m_imageAvailableForRenderingSemaphores;
+}
+
+std::vector<VkCommandBuffer>& icpVkGPUDevice::GetComputeCommandBuffers()
+{
+	return m_uiCommandBuffers;
+}
+
+std::vector<VkCommandBuffer>& icpVkGPUDevice::GetGraphicsCommandBuffers()
+{
+	return m_graphicsCommandBuffers;
+}
+
+std::vector<VkCommandBuffer>& icpVkGPUDevice::GetTransferCommandBuffers()
+{
+	return m_transferCommandBuffers;
 }
 
 

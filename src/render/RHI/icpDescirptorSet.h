@@ -2,13 +2,12 @@
 #include <variant>
 
 #include "../../core/icpMacros.h"
+
 #include <vulkan/vulkan.h>
+#include "../material/icpTextureRenderResourceManager.h"
+#include "icpGPUBuffer.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-struct icpTextureRenderResourceInfo;
-
-struct icpBufferRenderResourceInfo;
 
 struct icpDescriptorSetBindingInfo
 {
@@ -29,7 +28,10 @@ struct icpDescriptorSetCreation
 	std::vector<uint16_t> bindings;
 
 	uint32_t setIndex = 0;
-	icpDescriptorSetCreation& SetUniformBuffer(uint16_t binding, const std::vector<icpBufferRenderResourceInfo>& ub);
+	icpDescriptorSetCreation& SetUniformBuffer(uint16_t binding, 
+		const std::vector<icpBufferRenderResourceInfo>& ub);
+	icpDescriptorSetCreation& SetCombinedImageSampler(uint16_t binding,
+		const std::vector<icpTextureRenderResourceInfo>& imgInfos);
 };
 
 INCEPTION_END_NAMESPACE

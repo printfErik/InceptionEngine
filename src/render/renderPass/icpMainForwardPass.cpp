@@ -335,8 +335,8 @@ void icpMainForwardPass::render(uint32_t frameBufferIndex, uint32_t currentFrame
 
 	UpdateGlobalBuffers(currentFrame);
 
-	m_rhi->resetCommandBuffer(currentFrame);
-	recordCommandBuffer(m_rhi->m_graphicsCommandBuffers[currentFrame], frameBufferIndex, currentFrame);
+	m_rhi->ResetCommandBuffer(currentFrame);
+	recordCommandBuffer(m_rhi->GetGraphicsCommandBuffers()[currentFrame], frameBufferIndex, currentFrame);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -348,7 +348,7 @@ void icpMainForwardPass::render(uint32_t frameBufferIndex, uint32_t currentFrame
 	submitInfo.pWaitDstStageMask = m_waitStages;
 
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_rhi->m_graphicsCommandBuffers[currentFrame];
+	submitInfo.pCommandBuffers = &m_rhi->GetGraphicsCommandBuffers()[currentFrame];
 
 	info = submitInfo;
 }

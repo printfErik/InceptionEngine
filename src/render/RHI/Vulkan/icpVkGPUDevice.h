@@ -36,7 +36,7 @@ public:
 
 	void WaitForFence(uint32_t _currentFrame) override;
 	uint32_t AcquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result) override;
-	void resetCommandBuffer(uint32_t _currentFrame);
+	void ResetCommandBuffer(uint32_t _currentFrame) override;
 
 	void CreateSwapChain() override;
 	void CreateSwapChainImageViews() override;
@@ -61,15 +61,28 @@ public:
 	VkCommandPool& GetGraphicsCommandPool() override;
 	VkQueue& GetGraphicsQueue() override;
 
-	VkCommandPool& GetPresentCommandPool() override;
 	VkQueue& GetPresentQueue() override;
 
 	VkSwapchainKHR& GetSwapChain() override;
+	VkExtent2D& GetSwapChainExtent() override;
+	std::vector<VkImageView>& GetSwapChainImageViews() override;
+	std::vector<VkImage>& GetSwapChainImages() override;
+	VkFormat GetSwapChainImageFormat() override;
 
 	std::vector<VkSemaphore>& GetRenderFinishedForPresentationSemaphores() override;
+	std::vector<VkSemaphore>& GetImageAvailableForRenderingSemaphores() override;
 	std::vector<VkFence>& GetInFlightFences() override;
 
 	VkDescriptorPool& GetDescriptorPool() override;
+	VkInstance& GetInstance() override;
+	
+	GLFWwindow* GetWindow() override;
+	std::vector<VkCommandBuffer>& GetComputeCommandBuffers() override;
+	std::vector<VkCommandBuffer>& GetGraphicsCommandBuffers() override;
+	std::vector<VkCommandBuffer>& GetTransferCommandBuffers() override;
+
+	VkImageView GetDepthImageView() override;
+	
 private:
 	void createInstance();
 	void initializeDebugMessenger();
@@ -109,7 +122,7 @@ private:
 public:
 	VkInstance m_instance{ VK_NULL_HANDLE };
 	VkSurfaceKHR m_surface{ VK_NULL_HANDLE };
-	GLFWwindow* m_window{ VK_NULL_HANDLE };
+
 	VkPhysicalDevice m_physicalDevice{ VK_NULL_HANDLE };
 	QueueFamilyIndices m_queueIndices;
 	VkDevice m_device{ VK_NULL_HANDLE };
