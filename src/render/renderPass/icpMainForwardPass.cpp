@@ -728,9 +728,7 @@ void icpMainForwardPass::CreateSceneCB()
 void icpMainForwardPass::AllocateDescriptorSets()
 {
 	icpDescriptorSetCreation creation{};
-	auto layout = g_system_container.m_renderSystem->GetRenderPassManager()
-		->accessRenderPass(eRenderPass::MAIN_FORWARD_PASS)
-		->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_FRAME];
+	auto layout = m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_FRAME];
 
 	creation.layoutInfo = layout;
 
