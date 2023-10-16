@@ -34,13 +34,13 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	m_renderPasses.push_back(mainForwordPass);
 
 	
-	/*icpRenderPassBase::RendePassInitInfo copyPassInfo;
+	icpRenderPassBase::RenderPassInitInfo unlitPassInfo;
 	copyPassInfo.rhi = m_rhi;
 	copyPassInfo.passType = eRenderPass::COPY_PASS;
 	std::shared_ptr<icpRenderPassBase> copyPass = std::make_shared<icpRenderToImgPass>();
 	copyPass->initializeRenderPass(copyPassInfo);
 
-	m_renderPasses.push_back(copyPass);*/
+	m_renderPasses.push_back(copyPass);
 	
 
 	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
