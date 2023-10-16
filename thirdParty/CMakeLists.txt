@@ -3,11 +3,8 @@ set(third_party_folder "thirdParty")
 message(thirdParty )
 
 if(NOT TARGET glm)
-    option(BUILD_STATIC_LIBS "" ON)
-    option(BUILD_TESTING "" OFF)
-    option(GLM_TEST_ENABLE "" OFF)
-    add_subdirectory(glm)
-    set_target_properties(glm_static PROPERTIES FOLDER ${third_party_folder}/glm)
+    add_library(glm INTERFACE)
+    set_target_properties(glm PROPERTIES FOLDER ${third_party_folder}/glm)
 endif()
 
 if(NOT TARGET glfw)

@@ -3,7 +3,7 @@
 #include "../../core/icpMacros.h"
 #include <vulkan/vulkan.hpp>
 
-#include "vec4.hpp"
+#include <glm/vec4.hpp>
 #include "../RHI/Vulkan/vk_mem_alloc.h"
 
 INCEPTION_BEGIN_NAMESPACE

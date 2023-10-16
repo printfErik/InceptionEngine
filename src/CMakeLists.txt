@@ -32,8 +32,8 @@ target_link_libraries(${PROJECT_NAME} Vulkan::Vulkan)
 target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/glfw/include)
 target_link_libraries(${PROJECT_NAME} glfw)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/glm/glm)
-target_link_libraries(${PROJECT_NAME} glm_static)
+target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/glm)
+target_link_libraries(${PROJECT_NAME} glm)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/stb)
 
