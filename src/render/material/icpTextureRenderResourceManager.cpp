@@ -3,7 +3,7 @@
 #include "../RHI/Vulkan/icpVulkanUtility.h"
 #include "../../core/icpLogSystem.h"
 #include "../icpImageResource.h"
-#include "../RHI/Vulkan/vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
 
 INCEPTION_BEGIN_NAMESPACE
 

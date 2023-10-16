@@ -6,7 +6,7 @@
 
 #include "../scene/icpComponent.h"
 #include <vulkan/vulkan.hpp>
-#include "../render/RHI/Vulkan/vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
 #include "../render/material/icpMaterial.h"
 
 INCEPTION_BEGIN_NAMESPACE

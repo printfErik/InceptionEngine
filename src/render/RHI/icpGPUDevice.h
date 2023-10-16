@@ -1,7 +1,7 @@
 #pragma once
 #include "../../core/icpMacros.h"
 #include "../icpWindowSystem.h"
-#include "Vulkan/vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
 
 INCEPTION_BEGIN_NAMESPACE
 

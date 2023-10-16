@@ -27,30 +27,32 @@ add_executable(${PROJECT_NAME} ${ENGINE_SOURCE_HEADERS} ${ENGINE_SOURCE_SOURCES}
 
 find_package(Vulkan REQUIRED)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS}/vulkan/)
-target_link_libraries(${PROJECT_NAME} Vulkan::Vulkan)
+target_link_libraries(${PROJECT_NAME} PUBLIC Vulkan::Vulkan)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/glfw/include)
-target_link_libraries(${PROJECT_NAME} glfw)
-
-target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/glm)
-target_link_libraries(${PROJECT_NAME} glm)
-
-target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/stb)
+target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/tinyobjloader)
-target_link_libraries(${PROJECT_NAME} tinyobjloader)
+target_link_libraries(${PROJECT_NAME} PUBLIC tinyobjloader)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/imgui)
-target_link_libraries(${PROJECT_NAME} imgui)
+target_link_libraries(${PROJECT_NAME} PUBLIC imgui)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/entt/single_include)
-target_link_libraries(${PROJECT_NAME} EnTT)
+target_link_libraries(${PROJECT_NAME} PUBLIC EnTT)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/flatBuffers/include)
-target_link_libraries(${PROJECT_NAME} FlatBuffers)
+target_link_libraries(${PROJECT_NAME} PUBLIC FlatBuffers)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/spdlog/include)
-target_link_libraries(${PROJECT_NAME} spdlog)
+target_link_libraries(${PROJECT_NAME} PUBLIC spdlog)
+
+# Header-Only Lib
+target_link_libraries(${PROJECT_NAME} PUBLIC glm)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC stb)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC vma)
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")

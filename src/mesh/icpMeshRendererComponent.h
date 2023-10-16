@@ -13,7 +13,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "../render/material/icpMaterial.h"
-#include "../render/RHI/Vulkan/vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
 
 INCEPTION_BEGIN_NAMESPACE
 

@@ -6,7 +6,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "../RHI/Vulkan/vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
 #include "../RHI/icpGPUDevice.h"
 
 INCEPTION_BEGIN_NAMESPACE

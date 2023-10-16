@@ -4,7 +4,7 @@
 #include "../render/icpRenderSystem.h"
 #include "../render/RHI/Vulkan/icpVulkanUtility.h"
 #include "../mesh/icpMeshData.h"
-#include "../render/RHI/Vulkan/vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
 #include "../render/renderPass/icpMainForwardPass.h"
 #include "../render/RHI/icpDescirptorSet.h"
 #include "../render/RHI/icpGPUBuffer.h"
