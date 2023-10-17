@@ -154,11 +154,11 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::LoadGLTFResource(const std::
 		ICP_LOG_ERROR("Failed to Parse gltf");
 	}
 
-	icpMeshData meshData;
-	icpGLTFLoaderUtil::LoadGLTFMesh(gltfModel, meshData);
+	std::vector<std::vector<icpMeshData>> meshData;
+	icpGLTFLoaderUtil::LoadGLTFMeshs(gltfModel, meshData);
 
-
-
+	std::vector<icpImageResource> images;
+	icpGLTFLoaderUtil::LoadGLTFBuffer(gltfModel, images);
 }
 
 INCEPTION_END_NAMESPACE

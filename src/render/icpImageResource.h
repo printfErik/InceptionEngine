@@ -1,9 +1,10 @@
 #pragma once
 #include "../core/icpMacros.h"
 #include "../resource/icpResourceBase.h"
-
+#include "../resource/icpSamplerResource.h"
 
 INCEPTION_BEGIN_NAMESPACE
+
 class icpImageResource : public icpResourceBase
 {
 public:
@@ -18,6 +19,8 @@ public:
 	size_t m_channelNum = 0;
 
 	size_t m_mipmapLevel = 0;
+
+	icpSamplerResource m_sampler;
 
 private:
 
