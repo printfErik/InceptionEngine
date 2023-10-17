@@ -22,6 +22,8 @@ public:
 	std::shared_ptr<icpResourceBase> loadImageResource(const std::filesystem::path& imgPath);
 	std::shared_ptr<icpResourceBase> loadObjModelResource(const std::filesystem::path& objPath, bool ifLoadRelatedImgRes = false);
 
+	std::shared_ptr<icpResourceBase> LoadGLTFResource(const std::filesystem::path& gltfPath);
+
 	icpResourceContainer m_resources;
 
 };

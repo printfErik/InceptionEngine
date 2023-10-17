@@ -17,11 +17,18 @@ INCEPTION_BEGIN_NAMESPACE
 class icpImageResource;
 enum class ePrimitiveType;
 
+enum class eVertexFormat :uint32_t
+{
+	UNKNOWN = 0,
+	PNCV_F32,
+	VF_MAX
+};
+
 struct icpVertex
 {
 	glm::vec3 position;
-	glm::vec3 color;
 	glm::vec3 normal;
+	glm::vec3 color;
 	glm::vec2 texCoord;
 
 	static VkVertexInputBindingDescription getBindingDescription();
@@ -47,6 +54,8 @@ public:
 	std::shared_ptr<icpImageResource> m_imgRes = nullptr;
 
 	std::string m_meshName;
+
+	eVertexFormat m_eVertexFormat = eVertexFormat::UNKNOWN;
 };
 
 INCEPTION_END_NAMESPACE

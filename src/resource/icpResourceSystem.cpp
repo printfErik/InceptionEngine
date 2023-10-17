@@ -2,7 +2,7 @@
 #include "../mesh/icpMeshResource.h"
 #include "../render/icpImageResource.h"
 #include "../core/icpSystemContainer.h"
-#include <iostream>
+#include "../core/icpLogSystem.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -13,32 +13,16 @@
 
 #include "../core/icpConfigSystem.h"
 
+#define TINYGLTF_IMPLEMENTATION
+#include <tiny_gltf.h>
+
 #include <unordered_map>
+#include "icpGLTFLoaderUtil.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
 icpResourceSystem::icpResourceSystem()
 {
-	/* Two squads for testing
-	std::shared_ptr<icpResourceBase> simpleTri = std::make_shared<icpMeshResource>();
-	
-	icpMeshData meshData;
-	meshData.m_vertices.push_back({ {-0.5f, -0.5f, 0.0f}, { 1.0f, 0.0f, 0.0f }, {1.f, 0.f} });
-	meshData.m_vertices.push_back({ {0.5f, -0.5f, 0.0f}, { 0.0f, 1.0f, 0.0f },{0.f, 0.f} });
-	meshData.m_vertices.push_back({ {0.5f, 0.5f, 0.0f}, { 0.0f, 0.0f, 1.0f }, {0.f, 1.f} });
-	meshData.m_vertices.push_back({ {-0.5f, 0.5f, 0.0f}, { 0.0f, 0.0f, 1.0f }, {1.f, 1.f} });
-
-	meshData.m_vertices.push_back({ {-0.5f, -0.5f, -0.5f}, { 1.0f, 0.0f, 0.0f }, {1.f, 0.f} });
-	meshData.m_vertices.push_back({ {0.5f, -0.5f, -0.5f}, { 0.0f, 1.0f, 0.0f },{0.f, 0.f} });
-	meshData.m_vertices.push_back({ {0.5f, 0.5f, -0.5f}, { 0.0f, 0.0f, 1.0f }, {0.f, 1.f} });
-	meshData.m_vertices.push_back({ {-0.5f, 0.5f, -0.5f}, { 0.0f, 0.0f, 1.0f }, {1.f, 1.f} });
-
-	meshData.m_vertexIndices = { 0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4 };
-
-	auto meshP = std::dynamic_pointer_cast<icpMeshResource>(simpleTri);
-	meshP->m_meshData = meshData;
-	m_resources.m_allResources["firstTriangle"] = simpleTri;
-	*/
 }
 
 icpResourceSystem::~icpResourceSystem()
@@ -148,6 +132,34 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::loadObjModelResource(const s
 	return modelRes;
 }
 
+std::shared_ptr<icpResourceBase> icpResourceSystem::LoadGLTFResource(const std::filesystem::path& gltfPath)
+{
+	tinygltf::Model gltfModel;
+	tinygltf::TinyGLTF gltfLoader;
+	std::string error, warning;
+	bool ret = gltfLoader.LoadASCIIFromFile(&gltfModel, &error, &warning, gltfPath.string());
+
+	if (!error.empty())
+	{
+		ICP_LOG_ERROR("Load gltf error: ", error);
+	}
+
+	if (!warning.empty())
+	{
+		ICP_LOG_WARING("Load gltf error: ", warning);
+	}
+
+	if (!ret)
+	{
+		ICP_LOG_ERROR("Failed to Parse gltf");
+	}
+
+	icpMeshData meshData;
+	icpGLTFLoaderUtil::LoadGLTFMesh(gltfModel, meshData);
+
+
+
+}
 
 INCEPTION_END_NAMESPACE
 
