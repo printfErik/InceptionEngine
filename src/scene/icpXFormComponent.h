@@ -27,6 +27,8 @@ public:
 	glm::qua<float> m_quternionRot {1.f, 0.f, 0.f, 0.f};
 
 	glm::vec3 m_scale{ 1.f,1.f,1.f };
+
+	glm::mat4 m_mtxTransform{1.0f};
 };
 
 

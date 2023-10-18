@@ -9,6 +9,7 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
+class icpMeshResource;
 class icpResourceBase;
 class icpGameEntity;
 
@@ -26,7 +27,6 @@ public:
 
 	void getRootEntityList(std::vector<std::shared_ptr<icpGameEntity>>& list);
 	void createMeshEntityFromResource(std::shared_ptr<icpResourceBase> meshRes);
-
 	void LoadDefaultScene();
 
 	entt::registry m_registry;

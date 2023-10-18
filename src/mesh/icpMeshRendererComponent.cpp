@@ -171,5 +171,9 @@ std::shared_ptr<icpMaterialTemplate> icpMeshRendererComponent::addMaterial(eMate
 	return instance;
 }
 
+void icpMeshRendererComponent::AddMaterial(std::shared_ptr<icpMaterialTemplate> material)
+{
+	m_materials.push_back(material);
+}
 
 INCEPTION_END_NAMESPACE

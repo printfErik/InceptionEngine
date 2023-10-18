@@ -40,6 +40,7 @@ public:
 
 	void allocateDescriptorSets();
 
+	void AddMaterial(std::shared_ptr<icpMaterialTemplate> material);
 	std::shared_ptr<icpMaterialTemplate> addMaterial(eMaterialShadingModel shading_model);
 
 	std::vector<VkDescriptorSet> m_perMeshDSs;
