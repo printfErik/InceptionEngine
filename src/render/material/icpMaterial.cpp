@@ -146,6 +146,11 @@ void icpMaterialInstance::AddScalaValue(const icpScalaMaterialParameterInfo& val
 	m_vScalarParameterValues.push_back(value);
 }
 
+void icpMaterialInstance::AddVector4Value(const icpVector4MaterialParameterInfo& value)
+{
+	m_vVectorParameterValues.push_back(value);
+}
+
 
 void icpMaterialInstance::AddTexture(const std::string& texID)
 {

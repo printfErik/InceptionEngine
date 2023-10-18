@@ -14,7 +14,7 @@ public:
 	void setImageBuffer(unsigned char* imgBuffer, size_t size, size_t width, size_t height, size_t channelNum);
 	std::vector<unsigned char>& getImgBuffer();
 
-	size_t m_imgWidth = 0;
+	size_t m_width = 0;
 	size_t m_height = 0;
 	size_t m_channelNum = 0;
 

@@ -4,12 +4,17 @@
 #include "../core/icpSystemContainer.h"
 #include "../core/icpLogSystem.h"
 #include "../mesh/icpMeshData.h"
+#include "../mesh/icpMeshResource.h"
+#include "../render/icpRenderSystem.h"
+#include "../render/material/icpMaterial.h"
+#include <glm/gtc/type_ptr.hpp>
 
 INCEPTION_BEGIN_NAMESPACE
 
-void icpGLTFLoaderUtil::LoadGLTFMeshs(tinygltf::Model& gltfModel, std::vector<std::vector<icpMeshData>>& meshDatas)
+void icpGLTFLoaderUtil::LoadGLTFMeshs(tinygltf::Model& gltfModel, std::vector<std::shared_ptr<icpMaterialInstance>>& materials, 
+	std::vector<std::vector<icpMeshResource>>& meshResources)
 {
-	meshDatas.resize(gltfModel.meshes.size());
+	meshResources.resize(gltfModel.meshes.size());
 	for (auto meshIdx = 0; meshIdx < gltfModel.meshes.size(); meshIdx++)
 	{
 		tinygltf::Mesh& gltfMesh = gltfModel.meshes[meshIdx];
@@ -17,7 +22,7 @@ void icpGLTFLoaderUtil::LoadGLTFMeshs(tinygltf::Model& gltfModel, std::vector<st
 		std::vector<icpVertex> vertices;
 		std::vector<uint32_t> indices;
 
-		std::vector<icpMeshData> primitives(gltfMesh.primitives.size());
+		std::vector<icpMeshResource> primitives(gltfMesh.primitives.size());
 
 		for (auto primitiveIdx = 0; primitiveIdx < gltfMesh.primitives.size(); primitiveIdx++)
 		{
@@ -29,10 +34,13 @@ void icpGLTFLoaderUtil::LoadGLTFMeshs(tinygltf::Model& gltfModel, std::vector<st
 			LoadGLTFIndexBuffer(gltfPrimitive, gltfModel, meshData);
 			LoadGLTFVertexBuffer(gltfPrimitive, gltfModel, meshData);
 
-			primitives[primitiveIdx] = meshData;
+			icpMeshResource meshRes;
+			meshRes.m_meshData = meshData;
+			meshRes.m_pMaterial = materials[gltfPrimitive.material];
+			primitives[primitiveIdx] = meshRes;
 		}
 
-		meshDatas[meshIdx] = primitives;
+		meshResources[meshIdx] = primitives;
 	}
 }
 
@@ -280,7 +288,7 @@ void icpGLTFLoaderUtil::LoadGLTFTextures(tinygltf::Model& gltfModel, const std::
 {
 	for (tinygltf::Texture& tex : gltfModel.textures) 
 	{
-		tinygltf::Image image = gltfModel.images[tex.source];
+		tinygltf::Image& image = gltfModel.images[tex.source];
 		icpSamplerResource textureSampler;
 		if (tex.sampler == -1) 
 		{
@@ -297,11 +305,79 @@ void icpGLTFLoaderUtil::LoadGLTFTextures(tinygltf::Model& gltfModel, const std::
 		}
 
 		icpImageResource imageRes;
-		// todo
-		
+		imageRes.setImageBuffer(image.image.data(), image.image.size(), image.width, image.height, image.component);
+		imageRes.m_sampler = textureSampler;
+		imageRes.m_id = image.uri;
 		images.push_back(imageRes);
 	}
 }
+
+void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, std::vector<icpImageResource>& images, 
+	std::vector<std::shared_ptr<icpMaterialInstance>>& materials)
+{
+	auto materialSystem = g_system_container.m_renderSystem->GetMaterialSubSystem();
+	for (auto& material : gltfModel.materials)
+	{
+		if (material.alphaMode != "OPAQUE")
+		{
+			// todo: handle transparent objects
+			continue;
+		}
+
+		auto& pbr = material.pbrMetallicRoughness;
+
+		pbr.baseColorTexture.index = pbr.baseColorTexture.index < 0 ? 0 : pbr.baseColorTexture.index;
+		auto instance = materialSystem->createMaterialInstance(eMaterialShadingModel::DEFAULT_LIT);
+
+		auto& baseImage = images[gltfModel.textures[pbr.baseColorTexture.index].source];
+		instance->AddTexture(baseImage.m_id);
+
+		glm::vec4 baseColorFactor = glm::make_vec4(pbr.baseColorFactor.data());
+		instance->AddVector4Value({"baseColorFactor", baseColorFactor});
+
+		if (pbr.metallicRoughnessTexture.index >= 0)
+		{
+			auto& image = images[gltfModel.textures[pbr.metallicRoughnessTexture.index].source];
+			instance->AddTexture(image.m_id);
+		}
+
+		float metallicFactor = static_cast<float>(pbr.metallicFactor);
+		instance->AddScalaValue({ "metallicFactor", metallicFactor });
+
+		float roughnessFactor = static_cast<float>(pbr.roughnessFactor);
+		instance->AddScalaValue({ "roughnessFactor", roughnessFactor });
+
+		if (material.normalTexture.index >= 0)
+		{
+			auto& image = images[gltfModel.textures[material.normalTexture.index].source];
+			instance->AddTexture(image.m_id);
+		}
+
+		if (material.occlusionTexture.index >= 0)
+		{
+			auto& image = images[gltfModel.textures[material.occlusionTexture.index].source];
+			instance->AddTexture(image.m_id);
+		}
+
+		if (material.emissiveTexture.index >= 0)
+		{
+			auto& image = images[gltfModel.textures[material.emissiveTexture.index].source];
+			instance->AddTexture(image.m_id);
+		}
+
+		glm::vec4 emissiveFactor = glm::make_vec4(material.emissiveFactor.data());
+		instance->AddVector4Value({ "emissiveFactor", emissiveFactor });
+	}
+}
+
+void icpGLTFLoaderUtil::LoadGLTFScene(tinygltf::Model& gltfModel)
+{
+	for (auto& scene : gltfModel.scenes)
+	{
+		
+	}
+}
+
 
 
 INCEPTION_END_NAMESPACE

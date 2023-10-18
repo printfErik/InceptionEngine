@@ -2,6 +2,7 @@
 #include <tiny_gltf.h>
 #include "../core/icpMacros.h"
 #include "../render/icpImageResource.h"
+#include "../mesh/icpMeshResource.h"
 
 INCEPTION_BEGIN_NAMESPACE
 class icpMeshData;
@@ -9,7 +10,8 @@ class icpMeshData;
 class icpGLTFLoaderUtil
 {
 public:
-	static void LoadGLTFMeshs(tinygltf::Model& gltfModel, std::vector<std::vector<icpMeshData>>& meshDatas);
+	static void LoadGLTFMeshs(tinygltf::Model& gltf, std::vector<std::shared_ptr<icpMaterialInstance>>& materials, 
+		std::vector<std::vector<icpMeshResource>>& meshResources);
 
 	static void LoadGLTFBuffer(uint8_t* dataPtr, const tinygltf::Accessor& accessor, const tinygltf::BufferView& bufferView,
 		std::vector<uint8_t>& outBuffer);
@@ -24,6 +26,11 @@ public:
 
 	static void LoadGLTFTextures(tinygltf::Model& gltfModel, const std::vector<icpSamplerResource>& samplers,
 		std::vector<icpImageResource>& images);
+
+	static void LoadGLTFMaterials(tinygltf::Model& gltfModel, std::vector<icpImageResource>& images, 
+		std::vector<std::shared_ptr<icpMaterialInstance>>& materials);
+
+	static void LoadGLTFScene(tinygltf::Model& gltfModel);
 };
 
 INCEPTION_END_NAMESPACE

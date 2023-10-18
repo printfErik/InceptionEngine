@@ -28,6 +28,12 @@ struct icpScalaMaterialParameterInfo
 	float m_fValue = 0.f;
 };
 
+struct icpVector4MaterialParameterInfo
+{
+	std::string m_strVector4Name;
+	glm::vec4 m_vValue{};
+};
+
 // todo: replace string with real guid
 typedef std::string TextureID;
 
@@ -54,10 +60,9 @@ public:
 	virtual ~icpMaterialTemplate() = default;
 	virtual void AllocateDescriptorSets() = 0;
 	virtual void CreateUniformBuffers() = 0;
-	//virtual void addDiffuseTexture(const std::string& texID) = 0;
-	//virtual void addSpecularTexture(const std::string& texID) = 0;
 	virtual void AddTexture(const std::string& texID) = 0;
 	virtual void AddScalaValue(const icpScalaMaterialParameterInfo& value) = 0;
+	virtual void AddVector4Value(const icpVector4MaterialParameterInfo& value) = 0;
 	virtual void SetupMaterialRenderResources() = 0;
 
 	virtual uint32_t GetSRVNumber() const = 0;
@@ -80,10 +85,9 @@ public:
 
 	void AllocateDescriptorSets() override;
 	void CreateUniformBuffers() override;
-	//void addDiffuseTexture(const std::string& texID) override;
-	//void addSpecularTexture(const std::string& texID) override;
 	void AddTexture(const std::string& texID) override;
 	void AddScalaValue(const icpScalaMaterialParameterInfo& value) override;
+	void AddVector4Value(const icpVector4MaterialParameterInfo& value) override;
 	void SetupMaterialRenderResources() override;
 	uint64_t ComputeUBOSize();
 
@@ -92,7 +96,7 @@ private:
 	
 	std::vector<icpScalaMaterialParameterInfo> m_vScalarParameterValues;
 	std::vector<bool> m_vBoolParameterValues;
-	std::vector<glm::vec4> m_vVectorParameterValues;
+	std::vector<icpVector4MaterialParameterInfo> m_vVectorParameterValues;
 	std::vector<icpTextureMaterialParameterInfo> m_vTextureParameterValues;
 
 	uint32_t m_nSRVs = 0;
