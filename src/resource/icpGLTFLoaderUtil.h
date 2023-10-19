@@ -1,9 +1,10 @@
 #pragma once
-#include <tiny_gltf.h>
+
 #include "../core/icpMacros.h"
 #include "../render/icpImageResource.h"
 #include "../mesh/icpMeshResource.h"
 
+#include <tiny_gltf.h>
 
 INCEPTION_BEGIN_NAMESPACE
 

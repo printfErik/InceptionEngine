@@ -13,7 +13,8 @@
 #include "../scene/icpXFormComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	void icpGLTFLoaderUtil::LoadGLTFMeshs(tinygltf::Model& gltfModel, std::vector<std::shared_ptr<icpMaterialInstance>>& materials, 
+
+void icpGLTFLoaderUtil::LoadGLTFMeshs(tinygltf::Model& gltfModel, std::vector<std::shared_ptr<icpMaterialInstance>>& materials, 
 	                                      std::vector<std::vector<icpMeshResource>>& meshResources)
 {
 	meshResources.resize(gltfModel.meshes.size());
@@ -86,7 +87,7 @@ void icpGLTFLoaderUtil::LoadGLTFIndexBuffer(
 	const tinygltf::Buffer& buffer = gltfModel.buffers[bufferView.buffer];
 
 	uint32_t indexCount = static_cast<uint32_t>(accessor.count);
-	uint8_t* dataPtr = &(buffer.data[accessor.byteOffset + bufferView.byteOffset]);
+	uint8_t* dataPtr = (uint8_t*)buffer.data.data() + accessor.byteOffset + bufferView.byteOffset;
 
 	std::vector<uint8_t> indexBufferData;
 	LoadGLTFBuffer(dataPtr, accessor, bufferView, indexBufferData);
@@ -129,7 +130,7 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 	// Load Vertex Data
 	assert(gltfPrimitive.attributes.contains("POSITION"));
 
-	int posAccessorIdx = gltfPrimitive.attributes["POSITION"];
+	int posAccessorIdx = gltfPrimitive.attributes.at("POSITION");
 
 	const tinygltf::Accessor& posAccessor = gltfModel.accessors[posAccessorIdx > -1 ? posAccessorIdx : 0];
 	assert(posAccessor.type == TINYGLTF_TYPE_VEC3);
@@ -139,7 +140,7 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 	const tinygltf::Buffer& posBuffer = gltfModel.buffers[posBufferView.buffer];
 
 	auto vertexCount = static_cast<uint32_t>(posAccessor.count);
-	uint8_t* posDataPtr = &(posBuffer.data[posAccessor.byteOffset + posBufferView.byteOffset]);
+	uint8_t* posDataPtr = (uint8_t*)&posBuffer.data[posAccessor.byteOffset + posBufferView.byteOffset];
 
 	std::vector<uint8_t> posBufferData;
 	LoadGLTFBuffer(posDataPtr, posAccessor, posBufferView, posBufferData);
@@ -148,7 +149,7 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 	int normalAccessorIdx = -1;
 	if (gltfPrimitive.attributes.contains("NORMAL"))
 	{
-		normalAccessorIdx = gltfPrimitive.attributes["NORMAL"];
+		normalAccessorIdx = gltfPrimitive.attributes.at("NORMAL");
 		const tinygltf::Accessor& accessor = gltfModel.accessors[normalAccessorIdx > -1 ? normalAccessorIdx : 0];
 		assert(accessor.type == TINYGLTF_TYPE_VEC3);
 		assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
@@ -156,8 +157,7 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 		const tinygltf::BufferView& bufferView = gltfModel.bufferViews[accessor.bufferView];
 		const tinygltf::Buffer& buffer = gltfModel.buffers[bufferView.buffer];
 
-		uint32_t indexCount = static_cast<uint32_t>(accessor.count);
-		uint8_t* dataPtr = &(buffer.data[accessor.byteOffset + bufferView.byteOffset]);
+		uint8_t* dataPtr = (uint8_t*)&buffer.data[accessor.byteOffset + bufferView.byteOffset];
 
 		LoadGLTFBuffer(dataPtr, accessor, bufferView, normalBufferData);
 	}
@@ -166,7 +166,7 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 	int colorAccessorIdx = -1;
 	if (gltfPrimitive.attributes.contains("COLOR0"))
 	{
-		colorAccessorIdx = gltfPrimitive.attributes["COLOR0"];
+		colorAccessorIdx = gltfPrimitive.attributes.at("COLOR0");
 		const tinygltf::Accessor& accessor = gltfModel.accessors[colorAccessorIdx > -1 ? colorAccessorIdx : 0];
 		assert(accessor.type == TINYGLTF_TYPE_VEC3);
 		assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
@@ -174,8 +174,7 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 		const tinygltf::BufferView& bufferView = gltfModel.bufferViews[accessor.bufferView];
 		const tinygltf::Buffer& buffer = gltfModel.buffers[bufferView.buffer];
 
-		uint32_t indexCount = static_cast<uint32_t>(accessor.count);
-		uint8_t* dataPtr = &(buffer.data[accessor.byteOffset + bufferView.byteOffset]);
+		uint8_t* dataPtr = (uint8_t*)&(buffer.data[accessor.byteOffset + bufferView.byteOffset]);
 
 		LoadGLTFBuffer(dataPtr, accessor, bufferView, colorBufferData);
 	}
@@ -184,7 +183,7 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 	int tcAccessorIdx = -1;
 	if (gltfPrimitive.attributes.contains("TEXCOORD0"))
 	{
-		tcAccessorIdx = gltfPrimitive.attributes["TEXCOORD0"];
+		tcAccessorIdx = gltfPrimitive.attributes.at("TEXCOORD0");
 		const tinygltf::Accessor& accessor = gltfModel.accessors[tcAccessorIdx > -1 ? tcAccessorIdx : 0];
 		assert(accessor.type == TINYGLTF_TYPE_VEC2);
 		assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
@@ -192,8 +191,7 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 		const tinygltf::BufferView& bufferView = gltfModel.bufferViews[accessor.bufferView];
 		const tinygltf::Buffer& buffer = gltfModel.buffers[bufferView.buffer];
 
-		uint32_t indexCount = static_cast<uint32_t>(accessor.count);
-		uint8_t* dataPtr = &(buffer.data[accessor.byteOffset + bufferView.byteOffset]);
+		uint8_t* dataPtr = (uint8_t*)&(buffer.data[accessor.byteOffset + bufferView.byteOffset]);
 
 		LoadGLTFBuffer(dataPtr, accessor, bufferView, texCoordBufferData);
 	}
@@ -332,7 +330,7 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, std::vecto
 		auto instance = materialSystem->createMaterialInstance(eMaterialShadingModel::DEFAULT_LIT);
 
 		auto& baseImage = images[gltfModel.textures[pbr.baseColorTexture.index].source];
-		instance->AddTexture(baseImage.m_id);
+		instance->AddTexture({ "baseColorTexture", baseImage.m_id });
 
 		glm::vec4 baseColorFactor = glm::make_vec4(pbr.baseColorFactor.data());
 		instance->AddVector4Value({"baseColorFactor", baseColorFactor});
@@ -340,7 +338,7 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, std::vecto
 		if (pbr.metallicRoughnessTexture.index >= 0)
 		{
 			auto& image = images[gltfModel.textures[pbr.metallicRoughnessTexture.index].source];
-			instance->AddTexture(image.m_id);
+			instance->AddTexture({ "metallicRoughnessTexture", image.m_id });
 		}
 
 		float metallicFactor = static_cast<float>(pbr.metallicFactor);
@@ -352,19 +350,19 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, std::vecto
 		if (material.normalTexture.index >= 0)
 		{
 			auto& image = images[gltfModel.textures[material.normalTexture.index].source];
-			instance->AddTexture(image.m_id);
+			instance->AddTexture({ "normalTexture", image.m_id });
 		}
 
 		if (material.occlusionTexture.index >= 0)
 		{
 			auto& image = images[gltfModel.textures[material.occlusionTexture.index].source];
-			instance->AddTexture(image.m_id);
+			instance->AddTexture({ "occlusionTexture", image.m_id });
 		}
 
 		if (material.emissiveTexture.index >= 0)
 		{
 			auto& image = images[gltfModel.textures[material.emissiveTexture.index].source];
-			instance->AddTexture(image.m_id);
+			instance->AddTexture({ "emissiveTexture", image.m_id });
 		}
 
 		glm::vec4 emissiveFactor = glm::make_vec4(material.emissiveFactor.data());
@@ -389,7 +387,7 @@ void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, ic
 	const auto view = g_system_container.m_sceneSystem->m_registry.view<icpEntityDataComponent>();
 	const auto it = std::find_if(view.begin(), view.end(), [&view, &parentGuid](auto args)
 		{
-			icpEntityDataComponent& dataComp = view.get<icpEntityDataComponent>(*args);
+			icpEntityDataComponent& dataComp = view.get<icpEntityDataComponent>(args);
 			return dataComp.m_guid == parentGuid;
 		});
 

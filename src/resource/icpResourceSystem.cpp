@@ -4,20 +4,19 @@
 #include "../core/icpSystemContainer.h"
 #include "../core/icpLogSystem.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #define TINYOBJLOADER_USE_MAPBOX_EARCUT
 #define TINYOBJLOADER_IMPLEMENTATION 
 #include <tiny_obj_loader.h>
 
 #include "../core/icpConfigSystem.h"
 
-#define TINYGLTF_IMPLEMENTATION
-#include <tiny_gltf.h>
-
 #include <unordered_map>
 #include "icpGLTFLoaderUtil.h"
+
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <tiny_gltf.h>
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -132,7 +131,7 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::loadObjModelResource(const s
 	return modelRes;
 }
 
-std::shared_ptr<icpResourceBase> icpResourceSystem::LoadGLTFResource(const std::filesystem::path& gltfPath)
+bool icpResourceSystem::LoadGLTFResource(const std::filesystem::path& gltfPath)
 {
 	tinygltf::Model gltfModel;
 	tinygltf::TinyGLTF gltfLoader;
@@ -142,6 +141,7 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::LoadGLTFResource(const std::
 	if (!error.empty())
 	{
 		ICP_LOG_ERROR("Load gltf error: ", error);
+		return false;
 	}
 
 	if (!warning.empty())
@@ -152,6 +152,7 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::LoadGLTFResource(const std::
 	if (!ret)
 	{
 		ICP_LOG_ERROR("Failed to Parse gltf");
+		return false;
 	}
 
 	std::vector<icpSamplerResource> samplers;
@@ -166,6 +167,9 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::LoadGLTFResource(const std::
 	std::vector<std::vector<icpMeshResource>> meshResources;
 	icpGLTFLoaderUtil::LoadGLTFMeshs(gltfModel, materials, meshResources);
 
+	icpGLTFLoaderUtil::LoadGLTFScene(gltfModel, meshResources);
+
+	return true;
 }
 
 INCEPTION_END_NAMESPACE

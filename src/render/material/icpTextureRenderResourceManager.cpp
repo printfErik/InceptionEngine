@@ -44,7 +44,7 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 	vmaUnmapMemory(m_rhi->GetVmaAllocator(), stagingBufferAllocation);
 
 	icpVulkanUtility::CreateGPUImage(
-		static_cast<uint32_t>(info.m_texImageRes->m_imgWidth),
+		static_cast<uint32_t>(info.m_texImageRes->m_width),
 		static_cast<uint32_t>(info.m_texImageRes->m_height),
 		static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel),
 		VK_FORMAT_R8G8B8A8_SRGB,
@@ -56,12 +56,12 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 	);
 
 	icpVulkanUtility::transitionImageLayout(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_rhi->GetTransferCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetTransferQueue());
-	icpVulkanUtility::copyBuffer2Image(stagingBuffer, info.m_texImage, static_cast<uint32_t>(info.m_texImageRes->m_imgWidth), static_cast<uint32_t>(info.m_texImageRes->m_height), m_rhi->GetTransferCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetTransferQueue());
+	icpVulkanUtility::copyBuffer2Image(stagingBuffer, info.m_texImage, static_cast<uint32_t>(info.m_texImageRes->m_width), static_cast<uint32_t>(info.m_texImageRes->m_height), m_rhi->GetTransferCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetTransferQueue());
 		//icpVulkanUtility::transitionImageLayout(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, );
 
 	vmaDestroyBuffer(m_rhi->GetVmaAllocator(), stagingBuffer, stagingBufferAllocation);
 
-	icpVulkanUtility::generateMipmaps(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, static_cast<uint32_t>(info.m_texImageRes->m_imgWidth), static_cast<uint32_t>(info.m_texImageRes->m_height), static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue(), m_rhi->GetPhysicalDevice());
+	icpVulkanUtility::generateMipmaps(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, static_cast<uint32_t>(info.m_texImageRes->m_width), static_cast<uint32_t>(info.m_texImageRes->m_height), static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue(), m_rhi->GetPhysicalDevice());
 
 	info.m_texImageView = icpVulkanUtility::CreateGPUImageView(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, info.m_texImageRes->m_mipmapLevel, m_rhi->GetLogicalDevice());
 

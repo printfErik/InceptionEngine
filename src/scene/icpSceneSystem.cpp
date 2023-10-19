@@ -308,7 +308,7 @@ void icpSceneSystem::createMeshEntityFromResource(std::shared_ptr<icpResourceBas
 	//material->addDiffuseTexture(meshRes->m_id + "_diffuse");
 	//material->addSpecularTexture(meshRes->m_id + "_specular");
 
-	material->AddTexture(meshRes->m_id);
+	material->AddTexture({ "baseColorTexture", meshRes->m_id });
 
 	material->AddScalaValue({"Shininess", 0.1f});
 	material->SetupMaterialRenderResources();
@@ -395,9 +395,9 @@ void icpSceneSystem::LoadDefaultScene()
 		auto&& material = sphere.AddMaterial(eMaterialShadingModel::DEFAULT_LIT);
 
 		material->AddTexture({ "baseColorTexture","rustediron2_basecolor" });
-		material->AddTexture("rustediron2_metallic");
-		material->AddTexture("rustediron2_normal");
-		material->AddTexture("rustediron2_roughness");
+		material->AddTexture({ "metallicTexture", "rustediron2_metallic" });
+		material->AddTexture({  "normalTexture", "rustediron2_normal" });
+		material->AddTexture({ "roughnessTexture","rustediron2_roughness" });
 		material->AddScalaValue({ "Shininess", 0.1f });
 		material->SetupMaterialRenderResources();
 	}
