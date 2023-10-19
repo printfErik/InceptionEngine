@@ -29,6 +29,8 @@ public:
 	void createMeshEntityFromResource(std::shared_ptr<icpResourceBase> meshRes);
 	void LoadDefaultScene();
 
+	std::shared_ptr<icpGameEntity> FindEntity(icpGuid guid);
+
 	entt::registry m_registry;
 
 	std::vector<std::shared_ptr<icpGameEntity>> m_sceneRoots;

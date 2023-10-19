@@ -4,7 +4,11 @@
 #include "../render/icpImageResource.h"
 #include "../mesh/icpMeshResource.h"
 
+
 INCEPTION_BEGIN_NAMESPACE
+
+class icpGuid;
+
 class icpMeshData;
 
 class icpGLTFLoaderUtil
@@ -30,7 +34,9 @@ public:
 	static void LoadGLTFMaterials(tinygltf::Model& gltfModel, std::vector<icpImageResource>& images, 
 		std::vector<std::shared_ptr<icpMaterialInstance>>& materials);
 
-	static void LoadGLTFScene(tinygltf::Model& gltfModel);
+	static void LoadGLTFScene(tinygltf::Model& gltfModel, std::vector<std::vector<icpMeshResource>>& meshResources);
+
+	static void LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, icpGuid parentGuid, std::vector<std::vector<icpMeshResource>>& meshResources);
 };
 
 INCEPTION_END_NAMESPACE

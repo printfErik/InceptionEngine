@@ -9,6 +9,7 @@
 #include "../render/material/icpMaterial.h"
 #include <glm/gtc/type_ptr.hpp>
 
+#include "../scene/icpEntityDataComponent.h"
 #include "../scene/icpXFormComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -368,6 +369,8 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, std::vecto
 
 		glm::vec4 emissiveFactor = glm::make_vec4(material.emissiveFactor.data());
 		instance->AddVector4Value({ "emissiveFactor", emissiveFactor });
+
+		instance->SetupMaterialRenderResources();
 	}
 }
 
@@ -377,77 +380,91 @@ void icpGLTFLoaderUtil::LoadGLTFScene(tinygltf::Model& gltfModel, std::vector<st
 
 	for (int nodeIdx = 0; nodeIdx < scene.nodes.size(); nodeIdx++)
 	{
-		auto& node = gltfModel.nodes[scene.nodes[nodeIdx]];
-
-		glm::mat4 worldMtx{1.f};
-
-		if (!node.matrix.empty())
-		{
-			std::array<float, 16> matrixData;
-			for (int n = 0; n < 16; n++) 
-			{
-				matrixData[n] = static_cast<float>(node.matrix[n]);
-			}
-			memcpy(&worldMtx, matrixData.data(), sizeof(glm::mat4));
-		}
-		else
-		{
-			glm::vec3 translation{0.f};
-			glm::mat4 translationMtx{ 1.f };
-			if (!node.translation.empty())
-			{
-				translation = glm::vec3{ node.translation[0], node.translation[1], node.translation[2] };
-				translationMtx = glm::translate(translationMtx, translation);
-			}
-
-			glm::mat4 rotation{ 1.f };
-
-			if (node.rotation.empty())
-			{
-				glm::quat rot(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]);
-				rotation = glm::mat4{ rot };
-			}
-
-			glm::mat4 scale{ 1.f };
-			if (node.scale.empty())
-			{
-				scale = glm::scale(scale, glm::vec3{ node.scale[0], node.scale[1], node.scale[2] });
-			}
-
-			glm::mat4 transformMatrix = (translationMtx * rotation * scale);
-			memcpy(&worldMtx, &transformMatrix, sizeof(glm::mat4));
-		}
-
-		if (node.mesh > -1)
-		{
-			auto& primitives = meshResources[node.mesh];
-
-			for (auto& primitive : primitives)
-			{
-				auto entity = g_system_container.m_sceneSystem->CreateEntity(primitive.m_id, nullptr);
-				auto& xform = entity->accessComponent<icpXFormComponent>();
-
-				xform.m_mtxTransform = worldMtx;
-
-				auto& meshComp = entity->installComponent<icpMeshRendererComponent>();
-				meshComp.m_meshResId = primitive.m_id;
-
-				meshComp.prepareRenderResourceForMesh();
-
-				meshComp.AddMaterial(primitive.m_pMaterial);
-
-				primitive.m_pMaterial->SetupMaterialRenderResources();
-			}
-		}
-
-		for (int childIndex = 0; childIndex < node.children.size(); childIndex++)
-		{
-			auto& child = gltfModel.nodes[node.children[childIndex]];
-			LoadGLTFNode(child);
-		}
+		LoadGLTFNode(gltfModel, scene.nodes[nodeIdx], -1, meshResources);
 	}
 }
 
+void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, icpGuid parentGuid, std::vector<std::vector<icpMeshResource>>& meshResources)
+{
+	const auto view = g_system_container.m_sceneSystem->m_registry.view<icpEntityDataComponent>();
+	const auto it = std::find_if(view.begin(), view.end(), [&view, &parentGuid](auto args)
+		{
+			icpEntityDataComponent& dataComp = view.get<icpEntityDataComponent>(*args);
+			return dataComp.m_guid == parentGuid;
+		});
+
+	auto& parentDataComp = view.get<icpEntityDataComponent>(*it);
+	auto parentEntity = parentDataComp.m_possessor;
+
+	auto& node = gltfModel.nodes[nodeIdx];
+	glm::mat4 worldMtx{1.f};
+
+	if (!node.matrix.empty())
+	{
+		std::array<float, 16> matrixData;
+		for (int n = 0; n < 16; n++)
+		{
+			matrixData[n] = static_cast<float>(node.matrix[n]);
+		}
+		memcpy(&worldMtx, matrixData.data(), sizeof(glm::mat4));
+	}
+	else
+	{
+		glm::vec3 translation{0.f};
+		glm::mat4 translationMtx{ 1.f };
+		if (!node.translation.empty())
+		{
+			translation = glm::vec3{ node.translation[0], node.translation[1], node.translation[2] };
+			translationMtx = glm::translate(translationMtx, translation);
+		}
+
+		glm::mat4 rotation{ 1.f };
+
+		if (node.rotation.empty())
+		{
+			glm::quat rot(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]);
+			rotation = glm::mat4{ rot };
+		}
+
+		glm::mat4 scale{ 1.f };
+		if (node.scale.empty())
+		{
+			scale = glm::scale(scale, glm::vec3{ node.scale[0], node.scale[1], node.scale[2] });
+		}
+
+		glm::mat4 transformMatrix = (translationMtx * rotation * scale);
+		memcpy(&worldMtx, &transformMatrix, sizeof(glm::mat4));
+	}
+
+	if (node.mesh > -1)
+	{
+		auto& primitives = meshResources[node.mesh];
+
+		for (auto& primitive : primitives)
+		{
+			auto entity = g_system_container.m_sceneSystem->CreateEntity(primitive.m_id, nullptr);
+			auto& xform = entity->accessComponent<icpXFormComponent>();
+
+			xform.m_mtxTransform = worldMtx;
+
+			auto parentXform = std::make_shared<icpXFormComponent>(parentEntity->accessComponent<icpXFormComponent>());
+			xform.m_parent = parentXform;
+			parentXform->m_children.push_back(std::make_shared<icpXFormComponent>(xform));
+
+			auto& meshComp = entity->installComponent<icpMeshRendererComponent>();
+			meshComp.m_meshResId = primitive.m_id;
+
+			meshComp.prepareRenderResourceForMesh();
+			meshComp.AddMaterial(primitive.m_pMaterial);
+		}
+	}
+
+	for (int childIndex = 0; childIndex < node.children.size(); childIndex++)
+	{
+		LoadGLTFNode(gltfModel, node.children[childIndex], nodeIdx, meshResources);
+	}
+
+}
 
 
 INCEPTION_END_NAMESPACE

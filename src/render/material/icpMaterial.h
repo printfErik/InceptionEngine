@@ -10,17 +10,6 @@ INCEPTION_BEGIN_NAMESPACE
 class icpTextureRenderResourceManager;
 class icpImageResource;
 
-/*
-enum class eMaterialModel
-{
-	NULL_MATERIAL = 0,
-	LAMBERT,
-	BLINNPHONG,
-	PBR,
-	MATERIAL_TYPE_COUNT
-};
-*/
-// pipeline: import img resource -->
 
 struct icpScalaMaterialParameterInfo
 {
@@ -39,7 +28,7 @@ typedef std::string TextureID;
 
 struct icpTextureMaterialParameterInfo
 {
-	std::string m_strTextureName;
+	std::string m_strTextureType;
 	TextureID m_textureID;
 };
 
@@ -60,7 +49,7 @@ public:
 	virtual ~icpMaterialTemplate() = default;
 	virtual void AllocateDescriptorSets() = 0;
 	virtual void CreateUniformBuffers() = 0;
-	virtual void AddTexture(const std::string& texID) = 0;
+	virtual void AddTexture(const icpTextureMaterialParameterInfo& textureInfo) = 0;
 	virtual void AddScalaValue(const icpScalaMaterialParameterInfo& value) = 0;
 	virtual void AddVector4Value(const icpVector4MaterialParameterInfo& value) = 0;
 	virtual void SetupMaterialRenderResources() = 0;
@@ -85,7 +74,7 @@ public:
 
 	void AllocateDescriptorSets() override;
 	void CreateUniformBuffers() override;
-	void AddTexture(const std::string& texID) override;
+	void AddTexture(const icpTextureMaterialParameterInfo& textureInfo) override;
 	void AddScalaValue(const icpScalaMaterialParameterInfo& value) override;
 	void AddVector4Value(const icpVector4MaterialParameterInfo& value) override;
 	void SetupMaterialRenderResources() override;

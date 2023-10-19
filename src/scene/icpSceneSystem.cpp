@@ -394,7 +394,7 @@ void icpSceneSystem::LoadDefaultScene()
 
 		auto&& material = sphere.AddMaterial(eMaterialShadingModel::DEFAULT_LIT);
 
-		material->AddTexture("rustediron2_basecolor");
+		material->AddTexture({ "baseColorTexture","rustediron2_basecolor" });
 		material->AddTexture("rustediron2_metallic");
 		material->AddTexture("rustediron2_normal");
 		material->AddTexture("rustediron2_roughness");
@@ -414,5 +414,11 @@ void icpSceneSystem::LoadDefaultScene()
 		lightComp.m_color = glm::vec3(10.f, 10.f, 10.f);
 	}
 }
+
+std::shared_ptr<icpGameEntity> icpSceneSystem::FindEntity(icpGuid guid)
+{
+	
+}
+
 
 INCEPTION_END_NAMESPACE

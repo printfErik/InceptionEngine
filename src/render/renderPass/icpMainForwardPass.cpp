@@ -523,7 +523,7 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 		vmaUnmapMemory(m_rhi->GetVmaAllocator(), m_perFrameCBAllocations[curFrame]);
 	}
 
-	/*
+	
 	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
 
 	for (auto& entity: view)
@@ -532,30 +532,26 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 
 		auto& xformComp = view.get<icpXFormComponent>(entity);
 
-		// for temp use todo: remove it
-		auto firstRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(0.f, 0.f, 1.f));
-		auto secondRotate = glm::rotate(glm::mat4(1.f), glm::radians(-90.0f), glm::vec3(1.f, 0.f, 0.f));
-
 		UBOMeshRenderResource ubo{};
-		ubo.model = secondRotate * firstRotate;
+		ubo.model = xformComp.m_mtxTransform;
 		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
 
 		void* data;
-		vmaMapMemory(m_rhi->m_vmaAllocator, meshRenderer.m_perMeshUniformBufferAllocations[curFrame], &data);
+		vmaMapMemory(m_rhi->GetVmaAllocator(), meshRenderer.m_perMeshUniformBufferAllocations[curFrame], &data);
 		memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
-		vmaUnmapMemory(m_rhi->m_vmaAllocator, meshRenderer.m_perMeshUniformBufferAllocations[curFrame]);
+		vmaUnmapMemory(m_rhi->GetVmaAllocator(), meshRenderer.m_perMeshUniformBufferAllocations[curFrame]);
 
 		// todo classify different materialInstance
 		for (auto& material : meshRenderer.m_materials)
 		{
 			float fShininess = 1.f;
 			void* materialData;
-			vmaMapMemory(m_rhi->m_vmaAllocator, material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
+			vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
 			memcpy(materialData, &fShininess, sizeof(float));
-			vmaUnmapMemory(m_rhi->m_vmaAllocator, material->m_perMaterialUniformBufferAllocations[curFrame]);
+			vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
 		}
 	}
-	*/
+	
 	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponent, icpXFormComponent>();
 	for (auto& primitive: primitiveView)
 	{

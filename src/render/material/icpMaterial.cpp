@@ -152,10 +152,11 @@ void icpMaterialInstance::AddVector4Value(const icpVector4MaterialParameterInfo&
 }
 
 
-void icpMaterialInstance::AddTexture(const std::string& texID)
+void icpMaterialInstance::AddTexture(const icpTextureMaterialParameterInfo& textureInfo)
 {
 	auto texRendeResMgr = g_system_container.m_renderSystem->GetTextureRenderResourceManager();
 
+	auto& texID = textureInfo.m_textureID;
 	if(texRendeResMgr->m_textureRenderResources.find(texID) == texRendeResMgr->m_textureRenderResources.end())
 	{
 		auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / (texID + ".png");
@@ -167,11 +168,7 @@ void icpMaterialInstance::AddTexture(const std::string& texID)
 		texRendeResMgr->setupTextureRenderResources(texID);
 	}
 
-	icpTextureMaterialParameterInfo info{};
-	info.m_textureID = texID;
-	info.m_strTextureName = texID;
-
-	m_vTextureParameterValues.push_back(info);
+	m_vTextureParameterValues.push_back(textureInfo);
 }
 
 
