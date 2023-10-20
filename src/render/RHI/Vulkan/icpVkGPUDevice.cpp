@@ -45,9 +45,6 @@ bool icpVkGPUDevice::Initialize(std::shared_ptr<icpWindowSystem> window_system)
 	CreateDepthResources();
 
 	createDescriptorPools();
-	
-	allocateCommandBuffers();
-
 	createSyncObjects();
 
 	return true;
@@ -380,6 +377,11 @@ QueueFamilyIndices icpVkGPUDevice::findQueueFamilies(VkPhysicalDevice device)
 			indices.m_graphicsFamily = i;
 		}
 
+		if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
+		{
+			indices.m_computeFamily = i;
+		}
+
 		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
 		{
 			indices.m_transferFamily = i;
@@ -392,10 +394,6 @@ QueueFamilyIndices icpVkGPUDevice::findQueueFamilies(VkPhysicalDevice device)
 			indices.m_presentFamily = i;
 		}
 
-		if (indices.isComplete())
-		{
-			break;
-		}
 		i++;
 	}
 	return indices;
@@ -614,13 +612,13 @@ void icpVkGPUDevice::createCommandPools()
 		throw std::runtime_error("failed to create command pool!");
 	}
 
-	VkCommandPoolCreateInfo uiPoolCreateInfo = {};
-	uiPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	uiPoolCreateInfo.queueFamilyIndex = m_queueIndices.m_graphicsFamily.value();
-	uiPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	VkCommandPoolCreateInfo computeCreateInfo = {};
+	computeCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	computeCreateInfo.queueFamilyIndex = m_queueIndices.m_computeFamily.value();
+	computeCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-	if (vkCreateCommandPool(m_device, &uiPoolCreateInfo, nullptr, &m_uiCommandPool) != VK_SUCCESS) {
-		throw std::runtime_error("Could not create graphics command pool");
+	if (vkCreateCommandPool(m_device, &computeCreateInfo, nullptr, &m_computeCommandPool) != VK_SUCCESS) {
+		throw std::runtime_error("Could not create compute command pool");
 	}
 }
 
@@ -668,48 +666,6 @@ void icpVkGPUDevice::createDescriptorPools()
 	}
 }
 
-void icpVkGPUDevice::allocateCommandBuffers()
-{
-	m_graphicsCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-	VkCommandBufferAllocateInfo gAllocInfo{};
-	gAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	gAllocInfo.commandPool = m_graphicsCommandPool;
-	gAllocInfo.commandBufferCount = (uint32_t)m_graphicsCommandBuffers.size();
-	gAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-	if (vkAllocateCommandBuffers(m_device, &gAllocInfo, m_graphicsCommandBuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate graphics command buffer!");
-	}
-
-	m_transferCommandBuffers.resize(1); // for transfer use
-
-	VkCommandBufferAllocateInfo tAllocInfo{};
-	tAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	tAllocInfo.commandPool = m_transferCommandPool;
-	tAllocInfo.commandBufferCount = (uint32_t)m_transferCommandBuffers.size();
-	tAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-	if (vkAllocateCommandBuffers(m_device, &tAllocInfo, m_transferCommandBuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate transfer command buffer!");
-	}
-
-	m_uiCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-	VkCommandBufferAllocateInfo uiAllocInfo{};
-	uiAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	uiAllocInfo.commandPool = m_uiCommandPool;
-	uiAllocInfo.commandBufferCount = (uint32_t)m_uiCommandBuffers.size();
-	uiAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-	if (vkAllocateCommandBuffers(m_device, &uiAllocInfo, m_uiCommandBuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate ui command buffer!");
-	}
-}
-
 void icpVkGPUDevice::createSyncObjects()
 {
 	m_imageAvailableForRenderingSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -750,11 +706,6 @@ uint32_t icpVkGPUDevice::AcquireNextImageFromSwapchain(uint32_t _currentFrame, V
 	_result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableForRenderingSemaphores[_currentFrame], VK_NULL_HANDLE, &imageIndex);
 
 	return imageIndex;
-}
-
-void icpVkGPUDevice::ResetCommandBuffer(uint32_t _currentFrame)
-{
-	vkResetCommandBuffer(m_graphicsCommandBuffers[_currentFrame], 0);
 }
 
 void icpVkGPUDevice::CreateDescriptorSet(const icpDescriptorSetCreation& creation, std::vector<VkDescriptorSet>& DSs)
@@ -932,22 +883,4 @@ std::vector<VkSemaphore>& icpVkGPUDevice::GetImageAvailableForRenderingSemaphore
 {
 	return m_imageAvailableForRenderingSemaphores;
 }
-
-std::vector<VkCommandBuffer>& icpVkGPUDevice::GetComputeCommandBuffers()
-{
-	return m_uiCommandBuffers;
-}
-
-std::vector<VkCommandBuffer>& icpVkGPUDevice::GetGraphicsCommandBuffers()
-{
-	return m_graphicsCommandBuffers;
-}
-
-std::vector<VkCommandBuffer>& icpVkGPUDevice::GetTransferCommandBuffers()
-{
-	return m_transferCommandBuffers;
-}
-
-
-
 INCEPTION_END_NAMESPACE

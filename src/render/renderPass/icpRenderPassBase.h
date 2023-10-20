@@ -38,7 +38,9 @@ public:
 	virtual void recreateSwapChain() = 0;
 	virtual void CreateDescriptorSetLayouts() = 0;
 	virtual void AllocateDescriptorSets() = 0;
+	virtual void AllocateCommandBuffers() = 0;
 
+	std::vector<VkCommandBuffer> m_commandBuffers;
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 	VkRenderPass m_renderPassObj{ VK_NULL_HANDLE };
 
@@ -46,6 +48,7 @@ public:
 	std::vector<icpDescriptorSetLayoutInfo> m_DSLayouts;
 
 	std::shared_ptr<icpRenderPassBase> m_dependency{ nullptr };
+
 
 protected:
 	std::shared_ptr<icpGPUDevice> m_rhi;

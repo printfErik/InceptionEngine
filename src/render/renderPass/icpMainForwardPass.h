@@ -64,6 +64,8 @@ public:
 	void CreateDescriptorSetLayouts() override;
 	void AllocateDescriptorSets() override;
 
+	void AllocateCommandBuffers() override;
+
 	void CreateSceneCB();
 
 	VkSemaphore m_waitSemaphores[1];

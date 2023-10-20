@@ -14,13 +14,17 @@ struct QueueFamilyIndices
 	std::optional<uint32_t> m_graphicsFamily;
 	std::optional<uint32_t> m_presentFamily;
 	std::optional<uint32_t> m_transferFamily;
+	std::optional<uint32_t> m_computeFamily;
 
+	
 	bool isComplete() const
 	{
 		return m_graphicsFamily.has_value()
 			&& m_presentFamily.has_value()
-			&& m_transferFamily.has_value();
+			&& m_transferFamily.has_value()
+			&& m_computeFamily.has_value();
 	}
+	
 };
 
 class icpGPUDevice
@@ -44,9 +48,6 @@ public:
 	virtual std::vector<VkSemaphore>& GetImageAvailableForRenderingSemaphores() = 0;
 	virtual std::vector<VkSemaphore>& GetRenderFinishedForPresentationSemaphores() = 0;
 	virtual std::vector<VkFence>& GetInFlightFences() = 0;
-	virtual std::vector<VkCommandBuffer>& GetGraphicsCommandBuffers() = 0;
-	virtual std::vector<VkCommandBuffer>& GetComputeCommandBuffers() = 0;
-	virtual std::vector<VkCommandBuffer>& GetTransferCommandBuffers() = 0;
 	virtual GLFWwindow* GetWindow() = 0;
 	virtual VmaAllocator& GetVmaAllocator() = 0;
 	virtual VkQueue& GetGraphicsQueue() = 0;
@@ -66,8 +67,6 @@ public:
 	virtual void CreateDepthResources() = 0;
 
 	virtual void CreateDescriptorSet(const icpDescriptorSetCreation& creation, std::vector<VkDescriptorSet>& DSs) = 0;
-
-	virtual void ResetCommandBuffer(uint32_t _currentFrame) = 0;
 
 	bool m_framebufferResized = false;
 	GLFWwindow* m_window{ VK_NULL_HANDLE };

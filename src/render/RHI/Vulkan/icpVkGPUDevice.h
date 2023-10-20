@@ -36,15 +36,12 @@ public:
 
 	void WaitForFence(uint32_t _currentFrame) override;
 	uint32_t AcquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result) override;
-	void ResetCommandBuffer(uint32_t _currentFrame) override;
 
 	void CreateSwapChain() override;
 	void CreateSwapChainImageViews() override;
 
 	void CreateDepthResources() override;
 	void createDescriptorPools();
-
-	void allocateCommandBuffers();
 
 	void createVmaAllocator();
 
@@ -77,9 +74,6 @@ public:
 	VkInstance& GetInstance() override;
 	
 	GLFWwindow* GetWindow() override;
-	std::vector<VkCommandBuffer>& GetComputeCommandBuffers() override;
-	std::vector<VkCommandBuffer>& GetGraphicsCommandBuffers() override;
-	std::vector<VkCommandBuffer>& GetTransferCommandBuffers() override;
 
 	VkImageView GetDepthImageView() override;
 	
@@ -138,12 +132,7 @@ public:
 
 	VkCommandPool m_graphicsCommandPool{ VK_NULL_HANDLE };
 	VkCommandPool m_transferCommandPool{ VK_NULL_HANDLE };
-	VkCommandPool m_uiCommandPool{ VK_NULL_HANDLE };
-
-	std::vector<VkCommandBuffer> m_graphicsCommandBuffers;
-	std::vector<VkCommandBuffer> m_transferCommandBuffers;
-	std::vector<VkCommandBuffer> m_uiCommandBuffers;
-	/*std::vector<VkCommandBuffer> m_viewportCommandBuffers;*/
+	VkCommandPool m_computeCommandPool{ VK_NULL_HANDLE };
 
 	VkImage m_depthImage;
 	VmaAllocation m_depthBufferAllocation;

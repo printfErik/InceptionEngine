@@ -31,6 +31,8 @@ void icpMainForwardPass::initializeRenderPass(RenderPassInitInfo initInfo)
 	CreateSceneCB();
 	AllocateDescriptorSets();
 
+	AllocateCommandBuffers();
+
 	createRenderPass();
 	setupPipeline();
 	createFrameBuffers();
@@ -335,8 +337,8 @@ void icpMainForwardPass::render(uint32_t frameBufferIndex, uint32_t currentFrame
 
 	UpdateGlobalBuffers(currentFrame);
 
-	m_rhi->ResetCommandBuffer(currentFrame);
-	recordCommandBuffer(m_rhi->GetGraphicsCommandBuffers()[currentFrame], frameBufferIndex, currentFrame);
+	vkResetCommandBuffer(m_commandBuffers[currentFrame], 0);
+	recordCommandBuffer(m_commandBuffers[currentFrame], frameBufferIndex, currentFrame);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -348,7 +350,7 @@ void icpMainForwardPass::render(uint32_t frameBufferIndex, uint32_t currentFrame
 	submitInfo.pWaitDstStageMask = m_waitStages;
 
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_rhi->GetGraphicsCommandBuffers()[currentFrame];
+	submitInfo.pCommandBuffers = &m_commandBuffers[currentFrame];
 
 	info = submitInfo;
 }
@@ -741,6 +743,23 @@ void icpMainForwardPass::AllocateDescriptorSets()
 	creation.SetUniformBuffer(0, bufferInfos);
 	m_rhi->CreateDescriptorSet(creation, m_perFrameDSs);
 }
+
+void icpMainForwardPass::AllocateCommandBuffers()
+{
+	m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkCommandBufferAllocateInfo gAllocInfo{};
+	gAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	gAllocInfo.commandPool = m_rhi->GetGraphicsCommandPool();
+	gAllocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
+	gAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	if (vkAllocateCommandBuffers(m_rhi->GetLogicalDevice(), &gAllocInfo, m_commandBuffers.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate graphics command buffer!");
+	}
+}
+
 
 
 INCEPTION_END_NAMESPACE

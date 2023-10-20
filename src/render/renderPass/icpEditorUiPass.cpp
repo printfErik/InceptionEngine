@@ -27,10 +27,12 @@ void icpEditorUiPass::initializeRenderPass(RenderPassInitInfo initInfo)
 	createRenderPass();
 	setupPipeline();
 	createFrameBuffers();
-	//																				POI : may cause problem
-	VkCommandBuffer command_buffer = icpVulkanUtility::beginSingleTimeCommands(m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice());
+
+	AllocateCommandBuffers();
+
+	VkCommandBuffer command_buffer = icpVulkanUtility::beginSingleTimeCommands(m_rhi->GetTransferCommandPool(), m_rhi->GetLogicalDevice());
 	ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
-	icpVulkanUtility::endSingleTimeCommandsAndSubmit(command_buffer, m_rhi->GetGraphicsQueue(), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice());
+	icpVulkanUtility::endSingleTimeCommandsAndSubmit(command_buffer, m_rhi->GetTransferQueue(), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice());
 }
 
 void icpEditorUiPass::createFrameBuffers()
@@ -131,24 +133,22 @@ void icpEditorUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, V
 
 	ImGui::Render();
 
-	auto& graphicsCBs = m_rhi->GetGraphicsCommandBuffers();
+	vkResetCommandBuffer(m_commandBuffers[currentFrame], 0);
+	recordCommandBuffer(m_commandBuffers[currentFrame], frameBufferIndex);
 
-	vkResetCommandBuffer(graphicsCBs[currentFrame], 0);
-	recordCommandBuffer(graphicsCBs[currentFrame], frameBufferIndex);
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_commandBuffers[currentFrame]);
 
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), graphicsCBs[currentFrame]);
-
-	vkCmdEndRenderPass(graphicsCBs[currentFrame]);
+	vkCmdEndRenderPass(m_commandBuffers[currentFrame]);
 
 	VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &graphicsCBs[currentFrame];
+	submitInfo.pCommandBuffers = &m_commandBuffers[currentFrame];
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &m_rhi->GetRenderFinishedForPresentationSemaphores()[currentFrame];
 
-	vkEndCommandBuffer(graphicsCBs[currentFrame]);
+	vkEndCommandBuffer(m_commandBuffers[currentFrame]);
 
 	info = submitInfo;
 }
@@ -201,5 +201,20 @@ void icpEditorUiPass::setupPipeline()
 	ImGui_ImplVulkan_Init(&info, m_renderPassObj);
 }
 
+void icpEditorUiPass::AllocateCommandBuffers()
+{
+	m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkCommandBufferAllocateInfo gAllocInfo{};
+	gAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	gAllocInfo.commandPool = m_rhi->GetGraphicsCommandPool();
+	gAllocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
+	gAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	if (vkAllocateCommandBuffers(m_rhi->GetLogicalDevice(), &gAllocInfo, m_commandBuffers.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate graphics command buffer!");
+	}
+}
 
 INCEPTION_END_NAMESPACE

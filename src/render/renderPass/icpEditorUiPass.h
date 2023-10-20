@@ -23,6 +23,7 @@ public:
 	void recreateSwapChain() override;
 
 	void AllocateDescriptorSets() override {}
+	void AllocateCommandBuffers() override;
 	void CreateDescriptorSetLayouts() override {}
 
 private:

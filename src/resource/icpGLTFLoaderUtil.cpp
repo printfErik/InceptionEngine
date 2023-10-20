@@ -130,7 +130,7 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 	// Load Vertex Data
 	assert(gltfPrimitive.attributes.contains("POSITION"));
 
-	int posAccessorIdx = gltfPrimitive.attributes.at("POSITION");
+	const int posAccessorIdx = gltfPrimitive.attributes.at("POSITION");
 
 	const tinygltf::Accessor& posAccessor = gltfModel.accessors[posAccessorIdx > -1 ? posAccessorIdx : 0];
 	assert(posAccessor.type == TINYGLTF_TYPE_VEC3);
