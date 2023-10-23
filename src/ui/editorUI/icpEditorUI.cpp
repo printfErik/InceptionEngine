@@ -278,6 +278,22 @@ void icpEditorUI::showEditorUI()
 				}
 			}
 			ImGui::EndMenu();
+
+			static char gltfPath[64] = "";
+			ImGui::InputText("Load GLTF File Path", gltfPath, 64);
+			if (ImGui::Button("Load GLTF Files"))
+			{
+				if (std::strlen(gltfPath) == 0 || !checkFilePath(std::string()))
+				{
+					ImGui::SameLine();
+					ImGui::Text("File Path is not Legal!");
+				}
+				else
+				{
+					g_system_container.m_resourceSystem->LoadGLTFResource(gltfPath);
+				}
+			}
+			ImGui::EndMenu();
 		}
 
 		if (ImGui::BeginMenu("Debug Tool"))

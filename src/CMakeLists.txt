@@ -47,6 +47,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC FlatBuffers)
 target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/spdlog/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog)
 
+target_include_directories(${PROJECT_NAME} PUBLIC ${THIRD_PARTY_DIR}/enkiTS/src)
+target_link_libraries(${PROJECT_NAME} PUBLIC enkiTS)
+
 # Header-Only Lib
 target_link_libraries(${PROJECT_NAME} PUBLIC glm)
 
