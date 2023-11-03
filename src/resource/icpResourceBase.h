@@ -8,7 +8,9 @@ enum class icpResourceType
 {
 	UNKNOW = 0,
 	MESH,
-	TEXTURE
+	TEXTURE,
+	GLTF,
+	MATERIL
 };
 
 class icpResourceBase

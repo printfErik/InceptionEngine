@@ -98,7 +98,7 @@ void icpMaterialInstance::AllocateDescriptorSets()
 
 	for (uint32_t i = 0; i < imgInfosAllFrames.size(); i++)
 	{
-		creation.SetCombinedImageSampler(i + 1, imgInfosAllFrames[i]);
+		creation.SetCombinedImageSampler(i + 1u, imgInfosAllFrames[i]);
 	}
 
 	vulkanRHI->CreateDescriptorSet(creation, m_perMaterialDSs);

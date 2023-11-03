@@ -29,6 +29,23 @@ icpResourceSystem::~icpResourceSystem()
 
 }
 
+bool icpResourceSystem::Initialize()
+{
+	enki::TaskSchedulerConfig config;
+
+	config.numTaskThreadsToCreate += 1;
+
+	m_ekScheduler = std::make_unique<enki::TaskScheduler>();
+	m_ekScheduler->Initialize(config);
+
+	AsyncLoadFileResourceTask asyncFileLoadTask;
+	asyncFileLoadTask.threadNum = m_ekScheduler->GetThreadNum() - 1;
+	asyncFileLoadTask.m_pResourceSystem = shared_from_this();
+
+	m_ekScheduler->AddPinnedTask(&asyncFileLoadTask);
+}
+
+
 std::shared_ptr<icpResourceBase> icpResourceSystem::loadImageResource(const std::filesystem::path& imgPath)
 {
 	int width, height, channel;
@@ -47,7 +64,7 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::loadImageResource(const std:
 	imgRes->m_resType = icpResourceType::TEXTURE;
 
 	const auto& resName = imgPath.stem().string();
-	m_resources.m_allResources[icpResourceType::TEXTURE][resName] = imgRes;
+	m_resources[icpResourceType::TEXTURE][resName] = imgRes;
 
 
 	stbi_image_free(img);
@@ -119,7 +136,7 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::loadObjModelResource(const s
 	meshP->m_resType = icpResourceType::MESH;
 	meshP->m_id = objName;
 
-	m_resources.m_allResources[icpResourceType::MESH][objName] = modelRes;
+	m_resources[icpResourceType::MESH][objName] = modelRes;
 
 	if (ifLoadRelatedImgRes)
 	{
@@ -171,6 +188,54 @@ bool icpResourceSystem::LoadGLTFResource(const std::filesystem::path& gltfPath)
 
 	return true;
 }
+
+bool icpResourceSystem::RequestAsyncLoadResource(icpResourceType type, const std::filesystem::path& path)
+{
+	ResourceLoadTask task{};
+	task.type = type;
+	task.file_path = path;
+
+	m_taskLoadingQueue.push(task);
+
+	return true;
+}
+
+
+void icpResourceSystem::UpdateSystem()
+{
+	if (!m_taskLoadingQueue.empty())
+	{
+		auto& task = m_taskLoadingQueue.front();
+		switch (task.type)
+		{
+		case icpResourceType::GLTF:
+			{
+			LoadGLTFResource(task.file_path);
+			break;
+			}
+		default:
+			{
+			break;
+			}
+		}
+		m_taskLoadingQueue.pop();
+	}
+}
+
+icpResourceContainer& icpResourceSystem::GetResourceContainer()
+{
+	return m_resources;
+}
+
+
+void AsyncLoadFileResourceTask::Execute()
+{
+	while (m_bExecuting)
+	{
+		m_pResourceSystem->UpdateSystem();
+	}
+}
+
 
 INCEPTION_END_NAMESPACE
 

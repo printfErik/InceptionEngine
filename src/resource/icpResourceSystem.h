@@ -2,16 +2,21 @@
 #include "../core/icpMacros.h"
 #include "icpResourceBase.h"
 #include <map>
+#include <queue>
+#include <memory>
+#include <TaskScheduler.h>
 
 INCEPTION_BEGIN_NAMESPACE
 
-struct icpResourceContainer
+typedef std::map<icpResourceType, std::map<std::string, std::shared_ptr<icpResourceBase>>> icpResourceContainer;
+
+struct ResourceLoadTask
 {
-	std::map<icpResourceType, std::map<std::string, std::shared_ptr<icpResourceBase>>> m_allResources;
+	icpResourceType type;
+	std::filesystem::path file_path;
 };
 
-
-class icpResourceSystem
+class icpResourceSystem : public std::enable_shared_from_this<icpResourceSystem>
 {
 public:
 
@@ -19,13 +24,32 @@ public:
 
 	~icpResourceSystem();
 
+	bool Initialize();
+
 	std::shared_ptr<icpResourceBase> loadImageResource(const std::filesystem::path& imgPath);
 	std::shared_ptr<icpResourceBase> loadObjModelResource(const std::filesystem::path& objPath, bool ifLoadRelatedImgRes = false);
 
 	bool LoadGLTFResource(const std::filesystem::path& gltfPath);
 
-	icpResourceContainer m_resources;
+	bool RequestAsyncLoadResource(icpResourceType type, const std::filesystem::path& path);
 
+	void UpdateSystem();
+
+	icpResourceContainer& GetResourceContainer();
+
+private:
+	std::unique_ptr<enki::TaskScheduler> m_ekScheduler = nullptr;
+	std::queue<ResourceLoadTask> m_taskLoadingQueue;
+
+	icpResourceContainer m_resources;
+};
+
+struct  AsyncLoadFileResourceTask : enki::IPinnedTask
+{
+	void Execute() override;
+
+	std::shared_ptr<icpResourceSystem> m_pResourceSystem = nullptr;
+	bool m_bExecuting = true;
 };
 
 INCEPTION_END_NAMESPACE

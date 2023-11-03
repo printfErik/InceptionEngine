@@ -25,6 +25,7 @@ void icpSystemContainer::initializeAllSystems(const std::filesystem::path& _conf
 	m_configSystem = std::make_shared<icpConfigSystem>(_configFilePath);
 
 	m_resourceSystem = std::make_shared<icpResourceSystem>();
+	m_resourceSystem->Initialize();
 
 	m_windowSystem = std::make_shared<icpWindowSystem>();
 	m_windowSystem->initializeWindowSystem();

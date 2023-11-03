@@ -19,10 +19,20 @@ struct PointLightRenderResource
 	float quadratic;
 };
 
+layout(set = 1, binding = 0) uniform UBOPerMaterial
+{
+    float baseColorFactor;
+    float metallicFactor;
+    float roughnessFactor;
+    vec3 emissiveFactor;
+    float emissiveStrength;
+} uboPerMaterial;
+
 layout(set = 1, binding = 1) uniform sampler2D BaseColorSampler;
-layout(set = 1, binding = 2) uniform sampler2D MetallicSampler;
+layout(set = 1, binding = 2) uniform sampler2D MetallicRoughnessSampler;
 layout(set = 1, binding = 3) uniform sampler2D NormalSampler;
-layout(set = 1, binding = 4) uniform sampler2D RoughnessSampler;
+layout(set = 1, binding = 4) uniform sampler2D AoSampler;
+layout(set = 1, binding = 5) uniform sampler2D EmissiveSampler;
 
 layout(set = 2, binding = 0) uniform PerFrameCB
 {
@@ -102,42 +112,47 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 
 void main() 
 {   
-    vec3 Albedo = pow(texture(BaseColorSampler, fragTexCoord).rgb, vec3(2.2));
+    vec3 BaseColor = pow(texture(BaseColorSampler, fragTexCoord).rgb, vec3(2.2)) * uboPerMaterial.baseColorFactor;
+    float Metallic = texture(MetallicRoughnessSampler, fragTexCoord).g * uboPerMaterial.metallicFactor;
+    float PerceptualRoughness = texture(MetallicRoughnessSampler, fragTexCoord).b * uboPerMaterial.roughnessFactor;
+    
+    float AlphaRoughness = PerceptualRoughness * PerceptualRoughness;
+
+    vec3 F0 = vec3(0.04);
+    vec3 SpecularColor = mix(F0, BaseColor, Metallic);
 
     vec3 N = getNormalFromMap();
     vec3 V = normalize(uboPerFrame.camPos - worldPos);
-    vec3 F0 = vec3(0.04);
-    float Metallic = texture(MetallicSampler, fragTexCoord).r;
-    F0 = mix(F0, Albedo, Metallic);
-
     vec3 L = normalize(uboPerFrame.directionalLit.direction.xyz);
     vec3 H = normalize(V + L);
-    vec3 radiance = uboPerFrame.directionalLit.color.xyz;
 
-    // Cook-Torrance BRDF
-    float Roughness = texture(RoughnessSampler, fragTexCoord).r;
+    float NdotL = clamp(dot(N, L), 0.001, 1.0);
+    float NdotV = clamp(dot(N, V), 0.001, 1.0);
+    float NdotH = clamp(dot(N, H), 0.0, 1.0);
+    float LdotH = clamp(dot(L, H), 0.0, 1.0);
+    float VdotH = clamp(dot(V, H), 0.0, 1.0);
+    
     float NDF = DistributionGGX(N, H, Roughness);
     float G = GeometrySmith(N, V, L, Roughness);
-    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+    vec3 F = fresnelSchlick(VdotH, SpecularColor);
 
     vec3 numerator = NDF * G * F; 
-    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-    vec3 specular = numerator / denominator;
+    float denominator = 4.0 * NdotV * NdotL + 0.0001;
+    vec3 SpecularContrib = numerator / denominator;
 
-    vec3 kS = F;
-    vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - Metallic;
-
-    float NdotL = max(dot(N, L), 0.0); 
+    vec3 DiffuseColor = BaseColor * (vec3(1.0) - F0) * (1.0 - Metallic);
+    vec3 DiffuseContrib = (vec3(1.0) - F) * DiffuseColor / PI;
     
-    vec3 Lo = (kD * Albedo / PI + specular) * radiance * NdotL;
+    vec3 radiance = uboPerFrame.directionalLit.color.xyz;
+    vec3 Lo = (DiffuseContrib + SpecularContrib) * radiance * NdotL;
 
-    float AO = 1.f;
-    vec3 ambient = vec3(0.03) * Albedo * AO;
+    // if AO texture exists
+    float AO = texture(AoSampler, fragTexCoord).r;
+    vec3 color = Lo * AO;
 
-    vec3 color = ambient + Lo;
+    float3 Emissive = pow(texture(EmissiveSampler, fragTexCoord).rgb, 2.2) * uboPerMaterial.emissiveFactor.rgb * uboPerMaterial.emissiveStrength;
 
-    color = color / (color + vec3(1.0));
+    color += Emissive;
 
     color = pow(color, vec3(1.0 / 2.2));
 

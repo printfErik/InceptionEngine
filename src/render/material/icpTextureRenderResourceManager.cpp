@@ -19,7 +19,7 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 	icpTextureRenderResourceInfo info{};
 	info.m_texId = texId;
 
-	info.m_texImageRes = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::TEXTURE][texId]);
+	info.m_texImageRes = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->GetResourceContainer()[icpResourceType::TEXTURE][texId]);
 
 	if (!info.m_texImageRes)
 	{

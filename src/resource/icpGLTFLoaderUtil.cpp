@@ -369,6 +369,8 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, std::vecto
 		instance->AddVector4Value({ "emissiveFactor", emissiveFactor });
 
 		instance->SetupMaterialRenderResources();
+
+		materials.push_back(std::static_pointer_cast<icpMaterialInstance>(instance));
 	}
 }
 

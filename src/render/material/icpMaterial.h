@@ -70,7 +70,7 @@ class icpMaterialInstance : public icpMaterialTemplate
 public:
 	icpMaterialInstance() = default;
 	icpMaterialInstance(eMaterialShadingModel shading_model);
-	virtual ~icpMaterialInstance() = default;
+	~icpMaterialInstance() override = default ;
 
 	void AllocateDescriptorSets() override;
 	void CreateUniformBuffers() override;

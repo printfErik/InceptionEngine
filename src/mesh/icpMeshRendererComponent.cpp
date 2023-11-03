@@ -73,7 +73,7 @@ void icpMeshRendererComponent::createVertexBuffers()
 {
 	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 
-	const auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH][m_meshResId]);
+	const auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->GetResourceContainer()[icpResourceType::MESH][m_meshResId]);
 
 	auto bufferSize = sizeof(meshRes->m_meshData.m_vertices[0]) * meshRes->m_meshData.m_vertices.size();
 
@@ -120,7 +120,7 @@ void icpMeshRendererComponent::createIndexBuffers()
 {
 	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 
-	const auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->m_resources.m_allResources[icpResourceType::MESH][m_meshResId]);
+	const auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(g_system_container.m_resourceSystem->GetResourceContainer()[icpResourceType::MESH][m_meshResId]);
 	VkDeviceSize bufferSize = sizeof(meshRes->m_meshData.m_vertexIndices[0]) * meshRes->m_meshData.m_vertexIndices.size();
 
 	VkBuffer stagingBuffer{ VK_NULL_HANDLE };
