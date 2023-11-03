@@ -204,5 +204,10 @@ void icpMaterialInstance::SetupMaterialRenderResources()
 	AllocateDescriptorSets();
 }
 
+void icpMaterialInstance::MemCopyToBuffer(void* dst)
+{
+	memcpy(dst, )
+}
+
 
 INCEPTION_END_NAMESPACE

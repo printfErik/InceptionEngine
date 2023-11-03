@@ -19,13 +19,12 @@ struct PointLightRenderResource
 	float quadratic;
 };
 
-layout(set = 1, binding = 0) uniform UBOPerMaterial
+layout(std140, set = 1, binding = 0) uniform UBOPerMaterial
 {
-    float baseColorFactor;
+    vec4 baseColorFactor;
+    vec3 emissiveFactor;
     float metallicFactor;
     float roughnessFactor;
-    vec3 emissiveFactor;
-    float emissiveStrength;
 } uboPerMaterial;
 
 layout(set = 1, binding = 1) uniform sampler2D BaseColorSampler;
@@ -34,7 +33,7 @@ layout(set = 1, binding = 3) uniform sampler2D NormalSampler;
 layout(set = 1, binding = 4) uniform sampler2D AoSampler;
 layout(set = 1, binding = 5) uniform sampler2D EmissiveSampler;
 
-layout(set = 2, binding = 0) uniform PerFrameCB
+layout(std140, set = 2, binding = 0) uniform PerFrameCB
 {
     mat4 viewMatrix;
     mat4 projMatrix;
@@ -112,7 +111,7 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 
 void main() 
 {   
-    vec3 BaseColor = pow(texture(BaseColorSampler, fragTexCoord).rgb, vec3(2.2)) * uboPerMaterial.baseColorFactor;
+    vec3 BaseColor = pow(texture(BaseColorSampler, fragTexCoord).rgb, vec3(2.2)) * uboPerMaterial.baseColorFactor.rgb;
     float Metallic = texture(MetallicRoughnessSampler, fragTexCoord).g * uboPerMaterial.metallicFactor;
     float PerceptualRoughness = texture(MetallicRoughnessSampler, fragTexCoord).b * uboPerMaterial.roughnessFactor;
     
@@ -150,7 +149,7 @@ void main()
     float AO = texture(AoSampler, fragTexCoord).r;
     vec3 color = Lo * AO;
 
-    float3 Emissive = pow(texture(EmissiveSampler, fragTexCoord).rgb, 2.2) * uboPerMaterial.emissiveFactor.rgb * uboPerMaterial.emissiveStrength;
+    float3 Emissive = pow(texture(EmissiveSampler, fragTexCoord).rgb, 2.2) * uboPerMaterial.emissiveFactor.rgb;
 
     color += Emissive;
 

@@ -577,7 +577,6 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 		// todo classify different materialInstance
 		for (auto& material : primitiveRender.m_vMaterials)
 		{
-			float fShininess = 1.f;
 			void* materialData;
 			vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
 			memcpy(materialData, &fShininess, sizeof(float));

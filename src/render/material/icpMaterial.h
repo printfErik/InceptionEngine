@@ -53,7 +53,7 @@ public:
 	virtual void AddScalaValue(const icpScalaMaterialParameterInfo& value) = 0;
 	virtual void AddVector4Value(const icpVector4MaterialParameterInfo& value) = 0;
 	virtual void SetupMaterialRenderResources() = 0;
-
+	virtual void MemCopyToBuffer(void* dst) = 0;
 	virtual uint32_t GetSRVNumber() const = 0;
 
 
@@ -79,7 +79,7 @@ public:
 	void AddVector4Value(const icpVector4MaterialParameterInfo& value) override;
 	void SetupMaterialRenderResources() override;
 	uint64_t ComputeUBOSize();
-
+	void MemCopyToBuffer(void* dst) override;
 	uint32_t GetSRVNumber() const override;
 private:
 	
