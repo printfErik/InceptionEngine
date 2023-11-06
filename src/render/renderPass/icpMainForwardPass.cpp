@@ -717,7 +717,8 @@ void icpMainForwardPass::CreateSceneCB()
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			allocator,
 			m_perFrameCBAllocations[i],
-			m_perFrameCBs[i]
+			m_perFrameCBs[i],
+			m_rhi->GetQueueFamilyIndices()
 		);
 	}
 }
