@@ -29,6 +29,8 @@ icpResourceSystem::~icpResourceSystem()
 
 }
 
+static constexpr uint32_t RESOURCE_LOAD_THREAD_NUM = 1u;
+
 bool icpResourceSystem::Initialize()
 {
 	enki::TaskSchedulerConfig config;
@@ -38,11 +40,19 @@ bool icpResourceSystem::Initialize()
 	m_ekScheduler = std::make_unique<enki::TaskScheduler>();
 	m_ekScheduler->Initialize(config);
 
-	AsyncLoadFileResourceTask asyncFileLoadTask;
-	asyncFileLoadTask.threadNum = m_ekScheduler->GetThreadNum() - 1;
-	asyncFileLoadTask.m_pResourceSystem = shared_from_this();
+	m_run_pinned_task.threadNum = 1;
+	m_run_pinned_task.task_scheduler = m_ekScheduler.get();
+	m_run_pinned_task.m_pResourceSystem = this;
+	m_ekScheduler->AddPinnedTask(&m_run_pinned_task);
 
-	m_ekScheduler->AddPinnedTask(&asyncFileLoadTask);
+	//AsyncLoadFileResourceTask asyncFileLoadTask;
+	//asyncFileLoadTask.threadNum = 1;
+	//asyncFileLoadTask.task_scheduler = m_ekScheduler.get();
+	
+
+	//m_ekScheduler->AddPinnedTask(&asyncFileLoadTask);
+
+	return true;
 }
 
 
@@ -227,15 +237,15 @@ icpResourceContainer& icpResourceSystem::GetResourceContainer()
 	return m_resources;
 }
 
-
-void AsyncLoadFileResourceTask::Execute()
+void RunPinnedTaskLoopTask::Execute()
 {
-	while (m_bExecuting)
-	{
+	printf("This will run on the main thread\n");
+	while (execute) {
+		//task_scheduler->WaitForNewPinnedTasks(); // this thread will 'sleep' until there are new pinned tasks
+		//task_scheduler->RunPinnedTasks();
 		m_pResourceSystem->UpdateSystem();
 	}
 }
-
 
 INCEPTION_END_NAMESPACE
 
