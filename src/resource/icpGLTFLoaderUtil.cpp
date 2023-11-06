@@ -327,46 +327,46 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, std::vecto
 		auto& pbr = material.pbrMetallicRoughness;
 
 		pbr.baseColorTexture.index = pbr.baseColorTexture.index < 0 ? 0 : pbr.baseColorTexture.index;
-		auto instance = materialSystem->createMaterialInstance(eMaterialShadingModel::DEFAULT_LIT);
+		auto instance = materialSystem->createMaterialInstance(eMaterialShadingModel::PBR_LIT);
 
 		auto& baseImage = images[gltfModel.textures[pbr.baseColorTexture.index].source];
-		instance->AddTexture({ "baseColorTexture", baseImage.m_id });
+		instance->AddTexture("baseColorTexture", {baseImage.m_id });
 
 		glm::vec4 baseColorFactor = glm::make_vec4(pbr.baseColorFactor.data());
-		instance->AddVector4Value({"baseColorFactor", baseColorFactor});
+		instance->AddVector4Value("baseColorFactor", {baseColorFactor});
 
 		if (pbr.metallicRoughnessTexture.index >= 0)
 		{
 			auto& image = images[gltfModel.textures[pbr.metallicRoughnessTexture.index].source];
-			instance->AddTexture({ "metallicRoughnessTexture", image.m_id });
+			instance->AddTexture( "metallicRoughnessTexture", { image.m_id });
 		}
 
 		float metallicFactor = static_cast<float>(pbr.metallicFactor);
-		instance->AddScalaValue({ "metallicFactor", metallicFactor });
+		instance->AddScalaValue("metallicFactor", { metallicFactor });
 
 		float roughnessFactor = static_cast<float>(pbr.roughnessFactor);
-		instance->AddScalaValue({ "roughnessFactor", roughnessFactor });
+		instance->AddScalaValue( "roughnessFactor", { roughnessFactor });
 
 		if (material.normalTexture.index >= 0)
 		{
 			auto& image = images[gltfModel.textures[material.normalTexture.index].source];
-			instance->AddTexture({ "normalTexture", image.m_id });
+			instance->AddTexture( "normalTexture", { image.m_id });
 		}
 
 		if (material.occlusionTexture.index >= 0)
 		{
 			auto& image = images[gltfModel.textures[material.occlusionTexture.index].source];
-			instance->AddTexture({ "occlusionTexture", image.m_id });
+			instance->AddTexture( "occlusionTexture", { image.m_id });
 		}
 
 		if (material.emissiveTexture.index >= 0)
 		{
 			auto& image = images[gltfModel.textures[material.emissiveTexture.index].source];
-			instance->AddTexture({ "emissiveTexture", image.m_id });
+			instance->AddTexture( "emissiveTexture", { image.m_id });
 		}
 
 		glm::vec4 emissiveFactor = glm::make_vec4(material.emissiveFactor.data());
-		instance->AddVector4Value({ "emissiveFactor", emissiveFactor });
+		instance->AddVector4Value( "emissiveFactor", { emissiveFactor });
 
 		instance->SetupMaterialRenderResources();
 

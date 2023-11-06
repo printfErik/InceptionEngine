@@ -1,25 +1,27 @@
 #pragma once
 
+#include <map>
+
 #include "../../core/icpMacros.h"
 #include <vulkan/vulkan.hpp>
 
 #include <glm/vec4.hpp>
 #include <vk_mem_alloc.h>
 
+#include "glm/vec3.hpp"
+
 INCEPTION_BEGIN_NAMESPACE
-class icpTextureRenderResourceManager;
+	class icpTextureRenderResourceManager;
 class icpImageResource;
 
 
 struct icpScalaMaterialParameterInfo
 {
-	std::string m_strScalaName;
 	float m_fValue = 0.f;
 };
 
 struct icpVector4MaterialParameterInfo
 {
-	std::string m_strVector4Name;
 	glm::vec4 m_vValue{};
 };
 
@@ -28,7 +30,6 @@ typedef std::string TextureID;
 
 struct icpTextureMaterialParameterInfo
 {
-	std::string m_strTextureType;
 	TextureID m_textureID;
 };
 
@@ -36,7 +37,7 @@ struct icpTextureMaterialParameterInfo
 enum class eMaterialShadingModel
 {
 	UNLIT = 0,
-	DEFAULT_LIT,
+	PBR_LIT,
 	SHADING_MODEL_COUNT
 };
 
@@ -49,13 +50,13 @@ public:
 	virtual ~icpMaterialTemplate() = default;
 	virtual void AllocateDescriptorSets() = 0;
 	virtual void CreateUniformBuffers() = 0;
-	virtual void AddTexture(const icpTextureMaterialParameterInfo& textureInfo) = 0;
-	virtual void AddScalaValue(const icpScalaMaterialParameterInfo& value) = 0;
-	virtual void AddVector4Value(const icpVector4MaterialParameterInfo& value) = 0;
+	virtual void AddTexture(const std::string& key, const icpTextureMaterialParameterInfo& textureInfo) = 0;
+	virtual void AddScalaValue(const std::string& key, const icpScalaMaterialParameterInfo& value) = 0;
+	virtual void AddVector4Value(const std::string& key, const icpVector4MaterialParameterInfo& value) = 0;
 	virtual void SetupMaterialRenderResources() = 0;
-	virtual void MemCopyToBuffer(void* dst) = 0;
+	virtual void MemCopyToBuffer(void* dst, void* src, size_t size) = 0;
 	virtual uint32_t GetSRVNumber() const = 0;
-
+	virtual void* CheckMaterialDataCache() = 0;
 
 	eMaterialShadingModel m_shadingModel = eMaterialShadingModel::SHADING_MODEL_COUNT;
 
@@ -63,6 +64,26 @@ public:
 
 	std::vector<VkBuffer> m_perMaterialUniformBuffers;
 	std::vector<VmaAllocation> m_perMaterialUniformBufferAllocations;
+};
+
+struct alignas(16) ShaderMaterial {
+	glm::vec4 baseColorFactor = glm::vec4(1.f);
+	glm::vec4 emissiveFactor = glm::vec4(0.f);
+	//glm::vec4 diffuseFactor = glm::vec4(1.f);
+	//glm::vec4 specularFactor = glm::vec4(1.f);
+	//float workflow = 0.f;
+	float colorTextureSet = -1;
+	float PhysicalDescriptorTextureSet = -1;
+	float metallicTextureSet = -1;
+	float roughnessTextureSet = -1;
+	float normalTextureSet = -1;
+	float occlusionTextureSet = -1;
+	float emissiveTextureSet = -1;
+	float metallicFactor = 1.f;
+	float roughnessFactor = 1.f;
+	float alphaMask = 0.f;
+	float alphaMaskCutoff = 0.f;
+	//float emissiveStrength = 1.f;
 };
 
 class icpMaterialInstance : public icpMaterialTemplate
@@ -74,84 +95,28 @@ public:
 
 	void AllocateDescriptorSets() override;
 	void CreateUniformBuffers() override;
-	void AddTexture(const icpTextureMaterialParameterInfo& textureInfo) override;
-	void AddScalaValue(const icpScalaMaterialParameterInfo& value) override;
-	void AddVector4Value(const icpVector4MaterialParameterInfo& value) override;
+	void AddTexture(const std::string& key, const icpTextureMaterialParameterInfo& textureInfo) override;
+	void AddScalaValue(const std::string& key, const icpScalaMaterialParameterInfo& value) override;
+	void AddVector4Value(const std::string& key, const icpVector4MaterialParameterInfo& value) override;
 	void SetupMaterialRenderResources() override;
 	uint64_t ComputeUBOSize();
-	void MemCopyToBuffer(void* dst) override;
+	void MemCopyToBuffer(void* dst, void* src, size_t size) override;
 	uint32_t GetSRVNumber() const override;
+	void* CheckMaterialDataCache() override;
+
 private:
-	
-	std::vector<icpScalaMaterialParameterInfo> m_vScalarParameterValues;
-	std::vector<bool> m_vBoolParameterValues;
-	std::vector<icpVector4MaterialParameterInfo> m_vVectorParameterValues;
-	std::vector<icpTextureMaterialParameterInfo> m_vTextureParameterValues;
+
+	void FillPBRDataCache();
+	std::map<std::string, icpScalaMaterialParameterInfo> m_vScalarParameterValues;
+	std::map<std::string, bool> m_vBoolParameterValues;
+	std::map<std::string, icpVector4MaterialParameterInfo> m_vVectorParameterValues;
+	std::map<std::string, icpTextureMaterialParameterInfo> m_vTextureParameterValues;
 
 	uint32_t m_nSRVs = 0;
+
+	ShaderMaterial m_pbrDataCache;
 };
 
-/*
-class icpLambertMaterialInstance : public icpMaterialTemplate
-{
-public:
-	icpLambertMaterialInstance();
-	virtual ~icpLambertMaterialInstance() = default;
-
-	void allocateDescriptorSets() override {}
-	void createUniformBuffers() override {}
-	void addDiffuseTexture(const std::string& texID) override {}
-	void addSpecularTexture(const std::string& texID) override {}
-	void addShininess(float shininess) override {}
-	void setupMaterialRenderResources() override {}
-
-private:
-	std::vector<std::string> m_texRenderResourceIDs;
-};
-
-class icpBlinnPhongMaterialInstance : public icpMaterialTemplate
-{
-public:
-	struct UBOPerMaterial
-	{
-		float shininess = 1.f;
-	};
-
-	icpBlinnPhongMaterialInstance();
-	virtual ~icpBlinnPhongMaterialInstance() = default;
-
-	void allocateDescriptorSets() override;
-	void createUniformBuffers() override;
-	void addDiffuseTexture(const std::string& texID) override;
-	void addSpecularTexture(const std::string& texID) override;
-	void addShininess(float shininess) override;
-	void setupMaterialRenderResources() override;
-private:
-	std::vector<std::string> m_texRenderResourceIDs;
-
-	UBOPerMaterial m_ubo{};
-
-};
-
-class icpNullMaterialInstance : public icpMaterialTemplate
-{
-public:
-	icpNullMaterialInstance();
-	virtual ~icpNullMaterialInstance() = default;
-
-	void allocateDescriptorSets() override {}
-	void createUniformBuffers() override {}
-	void addDiffuseTexture(const std::string& texID) override {}
-	void addSpecularTexture(const std::string& texID) override {}
-	void addShininess(float shininess) override {}
-	void setupMaterialRenderResources() override {}
-};
-
-class icpPBRMaterialInstance
-{
-	
-};
-*/
 class icpMaterialSubSystem
 {
 public:

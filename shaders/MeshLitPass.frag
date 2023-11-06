@@ -22,16 +22,27 @@ struct PointLightRenderResource
 layout(std140, set = 1, binding = 0) uniform UBOPerMaterial
 {
     vec4 baseColorFactor;
-    vec3 emissiveFactor;
-    float metallicFactor;
-    float roughnessFactor;
+    vec4 emissiveFactor;
+	float colorTextureSet;
+	float PhysicalDescriptorTextureSet;
+    float metallicTextureSet;
+    float roughnessTextureSet;
+	float normalTextureSet;
+	float occlusionTextureSet;
+	float emissiveTextureSet;
+	float metallicFactor;
+	float roughnessFactor;
+	float alphaMask;
+	float alphaMaskCutoff;
 } uboPerMaterial;
 
 layout(set = 1, binding = 1) uniform sampler2D BaseColorSampler;
 layout(set = 1, binding = 2) uniform sampler2D MetallicRoughnessSampler;
-layout(set = 1, binding = 3) uniform sampler2D NormalSampler;
-layout(set = 1, binding = 4) uniform sampler2D AoSampler;
-layout(set = 1, binding = 5) uniform sampler2D EmissiveSampler;
+layout(set = 1, binding = 3) uniform sampler2D MetallicSampler;
+layout(set = 1, binding = 4) uniform sampler2D RoughnessSampler;
+layout(set = 1, binding = 5) uniform sampler2D NormalSampler;
+layout(set = 1, binding = 6) uniform sampler2D AoSampler;
+layout(set = 1, binding = 7) uniform sampler2D EmissiveSampler;
 
 layout(std140, set = 2, binding = 0) uniform PerFrameCB
 {
@@ -111,16 +122,28 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 
 void main() 
 {   
-    vec3 BaseColor = pow(texture(BaseColorSampler, fragTexCoord).rgb, vec3(2.2)) * uboPerMaterial.baseColorFactor.rgb;
-    float Metallic = texture(MetallicRoughnessSampler, fragTexCoord).g * uboPerMaterial.metallicFactor;
-    float PerceptualRoughness = texture(MetallicRoughnessSampler, fragTexCoord).b * uboPerMaterial.roughnessFactor;
+    vec3 BaseColor = uboPerMaterial.colorTextureSet > -1 ? 
+        pow(texture(BaseColorSampler, fragTexCoord).rgb, vec3(2.2)) * uboPerMaterial.baseColorFactor.rgb : 
+        uboPerMaterial.baseColorFactor.rgb;
+
+    float Metallic = uboPerMaterial.PhysicalDescriptorTextureSet > -1 ?
+        texture(MetallicRoughnessSampler, fragTexCoord).g * uboPerMaterial.metallicFactor :
+        uboPerMaterial.metallicTextureSet > -1 ? 
+            texture(MetallicSampler, fragTexCoord).r * uboPerMaterial.metallicFactor :
+            uboPerMaterial.metallicFactor;
+
+    float PerceptualRoughness = uboPerMaterial.PhysicalDescriptorTextureSet > -1 ?
+        texture(MetallicRoughnessSampler, fragTexCoord).b * uboPerMaterial.roughnessFactor :
+        uboPerMaterial.roughnessTextureSet > -1 ? 
+            texture(RoughnessSampler, fragTexCoord).r * uboPerMaterial.roughnessFactor :
+            uboPerMaterial.roughnessFactor;
     
     float AlphaRoughness = PerceptualRoughness * PerceptualRoughness;
 
     vec3 F0 = vec3(0.04);
     vec3 SpecularColor = mix(F0, BaseColor, Metallic);
 
-    vec3 N = getNormalFromMap();
+    vec3 N = uboPerMaterial.normalTextureSet > -1 ? getNormalFromMap() : normalize(fragNormal);
     vec3 V = normalize(uboPerFrame.camPos - worldPos);
     vec3 L = normalize(uboPerFrame.directionalLit.direction.xyz);
     vec3 H = normalize(V + L);
@@ -131,8 +154,8 @@ void main()
     float LdotH = clamp(dot(L, H), 0.0, 1.0);
     float VdotH = clamp(dot(V, H), 0.0, 1.0);
     
-    float NDF = DistributionGGX(N, H, Roughness);
-    float G = GeometrySmith(N, V, L, Roughness);
+    float NDF = DistributionGGX(N, H, AlphaRoughness);
+    float G = GeometrySmith(N, V, L, AlphaRoughness);
     vec3 F = fresnelSchlick(VdotH, SpecularColor);
 
     vec3 numerator = NDF * G * F; 
@@ -146,10 +169,13 @@ void main()
     vec3 Lo = (DiffuseContrib + SpecularContrib) * radiance * NdotL;
 
     // if AO texture exists
-    float AO = texture(AoSampler, fragTexCoord).r;
+    float AO = uboPerMaterial.occlusionTextureSet > -1 ? 
+        texture(AoSampler, fragTexCoord).r : 1.f;
     vec3 color = Lo * AO;
 
-    float3 Emissive = pow(texture(EmissiveSampler, fragTexCoord).rgb, 2.2) * uboPerMaterial.emissiveFactor.rgb;
+    vec3 Emissive = uboPerMaterial.emissiveTextureSet > -1 ? 
+        pow(texture(EmissiveSampler, fragTexCoord).rgb, vec3(2.2)) * uboPerMaterial.emissiveFactor.rgb :
+        uboPerMaterial.emissiveFactor.rgb;
 
     color += Emissive;
 

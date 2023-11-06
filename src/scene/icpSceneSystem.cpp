@@ -305,12 +305,8 @@ void icpSceneSystem::createMeshEntityFromResource(std::shared_ptr<icpResourceBas
 
 	mesh.prepareRenderResourceForMesh();
 	auto material = mesh.addMaterial(eMaterialShadingModel::UNLIT);
-	//material->addDiffuseTexture(meshRes->m_id + "_diffuse");
-	//material->addSpecularTexture(meshRes->m_id + "_specular");
 
-	material->AddTexture({ "baseColorTexture", meshRes->m_id });
-
-	material->AddScalaValue({"Shininess", 0.1f});
+	material->AddTexture("baseColorTexture",{ meshRes->m_id });
 	material->SetupMaterialRenderResources();
 }
 
@@ -392,13 +388,12 @@ void icpSceneSystem::LoadDefaultScene()
 		sphere.CreateUniformBuffers();
 		sphere.AllocateDescriptorSets();
 
-		auto&& material = sphere.AddMaterial(eMaterialShadingModel::DEFAULT_LIT);
+		auto&& material = sphere.AddMaterial(eMaterialShadingModel::PBR_LIT);
 
-		material->AddTexture({ "baseColorTexture","rustediron2_basecolor" });
-		material->AddTexture({ "metallicTexture", "rustediron2_metallic" });
-		material->AddTexture({  "normalTexture", "rustediron2_normal" });
-		material->AddTexture({ "roughnessTexture","rustediron2_roughness" });
-		material->AddScalaValue({ "Shininess", 0.1f });
+		material->AddTexture("baseColorTexture", { "rustediron2_basecolor" });
+		material->AddTexture("metallicTexture", { "rustediron2_metallic" });
+		material->AddTexture("normalTexture", { "rustediron2_normal" });
+		material->AddTexture("roughnessTexture", { "rustediron2_roughness" });
 		material->SetupMaterialRenderResources();
 	}
 	

@@ -546,10 +546,10 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 		// todo classify different materialInstance
 		for (auto& material : meshRenderer.m_materials)
 		{
-			float fShininess = 1.f;
+			//float fShininess = 1.f;
 			void* materialData;
 			vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
-			memcpy(materialData, &fShininess, sizeof(float));
+			memcpy(materialData, material->CheckMaterialDataCache(), sizeof(ShaderMaterial));
 			vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
 		}
 	}
@@ -579,7 +579,7 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 		{
 			void* materialData;
 			vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
-			memcpy(materialData, &fShininess, sizeof(float));
+			memcpy(materialData, material->CheckMaterialDataCache(), sizeof(ShaderMaterial));
 			vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
 		}
 	}

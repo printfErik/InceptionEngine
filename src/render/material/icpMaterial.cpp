@@ -81,7 +81,7 @@ void icpMaterialInstance::AllocateDescriptorSets()
 	std::vector<icpTextureRenderResourceInfo> imageInfos;
 	for (auto& texture : m_vTextureParameterValues)
 	{
-		auto& info = texRenderResMgr->m_textureRenderResources[texture.m_textureID];
+		auto& info = texRenderResMgr->m_textureRenderResources[texture.second.m_textureID];
 
 		icpTextureRenderResourceInfo imageInfo{};
 		imageInfo.m_texImageView = info.m_texImageView;
@@ -117,42 +117,19 @@ std::shared_ptr<icpMaterialTemplate> icpMaterialSubSystem::createMaterialInstanc
 	return instance;
 }
 
-/*
-void icpMaterialInstance::addDiffuseTexture(const std::string& texID)
+
+void icpMaterialInstance::AddScalaValue(const std::string& key, const icpScalaMaterialParameterInfo& value)
 {
-	auto texRendeResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
-	if (texRendeResMgr->m_textureRenderResurces.find(texID) == texRendeResMgr->m_textureRenderResurces.end() 
-		|| texRendeResMgr->m_textureRenderResurces[texID].m_state == eTextureRenderResouceState::UNINITIALIZED)
-	{
-		texRendeResMgr->setupTextureRenderResources(texID);
-	}
-	m_textureParameterValues.push_back(texID);
+	m_vScalarParameterValues[key] = value;
 }
 
-void icpMaterialInstance::addSpecularTexture(const std::string& texID)
+void icpMaterialInstance::AddVector4Value(const std::string& key, const icpVector4MaterialParameterInfo& value)
 {
-	auto texRendeResMgr = g_system_container.m_renderSystem->m_textureRenderResourceManager;
-	if (texRendeResMgr->m_textureRenderResurces.find(texID) == texRendeResMgr->m_textureRenderResurces.end()
-		|| texRendeResMgr->m_textureRenderResurces[texID].m_state == eTextureRenderResouceState::UNINITIALIZED)
-	{
-		texRendeResMgr->setupTextureRenderResources(texID);
-	}
-	m_textureParameterValues.push_back(texID);
-}
-*/
-
-void icpMaterialInstance::AddScalaValue(const icpScalaMaterialParameterInfo& value)
-{
-	m_vScalarParameterValues.push_back(value);
-}
-
-void icpMaterialInstance::AddVector4Value(const icpVector4MaterialParameterInfo& value)
-{
-	m_vVectorParameterValues.push_back(value);
+	m_vVectorParameterValues[key] = value;
 }
 
 
-void icpMaterialInstance::AddTexture(const icpTextureMaterialParameterInfo& textureInfo)
+void icpMaterialInstance::AddTexture(const std::string& key, const icpTextureMaterialParameterInfo& textureInfo)
 {
 	auto texRendeResMgr = g_system_container.m_renderSystem->GetTextureRenderResourceManager();
 
@@ -168,7 +145,7 @@ void icpMaterialInstance::AddTexture(const icpTextureMaterialParameterInfo& text
 		texRendeResMgr->setupTextureRenderResources(texID);
 	}
 
-	m_vTextureParameterValues.push_back(textureInfo);
+	m_vTextureParameterValues[key] = textureInfo;
 }
 
 
@@ -204,9 +181,50 @@ void icpMaterialInstance::SetupMaterialRenderResources()
 	AllocateDescriptorSets();
 }
 
-void icpMaterialInstance::MemCopyToBuffer(void* dst)
+void icpMaterialInstance::MemCopyToBuffer(void* dst, void* src, size_t size)
 {
-	memcpy(dst, )
+	memcpy(dst, src, size);
+}
+
+void* icpMaterialInstance::CheckMaterialDataCache()
+{
+	switch (m_shadingModel)
+	{
+	case eMaterialShadingModel::PBR_LIT:
+		{
+		FillPBRDataCache();
+		return &m_pbrDataCache;
+		}
+	case eMaterialShadingModel::UNLIT:
+		{
+		break;
+		}
+	default:
+		{
+		break;
+		}
+	}
+}
+
+void icpMaterialInstance::FillPBRDataCache()
+{
+	m_pbrDataCache.baseColorFactor = m_vVectorParameterValues.contains("baseColorFactor") ? m_vVectorParameterValues["baseColorFactor"].m_vValue : m_pbrDataCache.baseColorFactor;
+	m_pbrDataCache.emissiveFactor = m_vVectorParameterValues.contains("emissiveFactor") ? m_vVectorParameterValues["emissiveFactor"].m_vValue : m_pbrDataCache.emissiveFactor;
+	//m_pbrDataCache.diffuseFactor = m_vVectorParameterValues.contains("diffuseFactor") ? m_vScalarParameterValues["baseColorFactor"].m_fValue : m_pbrDataCache.baseColorFactor;
+	//m_pbrDataCache.specularFactor = m_vVectorParameterValues.contains("specularFactor") ? m_vScalarParameterValues["baseColorFactor"].m_fValue : m_pbrDataCache.baseColorFactor;
+	//m_pbrDataCache.workflow = m_vScalarParameterValues.contains("baseColorFactor") ? m_vScalarParameterValues["baseColorFactor"].m_fValue : m_pbrDataCache.baseColorFactor;
+	m_pbrDataCache.colorTextureSet = m_vTextureParameterValues.contains("baseColorTexture") ? 1.f : m_pbrDataCache.colorTextureSet;
+	m_pbrDataCache.PhysicalDescriptorTextureSet = m_vTextureParameterValues.contains("metallicRoughnessTexture") ? 1.f : m_pbrDataCache.PhysicalDescriptorTextureSet;
+	m_pbrDataCache.metallicTextureSet = m_vTextureParameterValues.contains("metallicTextureSet") ? 1.f : m_pbrDataCache.metallicTextureSet;
+	m_pbrDataCache.roughnessTextureSet = m_vTextureParameterValues.contains("roughnessTextureSet") ? 1.f : m_pbrDataCache.roughnessTextureSet;
+	m_pbrDataCache.normalTextureSet = m_vTextureParameterValues.contains("normalTexture") ? 1.f : m_pbrDataCache.normalTextureSet;
+	m_pbrDataCache.occlusionTextureSet = m_vTextureParameterValues.contains("occlusionTexture") ? 1.f : m_pbrDataCache.occlusionTextureSet;
+	m_pbrDataCache.emissiveTextureSet = m_vTextureParameterValues.contains("emissiveTexture") ? 1.f : m_pbrDataCache.emissiveTextureSet;
+	m_pbrDataCache.metallicFactor = m_vScalarParameterValues.contains("metallicFactor") ? m_vScalarParameterValues["metallicFactor"].m_fValue : m_pbrDataCache.metallicFactor;
+	m_pbrDataCache.roughnessFactor = m_vScalarParameterValues.contains("roughnessFactor") ? m_vScalarParameterValues["roughnessFactor"].m_fValue : m_pbrDataCache.roughnessFactor;
+	m_pbrDataCache.alphaMask = m_vScalarParameterValues.contains("alphaMask") ? m_vScalarParameterValues["alphaMask"].m_fValue : m_pbrDataCache.alphaMask;
+	m_pbrDataCache.alphaMaskCutoff = m_vScalarParameterValues.contains("alphaMaskCutoff") ? m_vScalarParameterValues["alphaMaskCutoff"].m_fValue : m_pbrDataCache.alphaMaskCutoff;
+	//m_pbrDataCache.emissiveStrength = m_vScalarParameterValues.contains("baseColorFactor") ? m_vScalarParameterValues["baseColorFactor"].m_fValue : m_pbrDataCache.baseColorFactor;
 }
 
 
