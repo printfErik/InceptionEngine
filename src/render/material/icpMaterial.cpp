@@ -71,9 +71,9 @@ void icpMaterialInstance::AllocateDescriptorSets()
 
 			bufferInfos.push_back(bufferInfo);
 		}
-	}
 
-	creation.SetUniformBuffer(0, bufferInfos);
+		creation.SetUniformBuffer(0, bufferInfos);
+	}
 
 	std::vector<std::vector<icpTextureRenderResourceInfo>> imgInfosAllFrames;
 	auto texRenderResMgr = g_system_container.m_renderSystem->GetTextureRenderResourceManager();
@@ -98,7 +98,7 @@ void icpMaterialInstance::AllocateDescriptorSets()
 
 	for (uint32_t i = 0; i < imgInfosAllFrames.size(); i++)
 	{
-		creation.SetCombinedImageSampler(i + 1u, imgInfosAllFrames[i]);
+		creation.SetCombinedImageSampler(i + UBOSize > 0 ? 1 : 0, imgInfosAllFrames[i]);
 	}
 
 	vulkanRHI->CreateDescriptorSet(creation, m_perMaterialDSs);
@@ -151,23 +151,7 @@ void icpMaterialInstance::AddTexture(const std::string& key, const icpTextureMat
 
 uint64_t icpMaterialInstance::ComputeUBOSize()
 {
-	uint64_t totalSize = 0;
-	for (auto bVal : m_vBoolParameterValues)
-	{
-		totalSize += sizeof(float);
-	}
-
-	for (auto fVal : m_vScalarParameterValues)
-	{
-		totalSize += sizeof(float);
-	}
-
-	for (auto vVal : m_vVectorParameterValues)
-	{
-		totalSize += sizeof(glm::vec4);
-	}
-
-	return totalSize;
+	return sizeof(ShaderMaterial);
 }
 
 uint32_t icpMaterialInstance::GetSRVNumber() const

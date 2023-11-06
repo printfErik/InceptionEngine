@@ -17,13 +17,6 @@ struct RunPinnedTaskLoopTask : public enki::IPinnedTask
 	bool                    execute = true;
 }; // struct RunPinnedTaskLoopTask
 
-struct AsyncLoadFileResourceTask : public enki::IPinnedTask
-{
-
-	
-	enki::TaskScheduler* task_scheduler = nullptr;
-	bool m_bExecuting = true;
-};
 
 typedef std::map<icpResourceType, std::map<std::string, std::shared_ptr<icpResourceBase>>> icpResourceContainer;
 

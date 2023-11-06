@@ -25,9 +25,21 @@ layout(set = 0, binding = 0) uniform UBOMeshRenderResource
     mat4 normalMatrix;
 } uboPerMesh;
 
-layout(set = 1, binding = 0) uniform UBOPerMaterial
+layout(std140, set = 1, binding = 0) uniform UBOPerMaterial
 {
-    float shininess;
+    vec4 baseColorFactor;
+    vec4 emissiveFactor;
+	float colorTextureSet;
+	float PhysicalDescriptorTextureSet;
+    float metallicTextureSet;
+    float roughnessTextureSet;
+	float normalTextureSet;
+	float occlusionTextureSet;
+	float emissiveTextureSet;
+	float metallicFactor;
+	float roughnessFactor;
+	float alphaMask;
+	float alphaMaskCutoff;
 } uboPerMaterial;
 
 layout(set = 2, binding = 0) uniform PerFrameCB
