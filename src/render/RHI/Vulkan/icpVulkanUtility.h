@@ -15,7 +15,9 @@ public:
 		VkBufferUsageFlags usage,
 		VmaAllocator& allocator,
 		VmaAllocation& allocation,
-		VkBuffer& buffer);
+		VkBuffer& buffer,
+		uint32_t queueFamilyIndexCount = 1,
+		uint32_t* queueFamilyIndices = nullptr);
 
 	static uint32_t findMemoryType(
 		uint32_t typeFilter,

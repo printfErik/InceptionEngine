@@ -117,7 +117,10 @@ void icpPrimitiveRendererComponent::CreateVertexBuffers()
 	VkBuffer stagingBuffer;
 	VmaAllocation stagingBufferAllocation;
 
-	VkSharingMode mode = gpuDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == gpuDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+	VkSharingMode mode = 
+		gpuDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == gpuDevice->GetQueueFamilyIndices().m_transferFamily.value()
+			? VK_SHARING_MODE_EXCLUSIVE
+			: VK_SHARING_MODE_CONCURRENT;
 
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,

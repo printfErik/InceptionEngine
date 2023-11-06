@@ -28,14 +28,17 @@ void icpVulkanUtility::CreateGPUBuffer(
 	VkBufferUsageFlags usage,
 	VmaAllocator& allocator,
 	VmaAllocation& allocation,
-	VkBuffer& buffer)
+	VkBuffer& buffer,
+	uint32_t queueFamilyIndexCount,
+	uint32_t* queueFamilyIndices)
 {
 	VkBufferCreateInfo bufferInfo{};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	bufferInfo.size = size;
 	bufferInfo.sharingMode = sharingMode;
 	bufferInfo.usage = usage;
-
+	bufferInfo.queueFamilyIndexCount = queueFamilyIndexCount;
+	bufferInfo.pQueueFamilyIndices = queueFamilyIndices;
 
 	/*
 	if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
