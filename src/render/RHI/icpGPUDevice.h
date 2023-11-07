@@ -57,6 +57,7 @@ public:
 	virtual VkCommandPool& GetTransferCommandPool() = 0;
 	virtual VkDescriptorPool& GetDescriptorPool() = 0;
 	virtual VkInstance& GetInstance() = 0;
+	virtual std::vector<uint32_t>& GetQueueFamilyIndicesVector() = 0;
 
 	virtual void WaitForFence(uint32_t _currentFrame) = 0;
 	virtual uint32_t AcquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result) = 0;

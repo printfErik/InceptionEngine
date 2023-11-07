@@ -18,6 +18,8 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
+static constexpr uint32_t PBR_MATERIAL_TEXTURE_NUMBER = 7;
+
 icpMainForwardPass::~icpMainForwardPass()
 {
 	
@@ -585,7 +587,6 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 	}
 }
 
-
 void icpMainForwardPass::CreateDescriptorSetLayouts()
 {
 	m_DSLayouts.resize(eMainForwardPassDSType::LAYOUT_TYPE_COUNT);
@@ -624,6 +625,11 @@ void icpMainForwardPass::CreateDescriptorSetLayouts()
 		perMaterialUBOBinding.pImmutableSamplers = nullptr;
 		perMaterialUBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 		m_DSLayouts[eMainForwardPassDSType::PER_MATERIAL].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+
+		for (int i = 0; i < PBR_MATERIAL_TEXTURE_NUMBER; i++)
+		{
+			
+		}
 
 		// set 1, binding 1
 		VkDescriptorSetLayoutBinding perMaterialDiffuseSamplerLayoutBinding{};
@@ -708,6 +714,7 @@ void icpMainForwardPass::CreateSceneCB()
 	m_perFrameCBAllocations.resize(MAX_FRAMES_IN_FLIGHT);
 
 	auto allocator = m_rhi->GetVmaAllocator();
+	auto& queueIndices = m_rhi->GetQueueFamilyIndicesVector();
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -718,7 +725,8 @@ void icpMainForwardPass::CreateSceneCB()
 			allocator,
 			m_perFrameCBAllocations[i],
 			m_perFrameCBs[i],
-			m_rhi->GetQueueFamilyIndices()
+			queueIndices.size(),
+			queueIndices.data()
 		);
 	}
 }

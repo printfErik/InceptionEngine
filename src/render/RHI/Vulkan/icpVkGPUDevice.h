@@ -76,6 +76,8 @@ public:
 	GLFWwindow* GetWindow() override;
 
 	VkImageView GetDepthImageView() override;
+
+	std::vector<uint32_t>& GetQueueFamilyIndicesVector() override;
 	
 private:
 	void createInstance();
@@ -119,10 +121,14 @@ public:
 
 	VkPhysicalDevice m_physicalDevice{ VK_NULL_HANDLE };
 	QueueFamilyIndices m_queueIndices;
+
+	std::vector<uint32_t> m_queueFamilyIndices;
+
 	VkDevice m_device{ VK_NULL_HANDLE };
 	VkQueue  m_graphicsQueue{ VK_NULL_HANDLE };
 	VkQueue m_presentQueue{ VK_NULL_HANDLE };
 	VkQueue m_transferQueue{ VK_NULL_HANDLE };
+	VkQueue m_computeQueue{ VK_NULL_HANDLE };
 
 	VkSwapchainKHR m_swapChain{ VK_NULL_HANDLE };
 	std::vector<VkImage> m_swapChainImages;

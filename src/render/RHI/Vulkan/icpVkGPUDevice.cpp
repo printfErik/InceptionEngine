@@ -387,15 +387,16 @@ QueueFamilyIndices icpVkGPUDevice::findQueueFamilies(VkPhysicalDevice device)
 			indices.m_transferFamily = i;
 		}
 
-		VkBool32 isPresentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &isPresentSupport);
-		if (isPresentSupport)
-		{
-			indices.m_presentFamily = i;
-		}
-
 		i++;
 	}
+
+	VkBool32 isPresentSupport = false;
+	vkGetPhysicalDeviceSurfaceSupportKHR(device, indices.m_graphicsFamily.value(), m_surface, &isPresentSupport);
+	if (isPresentSupport)
+	{
+		indices.m_presentFamily = indices.m_graphicsFamily.value();
+	}
+
 	return indices;
 }
 
@@ -404,7 +405,12 @@ void icpVkGPUDevice::createLogicalDevice()
 	m_queueIndices = findQueueFamilies(m_physicalDevice);
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> queueFamilies = { m_queueIndices.m_graphicsFamily.value(), m_queueIndices.m_presentFamily.value(), m_queueIndices.m_transferFamily.value()};
+	std::set<uint32_t> queueFamilies = {
+		m_queueIndices.m_graphicsFamily.value(),
+		m_queueIndices.m_presentFamily.value(),
+		m_queueIndices.m_transferFamily.value(),
+		m_queueIndices.m_computeFamily.value()
+	};
 
 	float queuePriority = 1.0f;
 	for (uint32_t queueFamily : queueFamilies)
@@ -440,6 +446,12 @@ void icpVkGPUDevice::createLogicalDevice()
 	vkGetDeviceQueue(m_device, m_queueIndices.m_graphicsFamily.value(), 0, &m_graphicsQueue);
 	vkGetDeviceQueue(m_device, m_queueIndices.m_presentFamily.value(), 0, &m_presentQueue);
 	vkGetDeviceQueue(m_device, m_queueIndices.m_transferFamily.value(), 0, &m_transferQueue);
+	vkGetDeviceQueue(m_device, m_queueIndices.m_computeFamily.value(), 0, &m_computeQueue);
+
+	for (auto& index : queueFamilies)
+	{
+		m_queueFamilyIndices.push_back(index);
+	}
 }
 
 SwapChainSupportDetails icpVkGPUDevice::querySwapChainSupport(VkPhysicalDevice device)
@@ -542,13 +554,19 @@ void icpVkGPUDevice::CreateSwapChain()
 	createInfo.imageArrayLayers = 1;
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-	uint32_t queueFamilyIndices[] = { m_queueIndices.m_graphicsFamily.value(),
-		m_queueIndices.m_presentFamily.value(),
-		m_queueIndices.m_transferFamily.value()};
+	uint32_t queueFamilyIndices[] = 
+	{
+		m_queueIndices.m_graphicsFamily.value(),
+		m_queueIndices.m_transferFamily.value(),
+		m_queueIndices.m_computeFamily.value()
+	};
 
-	std::set<uint32_t> queueFamilyIndexSet = { m_queueIndices.m_graphicsFamily.value(),
-		m_queueIndices.m_presentFamily.value(),
-		m_queueIndices.m_transferFamily.value() };
+	std::set<uint32_t> queueFamilyIndexSet = 
+	{
+		m_queueIndices.m_graphicsFamily.value(),
+		m_queueIndices.m_transferFamily.value(),
+		m_queueIndices.m_computeFamily.value()
+	};
 	if (queueFamilyIndexSet.size() == 1)
 	{
 		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -883,4 +901,11 @@ std::vector<VkSemaphore>& icpVkGPUDevice::GetImageAvailableForRenderingSemaphore
 {
 	return m_imageAvailableForRenderingSemaphores;
 }
+
+std::vector<uint32_t>& icpVkGPUDevice::GetQueueFamilyIndicesVector()
+{
+	return m_queueFamilyIndices;
+}
+
+
 INCEPTION_END_NAMESPACE

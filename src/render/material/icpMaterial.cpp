@@ -32,6 +32,8 @@ void icpMaterialInstance::CreateUniformBuffers()
 
 		VkSharingMode mode = vulkanRHI->GetQueueFamilyIndices().m_graphicsFamily.value() == vulkanRHI->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
+		auto& indicesVec = vulkanRHI->GetQueueFamilyIndicesVector();
+
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			icpVulkanUtility::CreateGPUBuffer(
@@ -40,7 +42,9 @@ void icpMaterialInstance::CreateUniformBuffers()
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				vulkanRHI->GetVmaAllocator(),
 				m_perMaterialUniformBufferAllocations[i],
-				m_perMaterialUniformBuffers[i]
+				m_perMaterialUniformBuffers[i],
+				indicesVec.size(),
+				indicesVec.data()
 			);
 		}
 	}

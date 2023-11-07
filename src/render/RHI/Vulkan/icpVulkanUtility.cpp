@@ -40,29 +40,6 @@ void icpVulkanUtility::CreateGPUBuffer(
 	bufferInfo.queueFamilyIndexCount = queueFamilyIndexCount;
 	bufferInfo.pQueueFamilyIndices = queueFamilyIndices;
 
-	/*
-	if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create vertex buffer!");
-	}
-
-	VkMemoryRequirements memRequirement{};
-
-	vkGetBufferMemoryRequirements(device, buffer, &memRequirement);
-
-	VkMemoryAllocateInfo allocateInfo{};
-	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocateInfo.allocationSize = memRequirement.size;
-	allocateInfo.memoryTypeIndex = findMemoryType(memRequirement.memoryTypeBits, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, physicalDevice);
-
-	if (vkAllocateMemory(device, &allocateInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate memory!");
-	}
-
-	vkBindBufferMemory(device, buffer, bufferMemory, 0);
-	*/
-
 	VmaAllocationCreateInfo vma_create_info{};
 	vma_create_info.usage = VMA_MEMORY_USAGE_AUTO;
 	vma_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
@@ -96,32 +73,6 @@ void icpVulkanUtility::CreateGPUImage(
 	imageInfo.usage = usage;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-
-
-	/*
-	if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create image");
-	}
-
-	VkMemoryRequirements memRequirement{};
-
-	vkGetImageMemoryRequirements(device, image, &memRequirement);
-
-	VkMemoryAllocateInfo allocateInfo{};
-	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocateInfo.allocationSize = memRequirement.size;
-	allocateInfo.memoryTypeIndex = icpVulkanUtility::findMemoryType(
-		memRequirement.memoryTypeBits,
-		properties, physicalDevice);
-
-	if (vkAllocateMemory(device, &allocateInfo, nullptr, &imageMem) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate memory!");
-	}
-	
-	vkBindImageMemory(device, image, imageMem, 0);
-	*/
 
 	VmaAllocationCreateInfo memory_info{};
 	memory_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;

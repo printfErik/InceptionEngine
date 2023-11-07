@@ -29,13 +29,17 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 	VkBuffer stagingBuffer;
 	VmaAllocation stagingBufferAllocation;
 
+	auto& queueIndices = m_rhi->GetQueueFamilyIndicesVector();
+
 	icpVulkanUtility::CreateGPUBuffer(
 		info.m_texImageRes->getImgBuffer().size(),
-		VK_SHARING_MODE_EXCLUSIVE,
+		m_rhi->GetQueueFamilyIndices().m_graphicsFamily.value() == m_rhi->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		m_rhi->GetVmaAllocator(),
 		stagingBufferAllocation,
-		stagingBuffer
+		stagingBuffer,
+		queueIndices.size(),
+		queueIndices.data()
 	);
 
 	void* data;

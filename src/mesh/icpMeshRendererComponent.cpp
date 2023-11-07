@@ -55,6 +55,7 @@ void icpMeshRendererComponent::createUniformBuffers()
 	m_perMeshUniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkSharingMode mode = vulkanRHI->GetQueueFamilyIndices().m_graphicsFamily.value() == vulkanRHI->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+	auto& queueIndices = vulkanRHI->GetQueueFamilyIndicesVector();
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -64,7 +65,9 @@ void icpMeshRendererComponent::createUniformBuffers()
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			vulkanRHI->GetVmaAllocator(),
 			m_perMeshUniformBufferAllocations[i],
-			m_perMeshUniformBuffers[i]
+			m_perMeshUniformBuffers[i],
+			queueIndices.size(),
+			queueIndices.data()
 		);
 	}
 }
@@ -81,14 +84,16 @@ void icpMeshRendererComponent::createVertexBuffers()
 	VmaAllocation stagingBufferAllocation{ VK_NULL_HANDLE };
 
 	VkSharingMode mode = vulkanRHI->GetQueueFamilyIndices().m_graphicsFamily.value() == vulkanRHI->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
-
+	auto& queueIndices = vulkanRHI->GetQueueFamilyIndicesVector();
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		vulkanRHI->GetVmaAllocator(),
 		stagingBufferAllocation,
-		stagingBuffer
+		stagingBuffer,
+		queueIndices.size(),
+		queueIndices.data()
 	);
 
 	void* data;
@@ -102,7 +107,9 @@ void icpMeshRendererComponent::createVertexBuffers()
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		vulkanRHI->GetVmaAllocator(),
 		m_vertexBufferAllocation,
-		m_vertexBuffer
+		m_vertexBuffer,
+		queueIndices.size(),
+		queueIndices.data()
 	);
 
 	icpVulkanUtility::copyBuffer(stagingBuffer,
@@ -127,14 +134,16 @@ void icpMeshRendererComponent::createIndexBuffers()
 	VmaAllocation stagingBufferAllocation{ VK_NULL_HANDLE };
 
 	VkSharingMode mode = vulkanRHI->GetQueueFamilyIndices().m_graphicsFamily.value() == vulkanRHI->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
-
+	auto& queueIndices = vulkanRHI->GetQueueFamilyIndicesVector();
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		vulkanRHI->GetVmaAllocator(),
 		stagingBufferAllocation,
-		stagingBuffer
+		stagingBuffer,
+		queueIndices.size(),
+		queueIndices.data()
 	);
 
 	void* data;
@@ -148,7 +157,9 @@ void icpMeshRendererComponent::createIndexBuffers()
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		vulkanRHI->GetVmaAllocator(),
 		m_indexBufferAllocation,
-		m_indexBuffer
+		m_indexBuffer,
+		queueIndices.size(),
+		queueIndices.data()
 	);
 
 	icpVulkanUtility::copyBuffer(stagingBuffer,

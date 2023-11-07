@@ -122,13 +122,17 @@ void icpPrimitiveRendererComponent::CreateVertexBuffers()
 			? VK_SHARING_MODE_EXCLUSIVE
 			: VK_SHARING_MODE_CONCURRENT;
 
+	auto& queueIndices = gpuDevice->GetQueueFamilyIndicesVector();
+
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
 		mode,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		gpuDevice->GetVmaAllocator(),
 		stagingBufferAllocation,
-		stagingBuffer
+		stagingBuffer,
+		queueIndices.size(),
+		queueIndices.data()
 	);
 
 	void* data;
@@ -142,7 +146,9 @@ void icpPrimitiveRendererComponent::CreateVertexBuffers()
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		gpuDevice->GetVmaAllocator(),
 		m_vertexBufferAllocation,
-		m_vertexBuffer
+		m_vertexBuffer,
+		queueIndices.size(),
+		queueIndices.data()
 	);
 
 	icpVulkanUtility::copyBuffer(stagingBuffer,
@@ -166,6 +172,7 @@ void icpPrimitiveRendererComponent::CreateIndexBuffers()
 	VmaAllocation stagingBufferAllocation{ VK_NULL_HANDLE };
 
 	VkSharingMode mode = gpuDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == gpuDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+	auto& queueIndices = gpuDevice->GetQueueFamilyIndicesVector();
 
 	icpVulkanUtility::CreateGPUBuffer(
 		bufferSize,
@@ -173,7 +180,9 @@ void icpPrimitiveRendererComponent::CreateIndexBuffers()
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		gpuDevice->GetVmaAllocator(),
 		stagingBufferAllocation,
-		stagingBuffer
+		stagingBuffer,
+		queueIndices.size(),
+		queueIndices.data()
 	);
 
 	void* data;
@@ -187,7 +196,9 @@ void icpPrimitiveRendererComponent::CreateIndexBuffers()
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		gpuDevice->GetVmaAllocator(),
 		m_indexBufferAllocation,
-		m_indexBuffer
+		m_indexBuffer,
+		queueIndices.size(),
+		queueIndices.data()
 	);
 
 	icpVulkanUtility::copyBuffer(stagingBuffer,
@@ -234,7 +245,9 @@ void icpPrimitiveRendererComponent::CreateUniformBuffers()
 	m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 	m_uniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
 
+
 	VkSharingMode mode = gpuDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == gpuDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+	auto& queueIndices = gpuDevice->GetQueueFamilyIndicesVector();
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -244,7 +257,9 @@ void icpPrimitiveRendererComponent::CreateUniformBuffers()
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			gpuDevice->GetVmaAllocator(),
 			m_uniformBufferAllocations[i],
-			m_uniformBuffers[i]
+			m_uniformBuffers[i],
+			queueIndices.size(),
+			queueIndices.data()
 		);
 	}
 }
