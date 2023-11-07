@@ -748,6 +748,9 @@ void icpVkGPUDevice::CreateDescriptorSet(const icpDescriptorSetCreation& creatio
 	for (int frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
 	{
 		std::vector<VkWriteDescriptorSet> descriptorWrites(bindingSize);
+
+		std::vector<VkDescriptorBufferInfo> bufferInfos(bindingSize);
+		std::vector<VkDescriptorImageInfo> imageInfos(bindingSize);
 		for (int i = 0; i < bindingSize; i ++)
 		{
 			auto layout = creation.layoutInfo.bindings[i];
@@ -756,39 +759,37 @@ void icpVkGPUDevice::CreateDescriptorSet(const icpDescriptorSetCreation& creatio
 			{
 			case VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
 				{
-				VkDescriptorBufferInfo bufferInfo{};
-				auto bufferRes = std::get<icpBufferRenderResourceInfo>(creation.resources[i * 3 + frame]);
-				bufferInfo.buffer = bufferRes.buffer;
-				bufferInfo.offset = bufferRes.offset;
-				bufferInfo.range = bufferRes.range;
-				descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				descriptorWrites[i].dstSet = DSs[frame];
-				descriptorWrites[i].dstBinding = i;
-				descriptorWrites[i].dstArrayElement = 0;
-				descriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				descriptorWrites[i].descriptorCount = 1;
-				descriptorWrites[i].pBufferInfo = &bufferInfo;
+					auto bufferRes = std::get<icpBufferRenderResourceInfo>(creation.resources[i * 3 + frame]);
+					bufferInfos[i].buffer = bufferRes.buffer;
+					bufferInfos[i].offset = bufferRes.offset;
+					bufferInfos[i].range = bufferRes.range;
+					descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					descriptorWrites[i].dstSet = DSs[frame];
+					descriptorWrites[i].dstBinding = i;
+					descriptorWrites[i].dstArrayElement = 0;
+					descriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+					descriptorWrites[i].descriptorCount = 1;
+					descriptorWrites[i].pBufferInfo = &bufferInfos[i];
 				}
 				break;
 			case VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
 				{
-				VkDescriptorImageInfo imageInfo{};
-				auto imageRes = std::get<icpTextureRenderResourceInfo>(creation.resources[i * 3 + frame]);
-				imageInfo.sampler = imageRes.m_texSampler;
-				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				imageInfo.imageView = imageRes.m_texImageView;
-				descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				descriptorWrites[i].dstSet = DSs[frame];
-				descriptorWrites[i].dstBinding = i;
-				descriptorWrites[i].dstArrayElement = 0;
-				descriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				descriptorWrites[i].descriptorCount = 1;
-				descriptorWrites[i].pImageInfo = &imageInfo;
+					auto imageRes = std::get<icpTextureRenderResourceInfo>(creation.resources[i * 3 + frame]);
+					imageInfos[i].sampler = imageRes.m_texSampler;
+					imageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					imageInfos[i].imageView = imageRes.m_texImageView;
+					descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					descriptorWrites[i].dstSet = DSs[frame];
+					descriptorWrites[i].dstBinding = i;
+					descriptorWrites[i].dstArrayElement = 0;
+					descriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+					descriptorWrites[i].descriptorCount = 1;
+					descriptorWrites[i].pImageInfo = &imageInfos[i];
 				}
 				break;
 			default:
 				{
-				ICP_LOG_WARING("not implemented yet");
+					ICP_LOG_WARING("not implemented yet");
 				}
 				break;
 			}
