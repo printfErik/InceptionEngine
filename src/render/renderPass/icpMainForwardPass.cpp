@@ -623,51 +623,24 @@ void icpMainForwardPass::CreateDescriptorSetLayouts()
 		perMaterialUBOBinding.descriptorCount = 1;
 		perMaterialUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		perMaterialUBOBinding.pImmutableSamplers = nullptr;
-		perMaterialUBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+		perMaterialUBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 		m_DSLayouts[eMainForwardPassDSType::PER_MATERIAL].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+
+		std::vector<VkDescriptorSetLayoutBinding> bindings {perMaterialUBOBinding};
 
 		for (int i = 0; i < PBR_MATERIAL_TEXTURE_NUMBER; i++)
 		{
-			
+			// set 1, binding i
+			VkDescriptorSetLayoutBinding perMaterialTextureSamplerLayoutBinding{};
+			perMaterialTextureSamplerLayoutBinding.binding = i + 1;
+			perMaterialTextureSamplerLayoutBinding.descriptorCount = 1;
+			perMaterialTextureSamplerLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			perMaterialTextureSamplerLayoutBinding.pImmutableSamplers = nullptr;
+			perMaterialTextureSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+			m_DSLayouts[eMainForwardPassDSType::PER_MATERIAL].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER });
+
+			bindings.push_back(perMaterialTextureSamplerLayoutBinding);
 		}
-
-		// set 1, binding 1
-		VkDescriptorSetLayoutBinding perMaterialDiffuseSamplerLayoutBinding{};
-		perMaterialDiffuseSamplerLayoutBinding.binding = 1;
-		perMaterialDiffuseSamplerLayoutBinding.descriptorCount = 1;
-		perMaterialDiffuseSamplerLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		perMaterialDiffuseSamplerLayoutBinding.pImmutableSamplers = nullptr;
-		perMaterialDiffuseSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		m_DSLayouts[eMainForwardPassDSType::PER_MATERIAL].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER });
-
-		// set 1, binding 2
-		VkDescriptorSetLayoutBinding perMaterialSpecularSamplerLayoutBinding{};
-		perMaterialSpecularSamplerLayoutBinding.binding = 2;
-		perMaterialSpecularSamplerLayoutBinding.descriptorCount = 1;
-		perMaterialSpecularSamplerLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		perMaterialSpecularSamplerLayoutBinding.pImmutableSamplers = nullptr;
-		perMaterialSpecularSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		m_DSLayouts[eMainForwardPassDSType::PER_MATERIAL].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER });
-
-		// set 1, binding 3
-		VkDescriptorSetLayoutBinding perMaterialNormalSamplerLayoutBinding{};
-		perMaterialNormalSamplerLayoutBinding.binding = 3;
-		perMaterialNormalSamplerLayoutBinding.descriptorCount = 1;
-		perMaterialNormalSamplerLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		perMaterialNormalSamplerLayoutBinding.pImmutableSamplers = nullptr;
-		perMaterialNormalSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		m_DSLayouts[eMainForwardPassDSType::PER_MATERIAL].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER });
-
-		// set 1, binding 4
-		VkDescriptorSetLayoutBinding perMaterialRoughnessSamplerLayoutBinding{};
-		perMaterialRoughnessSamplerLayoutBinding.binding = 4;
-		perMaterialRoughnessSamplerLayoutBinding.descriptorCount = 1;
-		perMaterialRoughnessSamplerLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		perMaterialRoughnessSamplerLayoutBinding.pImmutableSamplers = nullptr;
-		perMaterialRoughnessSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		m_DSLayouts[eMainForwardPassDSType::PER_MATERIAL].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER });
-		
-		std::array<VkDescriptorSetLayoutBinding, 5> bindings{ perMaterialUBOBinding, perMaterialSpecularSamplerLayoutBinding, perMaterialDiffuseSamplerLayoutBinding, perMaterialNormalSamplerLayoutBinding, perMaterialRoughnessSamplerLayoutBinding};
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());

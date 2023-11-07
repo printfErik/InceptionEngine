@@ -50,6 +50,30 @@ void icpMaterialInstance::CreateUniformBuffers()
 	}
 }
 
+void icpMaterialInstance::AddedTextureDescriptor(const std::string& textureType, std::vector<std::vector<icpTextureRenderResourceInfo>>& imgInfosAllFrames)
+{
+	auto texRenderResMgr = g_system_container.m_renderSystem->GetTextureRenderResourceManager();
+	std::vector<icpTextureRenderResourceInfo> imageInfos;
+	icpTextureRenderResourceInfo info{};
+
+	if (!m_vTextureParameterValues.contains(textureType))
+	{
+		info = texRenderResMgr->m_textureRenderResources["empty2D001"];
+	}
+	else
+	{
+		auto& texture = m_vTextureParameterValues[textureType];
+		info = texRenderResMgr->m_textureRenderResources[texture.m_textureID];
+	}
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		imageInfos.push_back(info);
+	}
+
+	imgInfosAllFrames.push_back(imageInfos);
+}
+
 void icpMaterialInstance::AllocateDescriptorSets()
 {
 	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
@@ -61,11 +85,10 @@ void icpMaterialInstance::AllocateDescriptorSets()
 
 	creation.layoutInfo = layout;
 
-	std::vector<icpBufferRenderResourceInfo> bufferInfos;
-
 	uint64_t UBOSize = ComputeUBOSize();
 	if (UBOSize > 0)
 	{
+		std::vector<icpBufferRenderResourceInfo> bufferInfos;
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			icpBufferRenderResourceInfo bufferInfo{};
@@ -80,25 +103,14 @@ void icpMaterialInstance::AllocateDescriptorSets()
 	}
 
 	std::vector<std::vector<icpTextureRenderResourceInfo>> imgInfosAllFrames;
-	auto texRenderResMgr = g_system_container.m_renderSystem->GetTextureRenderResourceManager();
 
-	std::vector<icpTextureRenderResourceInfo> imageInfos;
-	for (auto& texture : m_vTextureParameterValues)
-	{
-		auto& info = texRenderResMgr->m_textureRenderResources[texture.second.m_textureID];
-
-		icpTextureRenderResourceInfo imageInfo{};
-		imageInfo.m_texImageView = info.m_texImageView;
-		imageInfo.m_texSampler = info.m_texSampler;
-		imageInfo.m_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-		{
-			imageInfos.push_back(imageInfo);
-		}
-
-		imgInfosAllFrames.push_back(imageInfos);
-	}
+	AddedTextureDescriptor("baseColorTexture", imgInfosAllFrames);
+	AddedTextureDescriptor("metallicRoughnessTexture", imgInfosAllFrames);
+	AddedTextureDescriptor("metallicTexture", imgInfosAllFrames);
+	AddedTextureDescriptor("roughnessTexture", imgInfosAllFrames);
+	AddedTextureDescriptor("normalTexture", imgInfosAllFrames);
+	AddedTextureDescriptor("occlusionTexture", imgInfosAllFrames);
+	AddedTextureDescriptor("emissiveTexture", imgInfosAllFrames);
 
 	for (uint32_t i = 0; i < imgInfosAllFrames.size(); i++)
 	{

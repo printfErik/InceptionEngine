@@ -28,6 +28,7 @@ bool icpRenderSystem::initializeRenderSystem()
 	m_pRenderPassManager->initialize(m_pGPUDevice);
 
 	m_textureRenderResourceManager = std::make_shared<icpTextureRenderResourceManager>(m_pGPUDevice);
+	m_textureRenderResourceManager->InitializeEmptyTexture();
 
 	m_materialSystem = std::make_shared<icpMaterialSubSystem>();
 	m_materialSystem->initializeMaterialSubSystem();

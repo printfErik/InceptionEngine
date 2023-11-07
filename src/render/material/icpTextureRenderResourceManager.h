@@ -46,6 +46,8 @@ public:
 
 	void deleteTexture(const std::string& texId);
 
+	void InitializeEmptyTexture();
+
 	std::shared_ptr<icpGPUDevice> m_rhi = nullptr;
 	std::map<std::string, icpTextureRenderResourceInfo> m_textureRenderResources;
 

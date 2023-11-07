@@ -8,6 +8,7 @@
 #include <glm/vec4.hpp>
 #include <vk_mem_alloc.h>
 
+#include "icpTextureRenderResourceManager.h"
 #include "glm/vec3.hpp"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -107,6 +108,7 @@ public:
 private:
 
 	void FillPBRDataCache();
+	void AddedTextureDescriptor(const std::string& textureType, std::vector<std::vector<icpTextureRenderResourceInfo>>& imgInfosAllFrames);
 	std::map<std::string, icpScalaMaterialParameterInfo> m_vScalarParameterValues;
 	std::map<std::string, bool> m_vBoolParameterValues;
 	std::map<std::string, icpVector4MaterialParameterInfo> m_vVectorParameterValues;
