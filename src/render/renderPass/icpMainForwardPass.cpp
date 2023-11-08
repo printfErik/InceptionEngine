@@ -32,9 +32,7 @@ void icpMainForwardPass::initializeRenderPass(RenderPassInitInfo initInfo)
 	CreateDescriptorSetLayouts();
 	CreateSceneCB();
 	AllocateDescriptorSets();
-
 	AllocateCommandBuffers();
-
 	createRenderPass();
 	setupPipeline();
 	createFrameBuffers();
