@@ -10,7 +10,7 @@
 #include "../render/RHI/icpGPUBuffer.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
+void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
 {
 	switch (m_primitive)
 	{
@@ -70,7 +70,7 @@ INCEPTION_BEGIN_NAMESPACE
 				float yPos = std::cos(ySegment * PI);
 				float zPos = std::sin(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
 
-				sphereVertices.push_back({ {xPos, yPos, zPos}, {xPos, yPos, zPos}, color, {xSegment, ySegment} });
+				sphereVertices.push_back({ {xPos, yPos, zPos}, color, {xPos, yPos, zPos}, {xSegment, ySegment} });
 			}
 		}
 		m_vertices.assign(sphereVertices.begin(), sphereVertices.end());

@@ -15,24 +15,59 @@ enum class eRenderPass
 
 class icpRenderPassBase;
 
-class icpRenderPassManager
+#define MAX_POINT_LIGHT_COUNT 4
+
+struct DirectionalLightRenderResource
+{
+	glm::vec4 direction;
+	glm::vec4 color;
+};
+
+struct PointLightRenderResource
+{
+	glm::vec3 position;
+	glm::vec3 ambient;
+	glm::vec3 diffuse;
+	glm::vec3 specular;
+	float constant = 0.f;
+	float linear = 0.f;
+	float quadratic = 0.f;
+};
+
+struct perFrameCB
+{
+	glm::mat4 view;
+	glm::mat4 projection;
+	glm::vec3 camPos;
+	float pointLightNumber = 0.f;
+	DirectionalLightRenderResource dirLight;
+	PointLightRenderResource pointLight[MAX_POINT_LIGHT_COUNT];
+};
+
+class icpRenderPassManager : public std::enable_shared_from_this<icpRenderPassManager>
 {
 public:
 	icpRenderPassManager();
 	~icpRenderPassManager();
 
 	bool initialize(std::shared_ptr<icpGPUDevice> vulkanRHI);
+
+	void CreateSceneCB();
 	void cleanup();
 
+	void UpdateGlobalSceneCB(uint32_t curFrame);
 	void render();
 
 	std::shared_ptr<icpRenderPassBase> accessRenderPass(eRenderPass passType);
-
+	std::vector<VkBuffer> m_vSceneCBs;
 private:
 
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
 
 	std::vector<std::shared_ptr<icpRenderPassBase>> m_renderPasses;
+
+	
+	std::vector<VmaAllocation> m_vSceneCBAllocations;
 
 	uint32_t m_currentFrame = 0;
 };

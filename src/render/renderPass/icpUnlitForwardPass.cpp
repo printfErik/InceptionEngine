@@ -12,12 +12,12 @@ void icpUnlitForwardPass::initializeRenderPass(RenderPassInitInfo initInfo)
 	m_rhi = initInfo.device;
 
 	CreateDescriptorSetLayouts();
-	CreateSceneCB();
+	//CreateSceneCB();
 	AllocateDescriptorSets();
 	AllocateCommandBuffers();
-	createRenderPass();
+	//createRenderPass();
 	setupPipeline();
-	createFrameBuffers();
+	//createFrameBuffers();
 }
 
 void icpUnlitForwardPass::CreateDescriptorSetLayouts()

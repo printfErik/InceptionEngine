@@ -28,9 +28,9 @@ icpMainForwardPass::~icpMainForwardPass()
 void icpMainForwardPass::initializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.device;
+	m_renderPassMgr = initInfo.renderPassMgr;
 
 	CreateDescriptorSetLayouts();
-	CreateSceneCB();
 	AllocateDescriptorSets();
 	AllocateCommandBuffers();
 	createRenderPass();
@@ -475,57 +475,6 @@ void icpMainForwardPass::recreateSwapChain() {
 
 void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 {
-	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
-
-	perFrameCB CBPerFrame{};
-
-	CBPerFrame.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
-	auto aspectRatio = (float)m_rhi->GetSwapChainExtent().width / (float)m_rhi->GetSwapChainExtent().height;
-	CBPerFrame.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
-	CBPerFrame.projection[1][1] *= -1;
-
-	CBPerFrame.camPos = camera->m_position;
-
-	auto lightView = g_system_container.m_sceneSystem->m_registry.view<icpDirectionalLightComponent>();
-
-	int index = 0;
-	for (auto& light : lightView)
-	{
-		auto& lightComp = lightView.get<icpDirectionalLightComponent>(light);
-		auto dirL = dynamic_cast<icpDirectionalLightComponent&>(lightComp);
-		CBPerFrame.dirLight.color = glm::vec4(dirL.m_color,1.f);
-		CBPerFrame.dirLight.direction = glm::vec4(dirL.m_direction, 0.f);
-
-		/*
-			case eLightType::POINT_LIGHT:
-			{
-				auto pointLight = dynamic_cast<icpPointLightComponent&>(lightComp);
-				PointLightRenderResource point{};
-				point.position = pointLight.m_position;
-				point.constant = pointLight.constant;
-				point.linear = pointLight.linear;
-				point.quadratic = pointLight.quadratic;
-				CBPerFrame.pointLight[index] = point;
-				index++;
-			}
-			break;
-			default:
-				break;
-		}
-		*/
-	}
-
-	CBPerFrame.pointLightNumber = 0.f;
-
-	if (!lightView.empty())
-	{
-		void* data;
-		vmaMapMemory(m_rhi->GetVmaAllocator(), m_perFrameCBAllocations[curFrame], &data);
-		memcpy(data, &CBPerFrame, sizeof(perFrameCB));
-		vmaUnmapMemory(m_rhi->GetVmaAllocator(), m_perFrameCBAllocations[curFrame]);
-	}
-
-	
 	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
 
 	for (auto& entity: view)
@@ -676,32 +625,6 @@ void icpMainForwardPass::CreateDescriptorSetLayouts()
 	}
 }
 
-void icpMainForwardPass::CreateSceneCB()
-{
-	auto perFrameSize = sizeof(perFrameCB);
-	VkSharingMode mode = m_rhi->GetQueueFamilyIndices().m_graphicsFamily.value() == m_rhi->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
-
-	m_perFrameCBs.resize(MAX_FRAMES_IN_FLIGHT);
-	m_perFrameCBAllocations.resize(MAX_FRAMES_IN_FLIGHT);
-
-	auto allocator = m_rhi->GetVmaAllocator();
-	auto& queueIndices = m_rhi->GetQueueFamilyIndicesVector();
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		icpVulkanUtility::CreateGPUBuffer(
-			perFrameSize,
-			mode,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			allocator,
-			m_perFrameCBAllocations[i],
-			m_perFrameCBs[i],
-			queueIndices.size(),
-			queueIndices.data()
-		);
-	}
-}
-
 void icpMainForwardPass::AllocateDescriptorSets()
 {
 	icpDescriptorSetCreation creation{};
@@ -713,7 +636,7 @@ void icpMainForwardPass::AllocateDescriptorSets()
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		icpBufferRenderResourceInfo bufferInfo{};
-		bufferInfo.buffer = m_perFrameCBs[i];
+		bufferInfo.buffer = m_renderPassMgr.lock()->m_vSceneCBs[i];
 		bufferInfo.offset = 0;
 		bufferInfo.range = sizeof(perFrameCB);
 		bufferInfos.push_back(bufferInfo);

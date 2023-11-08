@@ -3,8 +3,9 @@
 #include "../RHI/Vulkan/icpVkGPUDevice.h"
 #include "../RHI/icpDescirptorSet.h"
 
-INCEPTION_BEGIN_NAMESPACE
 
+INCEPTION_BEGIN_NAMESPACE
+class icpRenderPassManager;
 enum class eRenderPass;
 
 class icpEditorUI;
@@ -17,6 +18,7 @@ public:
 	{
 		std::shared_ptr<icpGPUDevice> device{ nullptr };
 		eRenderPass passType;
+		std::weak_ptr<icpRenderPassManager> renderPassMgr;
 		std::shared_ptr<icpRenderPassBase> dependency{ nullptr };
 		std::shared_ptr<icpEditorUI> editorUi{ nullptr };
 	};
@@ -51,6 +53,7 @@ public:
 
 
 protected:
+	std::weak_ptr<icpRenderPassManager> m_renderPassMgr;
 	std::shared_ptr<icpGPUDevice> m_rhi;
 };
 

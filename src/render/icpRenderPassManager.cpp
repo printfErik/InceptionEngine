@@ -8,10 +8,12 @@
 
 #include "../ui/editorUI/icpEditorUI.h"
 #include "renderPass/icpRenderPassBase.h"
+#include "icpCameraSystem.h"
+#include "../scene/icpSceneSystem.h"
+#include "light/icpLightComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-icpRenderPassManager::icpRenderPassManager()
+	icpRenderPassManager::icpRenderPassManager()
 {
 }
 
@@ -25,9 +27,12 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 {
 	m_pDevice = vulkanRHI;
 
+	CreateSceneCB();
+
 	icpRenderPassBase::RenderPassInitInfo mainPassCreateInfo;
 	mainPassCreateInfo.device = m_pDevice;
 	mainPassCreateInfo.passType = eRenderPass::MAIN_FORWARD_PASS;
+	mainPassCreateInfo.renderPassMgr = shared_from_this();
 	std::shared_ptr<icpRenderPassBase> mainForwordPass = std::make_shared<icpMainForwardPass>();
 	mainForwordPass->initializeRenderPass(mainPassCreateInfo);
 
@@ -74,6 +79,8 @@ void icpRenderPassManager::render()
 	{
 		return;
 	}
+
+	UpdateGlobalSceneCB(m_currentFrame);
 
 	std::vector<VkSubmitInfo> infos;
 
@@ -124,5 +131,69 @@ std::shared_ptr<icpRenderPassBase> icpRenderPassManager::accessRenderPass(eRende
 {
 	return m_renderPasses[static_cast<int>(passType)];
 }
+
+void icpRenderPassManager::CreateSceneCB()
+{
+	auto perFrameSize = sizeof(perFrameCB);
+	VkSharingMode mode = m_pDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == m_pDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+	m_vSceneCBs.resize(MAX_FRAMES_IN_FLIGHT);
+	m_vSceneCBAllocations.resize(MAX_FRAMES_IN_FLIGHT);
+
+	auto allocator = m_pDevice->GetVmaAllocator();
+	auto& queueIndices = m_pDevice->GetQueueFamilyIndicesVector();
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpVulkanUtility::CreateGPUBuffer(
+			perFrameSize,
+			mode,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			allocator,
+			m_vSceneCBAllocations[i],
+			m_vSceneCBs[i],
+			queueIndices.size(),
+			queueIndices.data()
+		);
+	}
+}
+
+void icpRenderPassManager::UpdateGlobalSceneCB(uint32_t curFrame)
+{
+	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
+
+	perFrameCB CBPerFrame{};
+
+	CBPerFrame.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
+	auto aspectRatio = (float)m_pDevice->GetSwapChainExtent().width / (float)m_pDevice->GetSwapChainExtent().height;
+	CBPerFrame.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
+	CBPerFrame.projection[1][1] *= -1;
+
+	CBPerFrame.camPos = camera->m_position;
+
+	auto lightView = g_system_container.m_sceneSystem->m_registry.view<icpDirectionalLightComponent>();
+
+	int index = 0;
+	for (auto& light : lightView)
+	{
+		auto& lightComp = lightView.get<icpDirectionalLightComponent>(light);
+		auto dirL = dynamic_cast<icpDirectionalLightComponent&>(lightComp);
+		CBPerFrame.dirLight.color = glm::vec4(dirL.m_color, 1.f);
+		CBPerFrame.dirLight.direction = glm::vec4(dirL.m_direction, 0.f);
+
+		// todo add point lights
+	}
+
+	CBPerFrame.pointLightNumber = 0.f;
+
+	if (!lightView.empty())
+	{
+		void* data;
+		vmaMapMemory(m_pDevice->GetVmaAllocator(), m_vSceneCBAllocations[curFrame], &data);
+		memcpy(data, &CBPerFrame, sizeof(perFrameCB));
+		vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_vSceneCBAllocations[curFrame]);
+	}
+}
+
 
 INCEPTION_END_NAMESPACE

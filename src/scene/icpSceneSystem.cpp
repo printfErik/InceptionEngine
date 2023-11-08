@@ -415,31 +415,4 @@ std::shared_ptr<icpGameEntity> icpSceneSystem::FindEntity(icpGuid guid)
 	
 }
 
-void icpSceneSystem::CreateSceneCB()
-{
-	auto perFrameSize = sizeof(perFrameCB);
-	VkSharingMode mode = m_rhi->GetQueueFamilyIndices().m_graphicsFamily.value() == m_rhi->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
-
-	m_perFrameCBs.resize(MAX_FRAMES_IN_FLIGHT);
-	m_perFrameCBAllocations.resize(MAX_FRAMES_IN_FLIGHT);
-
-	auto allocator = m_rhi->GetVmaAllocator();
-	auto& queueIndices = m_rhi->GetQueueFamilyIndicesVector();
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		icpVulkanUtility::CreateGPUBuffer(
-			perFrameSize,
-			mode,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			allocator,
-			m_perFrameCBAllocations[i],
-			m_perFrameCBs[i],
-			queueIndices.size(),
-			queueIndices.data()
-		);
-	}
-}
-
-
 INCEPTION_END_NAMESPACE

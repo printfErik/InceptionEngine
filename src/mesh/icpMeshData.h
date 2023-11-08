@@ -27,8 +27,8 @@ enum class eVertexFormat :uint32_t
 struct icpVertex
 {
 	glm::vec3 position;
-	glm::vec3 normal;
 	glm::vec3 color;
+	glm::vec3 normal;
 	glm::vec2 texCoord;
 
 	static VkVertexInputBindingDescription getBindingDescription();

@@ -37,17 +37,10 @@ public:
 
 	void AllocateCommandBuffers() override;
 
-	void CreateSceneCB();
-
 	VkSemaphore m_waitSemaphores[1];
 	VkPipelineStageFlags m_waitStages[1];
 
-	std::vector<VkBuffer> m_perFrameCBs;
-	std::vector<VmaAllocation> m_perFrameCBAllocations;
-
 	std::vector<VkDescriptorSet> m_perFrameDSs;
-	std::vector<VkDescriptorSet> m_perMeshDSs;
-	std::vector<VkDescriptorSet> m_perMaterialDSs;
 
 private:
 
