@@ -23,19 +23,12 @@ public:
 	void InitializeRenderPass(RenderPassInitInfo initInfo) override;
 	void SetupPipeline() override;
 	void Cleanup() override;
-	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) override;
+	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override;
 
-	void CreateFrameBuffers();
-
-	void CreateRenderPass();
-	void CleanupSwapChain();
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
-	void RecreateSwapChain() override;
 
 	void CreateDescriptorSetLayouts() override;
 	void AllocateDescriptorSets() override{}
-
-	void AllocateCommandBuffers() override;
 
 	VkSemaphore m_waitSemaphores[1];
 	VkPipelineStageFlags m_waitStages[1];

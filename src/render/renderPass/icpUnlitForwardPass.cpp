@@ -5,6 +5,9 @@
 #include "../../core/icpConfigSystem.h"
 #include "../../mesh/icpMeshData.h"
 #include "../icpRenderPassManager.h"
+#include "../../mesh/icpMeshRendererComponent.h"
+#include "../../scene/icpXFormComponent.h"
+#include "../icpRenderSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -19,10 +22,7 @@ void icpUnlitForwardPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	m_renderPassMgr = initInfo.renderPassMgr;
 
 	CreateDescriptorSetLayouts();
-	AllocateCommandBuffers();
-	CreateRenderPass();
 	SetupPipeline();
-	CreateFrameBuffers();
 }
 
 void icpUnlitForwardPass::CreateDescriptorSetLayouts()
@@ -254,7 +254,7 @@ void icpUnlitForwardPass::SetupPipeline()
 	info.pDynamicState = &dynamicState;
 
 	// RenderPass
-	info.renderPass = m_renderPassObj;
+	info.renderPass = m_renderPassMgr.lock()->m_mainForwardRenderPass;
 	info.subpass = 0;
 
 	info.basePipelineHandle = VK_NULL_HANDLE;
@@ -268,127 +268,151 @@ void icpUnlitForwardPass::SetupPipeline()
 	vkDestroyShaderModule(m_rhi->GetLogicalDevice(), fragShader.module, nullptr);
 }
 
-void icpUnlitForwardPass::AllocateCommandBuffers()
-{
-	m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-	VkCommandBufferAllocateInfo gAllocInfo{};
-	gAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	gAllocInfo.commandPool = m_rhi->GetGraphicsCommandPool();
-	gAllocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
-	gAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-	if (vkAllocateCommandBuffers(m_rhi->GetLogicalDevice(), &gAllocInfo, m_commandBuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate graphics command buffer!");
-	}
-}
-
-void icpUnlitForwardPass::CreateRenderPass()
-{
-	VkAttachmentDescription colorAttachment{};
-	colorAttachment.format = m_rhi->GetSwapChainImageFormat();
-	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentDescription depthAttachment{};
-	depthAttachment.format = icpVulkanUtility::findDepthFormat(m_rhi->GetPhysicalDevice());
-	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentReference colorAttachmentRef{};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentReference depthAttachmentRef{};
-	depthAttachmentRef.attachment = 1;
-	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpass{};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
-	subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-	VkSubpassDependency dependency{};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass = 0;
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	dependency.srcAccessMask = 0;
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-	std::array<VkAttachmentDescription, 2> attachments{ colorAttachment, depthAttachment };
-
-	VkRenderPassCreateInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-	renderPassInfo.pAttachments = attachments.data();
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-	renderPassInfo.dependencyCount = 1;
-	renderPassInfo.pDependencies = &dependency;
-
-	if (vkCreateRenderPass(m_rhi->GetLogicalDevice(), &renderPassInfo, nullptr, &m_renderPassObj) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create render pass!");
-	}
-}
-
-void icpUnlitForwardPass::CreateFrameBuffers()
-{
-	auto& imageViews = m_rhi->GetSwapChainImageViews();
-	m_swapChainFramebuffers.resize(imageViews.size());
-
-	for (size_t i = 0; i < imageViews.size(); i++)
-	{
-		std::array<VkImageView, 2> attachments =
-		{
-			imageViews[i],
-			m_rhi->GetDepthImageView()
-		};
-
-		VkFramebufferCreateInfo framebufferInfo{};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = m_renderPassObj;
-		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-		framebufferInfo.pAttachments = attachments.data();
-		framebufferInfo.width = m_rhi->GetSwapChainExtent().width;
-		framebufferInfo.height = m_rhi->GetSwapChainExtent().height;
-		framebufferInfo.layers = 1;
-
-		if (vkCreateFramebuffer(m_rhi->GetLogicalDevice(), &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create framebuffer!");
-		}
-	}
-}
-
 void icpUnlitForwardPass::Cleanup()
 {
-	for (auto framebuffer : m_swapChainFramebuffers)
-	{
-		vkDestroyFramebuffer(m_rhi->GetLogicalDevice(), framebuffer, nullptr);
-	}
-
-	vkDestroyRenderPass(m_rhi->GetLogicalDevice(), m_renderPassObj, nullptr);
 	vkDestroyPipelineLayout(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipelineLayout, nullptr);
 	vkDestroyPipeline(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipeline, nullptr);
 }
 
-void icpUnlitForwardPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info)
+void icpUnlitForwardPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
-	
+	auto mgr = m_renderPassMgr.lock();
+	UpdateGlobalBuffers(currentFrame);
+
+	vkResetCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], 0);
+	RecordCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], frameBufferIndex, currentFrame);
 }
+
+void icpUnlitForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
+{
+	auto mgr = m_renderPassMgr.lock();
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+		throw std::runtime_error("failed to begin recording command buffer!");
+	}
+
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = mgr->m_mainForwardRenderPass;
+	renderPassInfo.framebuffer = mgr->m_vSwapChainFrameBuffers[imageIndex];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = m_rhi->GetSwapChainExtent();
+
+	std::array<VkClearValue, 2> clearColors{};
+	clearColors[0].color = { {0.f,0.f,0.f,1.f} };
+	clearColors[1].depthStencil = { 1.f, 0 };
+
+	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+	renderPassInfo.pClearValues = clearColors.data();
+
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
+
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = (float)m_rhi->GetSwapChainExtent().width;
+	viewport.height = (float)m_rhi->GetSwapChainExtent().height;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = m_rhi->GetSwapChainExtent();
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	std::vector<VkDeviceSize> offsets{ 0 };
+
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &m_perFrameDSs[curFrame], 0, nullptr);
+
+	auto materialSubSystem = g_system_container.m_renderSystem->GetMaterialSubSystem();
+
+	for (auto materialInstance : materialSubSystem->m_vMaterialContainer)
+	{
+		vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(materialInstance->m_perMaterialDSs[curFrame]), 0, nullptr);
+	}
+
+	std::vector<std::shared_ptr<icpGameEntity>> rootList;
+	g_system_container.m_sceneSystem->getRootEntityList(rootList);
+
+	for (auto entity : rootList)
+	{
+		if (entity->hasComponent<icpMeshRendererComponent>())
+		{
+			const auto& meshRender = entity->accessComponent<icpMeshRendererComponent>();
+			auto& meshResId = meshRender.m_meshResId;
+			auto res = g_system_container.m_resourceSystem->GetResourceContainer()[icpResourceType::MESH][meshResId];
+			auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(res);
+
+			auto vertBuf = meshRender.m_vertexBuffer;
+			std::vector<VkBuffer>vertexBuffers{ vertBuf };
+
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
+			vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshRes->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
+		}
+		else if (entity->hasComponent<icpPrimitiveRendererComponent>())
+		{
+			auto& primitive = entity->accessComponent<icpPrimitiveRendererComponent>();
+			auto vertBuf = primitive.m_vertexBuffer;
+			std::vector<VkBuffer>vertexBuffers{ vertBuf };
+
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
+			vkCmdBindIndexBuffer(commandBuffer, primitive.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+			auto& descriptorSets = primitive.m_descriptorSets;
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(primitive.m_vertexIndices.size()), 1, 0, 0, 0);
+		}
+	}
+
+	vkCmdEndRenderPass(commandBuffer);
+
+	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to record command buffer!");
+	}
+}
+
+void icpUnlitForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
+{
+	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
+
+	for (auto& entity : view)
+	{
+		auto& meshRenderer = view.get<icpMeshRendererComponent>(entity);
+
+		if (meshRenderer.m_pMaterial->m_shadingModel != eMaterialShadingModel::UNLIT)
+		{
+			continue;
+		}
+
+		auto& xformComp = view.get<icpXFormComponent>(entity);
+
+		UBOMeshRenderResource ubo{};
+		ubo.model = xformComp.m_mtxTransform;
+		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
+
+		void* data;
+		vmaMapMemory(m_rhi->GetVmaAllocator(), meshRenderer.m_perMeshUniformBufferAllocations[curFrame], &data);
+		memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
+		vmaUnmapMemory(m_rhi->GetVmaAllocator(), meshRenderer.m_perMeshUniformBufferAllocations[curFrame]);
+
+		auto material = meshRenderer.m_pMaterial;
+
+		void* materialData;
+		vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
+		memcpy(materialData, material->CheckMaterialDataCache(), sizeof(ShaderMaterial));
+		vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
+	}
+}
+
 
 
 INCEPTION_END_NAMESPACE

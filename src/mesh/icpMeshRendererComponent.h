@@ -56,8 +56,8 @@ public:
 
 	std::string m_meshResId;
 
-	// only one material for one mesh for now
-	std::vector<std::shared_ptr<icpMaterialTemplate>> m_materials;
+	// only one material
+	std::shared_ptr<icpMaterialTemplate> m_pMaterial;
 };
 
 

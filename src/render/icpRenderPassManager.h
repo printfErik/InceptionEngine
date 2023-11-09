@@ -63,15 +63,22 @@ public:
 	void AllocateGlobalSceneDescriptorSets();
 
 	void CreateForwardRenderPass();
+	void CreateSwapChainFrameBuffers();
+
+	void AllocateCommandBuffers();
+	void RecreateSwapChain();
+	void CleanupSwapChain();
+
 	std::shared_ptr<icpRenderPassBase> accessRenderPass(eRenderPass passType);
 
 	std::vector<VkBuffer> m_vSceneCBs;
 	icpDescriptorSetLayoutInfo m_sceneDSLayout{};
-	std::vector<VkDescriptorSet> m_sceneDSs;
+	std::vector<VkDescriptorSet> m_vSceneDSs;
 
-	std::vector<VkFramebuffer> m_swapChainFramebuffers;
-	VkRenderPass m_renderPassObj{ VK_NULL_HANDLE };
+	VkRenderPass m_mainForwardRenderPass{ VK_NULL_HANDLE };
 
+	std::vector<VkFramebuffer> m_vSwapChainFrameBuffers;
+	std::vector<VkCommandBuffer> m_vMainForwardCommandBuffers;
 
 private:
 

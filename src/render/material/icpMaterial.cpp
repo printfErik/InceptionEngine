@@ -122,7 +122,7 @@ void icpMaterialInstance::AllocateDescriptorSets()
 
 void icpMaterialSubSystem::initializeMaterialSubSystem()
 {
-	//m_materials.resize(static_cast<int>(eMaterialModel::MATERIAL_TYPE_COUNT) - 1);
+	
 }
 
 

@@ -24,15 +24,14 @@ public:
 	void InitializeRenderPass(RenderPassInitInfo initInfo) override;
 	void SetupPipeline() override;
 	void Cleanup() override;
-	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) override;
+	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override;
 
-	void RecreateSwapChain() override;
-	void CreateFrameBuffers();
-	void CreateRenderPass();
 	void CreateDescriptorSetLayouts() override;
-	void AllocateDescriptorSets() override{};
+	void AllocateDescriptorSets() override{}
 
-	void AllocateCommandBuffers() override;
+	void UpdateGlobalBuffers(uint32_t curFrame);
+	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
+
 
 };
 

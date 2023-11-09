@@ -36,19 +36,14 @@ public:
 	virtual void InitializeRenderPass(RenderPassInitInfo initInfo) = 0;
 	virtual void SetupPipeline() = 0;
 	virtual void Cleanup() = 0;
-	virtual void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) = 0;
-	virtual void RecreateSwapChain() = 0;
+	virtual void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) = 0;
 	virtual void CreateDescriptorSetLayouts() = 0;
 	virtual void AllocateDescriptorSets() = 0;
-	virtual void AllocateCommandBuffers() = 0;
-
-	std::vector<VkCommandBuffer> m_commandBuffers;
 
 	RenderPipelineInfo m_pipelineInfo{};
 	std::vector<icpDescriptorSetLayoutInfo> m_DSLayouts;
 
 	std::shared_ptr<icpRenderPassBase> m_dependency{ nullptr };
-
 
 protected:
 	std::weak_ptr<icpRenderPassManager> m_renderPassMgr;

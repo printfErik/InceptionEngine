@@ -50,7 +50,7 @@ public:
 	std::vector<icpVertex> m_vertices;
 	std::vector<uint32_t> m_vertexIndices;
 
-	std::vector<std::shared_ptr<icpMaterialTemplate>> m_vMaterials;
+	std::shared_ptr<icpMaterialTemplate> m_pMaterial = nullptr;
 
 private:
 

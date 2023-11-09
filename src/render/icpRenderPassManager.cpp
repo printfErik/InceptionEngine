@@ -77,23 +77,42 @@ void icpRenderPassManager::render()
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
+		RecreateSwapChain();
 		return;
+	}
+
+	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		throw std::runtime_error("failed to present swap chain image!");
 	}
 
 	UpdateGlobalSceneCB(m_currentFrame);
 
-	std::vector<VkSubmitInfo> infos;
-
 	for(const auto renderPass : m_renderPasses)
 	{
-		VkSubmitInfo submitInfo;
-		renderPass->Render(index, m_currentFrame, result, submitInfo);
-		infos.push_back(submitInfo);
+		renderPass->Render(index, m_currentFrame, result);
 	}
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	auto& semaphores = m_pDevice->GetImageAvailableForRenderingSemaphores();
+	auto waitSemaphore = semaphores[m_currentFrame];
+
+	VkPipelineStageFlags waitStage = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &waitSemaphore;
+	submitInfo.pWaitDstStageMask = &waitStage;
+
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &m_pDevice->GetRenderFinishedForPresentationSemaphores()[m_currentFrame];
+
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &m_vMainForwardCommandBuffers[m_currentFrame];
+
 
 	auto& fences = m_pDevice->GetInFlightFences();
 
-	result = vkQueueSubmit(m_pDevice->GetGraphicsQueue(), static_cast<uint32_t>(infos.size()), infos.data(), fences[m_currentFrame]);
+	vkQueueSubmit(m_pDevice->GetGraphicsQueue(), 1, &submitInfo, fences[m_currentFrame]);
 
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -109,15 +128,12 @@ void icpRenderPassManager::render()
 
 	presentInfo.pImageIndices = &index;
 
-	vkQueuePresentKHR(m_pDevice->GetPresentQueue(), &presentInfo);
+	result = vkQueuePresentKHR(m_pDevice->GetPresentQueue(), &presentInfo);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_pDevice->m_framebufferResized)
 	{
-		for (const auto renderPass : m_renderPasses)
-		{
-			renderPass->RecreateSwapChain();
-		}
 		m_pDevice->m_framebufferResized = false;
+		RecreateSwapChain();
 	}
 	else if (result != VK_SUCCESS) 
 	{
@@ -238,7 +254,7 @@ void icpRenderPassManager::AllocateGlobalSceneDescriptorSets()
 	}
 
 	creation.SetUniformBuffer(0, bufferInfos);
-	m_pDevice->CreateDescriptorSet(creation, m_sceneDSs);
+	m_pDevice->CreateDescriptorSet(creation, m_vSceneDSs);
 }
 
 void icpRenderPassManager::CreateForwardRenderPass()
@@ -296,8 +312,84 @@ void icpRenderPassManager::CreateForwardRenderPass()
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 
-	if (vkCreateRenderPass(m_pDevice->GetLogicalDevice(), &renderPassInfo, nullptr, &m_renderPassObj) != VK_SUCCESS) {
+	if (vkCreateRenderPass(m_pDevice->GetLogicalDevice(), &renderPassInfo, nullptr, &m_mainForwardRenderPass) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create render pass!");
 	}
 }
+
+void icpRenderPassManager::CreateSwapChainFrameBuffers()
+{
+	auto& imageViews = m_pDevice->GetSwapChainImageViews();
+	m_vSwapChainFrameBuffers.resize(imageViews.size());
+
+	for (size_t i = 0; i < imageViews.size(); i++)
+	{
+		std::array<VkImageView, 2> attachments =
+		{
+			imageViews[i],
+			m_pDevice->GetDepthImageView()
+		};
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = m_mainForwardRenderPass;
+		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		framebufferInfo.pAttachments = attachments.data();
+		framebufferInfo.width = m_pDevice->GetSwapChainExtent().width;
+		framebufferInfo.height = m_pDevice->GetSwapChainExtent().height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_pDevice->GetLogicalDevice(), &framebufferInfo, nullptr, &m_vSwapChainFrameBuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create framebuffer!");
+		}
+	}
+}
+
+
+void icpRenderPassManager::AllocateCommandBuffers()
+{
+	m_vMainForwardCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkCommandBufferAllocateInfo gAllocInfo{};
+	gAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	gAllocInfo.commandPool = m_pDevice->GetGraphicsCommandPool();
+	gAllocInfo.commandBufferCount = (uint32_t)m_vMainForwardCommandBuffers.size();
+	gAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	if (vkAllocateCommandBuffers(m_pDevice->GetLogicalDevice(), &gAllocInfo, m_vMainForwardCommandBuffers.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate graphics command buffer!");
+	}
+}
+
+void icpRenderPassManager::RecreateSwapChain()
+{
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(m_pDevice->GetWindow(), &width, &height);
+	while (width == 0 || height == 0)
+	{
+		glfwGetFramebufferSize(m_pDevice->GetWindow(), &width, &height);
+		glfwWaitEvents();
+	}
+
+	vkDeviceWaitIdle(m_pDevice->GetLogicalDevice());
+
+	CleanupSwapChain();
+	m_pDevice->CleanUpSwapChain();
+
+	m_pDevice->CreateSwapChain();
+	m_pDevice->CreateSwapChainImageViews();
+	m_pDevice->CreateDepthResources();
+	CreateSwapChainFrameBuffers();
+}
+
+void icpRenderPassManager::CleanupSwapChain()
+{
+	for (auto framebuffer : m_vSwapChainFrameBuffers)
+	{
+		vkDestroyFramebuffer(m_pDevice->GetLogicalDevice(), framebuffer, nullptr);
+	}
+}
+
 INCEPTION_END_NAMESPACE

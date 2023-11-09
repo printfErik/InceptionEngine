@@ -268,7 +268,7 @@ std::shared_ptr<icpMaterialTemplate> icpPrimitiveRendererComponent::AddMaterial(
 {
 	auto materialSystem = g_system_container.m_renderSystem->GetMaterialSubSystem();
 	auto instance = materialSystem->createMaterialInstance(shading_model);
-	m_vMaterials.push_back(instance);
+	m_pMaterial = instance;
 
 	return instance;
 }

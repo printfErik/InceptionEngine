@@ -9,6 +9,7 @@
 #include <backends/imgui_impl_vulkan.h>
 #include <backends/imgui_impl_glfw.h>
 
+#include "../icpRenderPassManager.h"
 #include "../../ui/editorUI/icpEditorUI.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -21,107 +22,25 @@ icpEditorUiPass::~icpEditorUiPass()
 void icpEditorUiPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.device;
-
 	m_editorUI = initInfo.editorUi;
+	m_renderPassMgr = initInfo.renderPassMgr;
 
-	CreateRenderPass();
 	SetupPipeline();
-	CreateFrameBuffers();
-
-	AllocateCommandBuffers();
 
 	VkCommandBuffer command_buffer = icpVulkanUtility::beginSingleTimeCommands(m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice());
 	ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
 	icpVulkanUtility::endSingleTimeCommandsAndSubmit(command_buffer, m_rhi->GetGraphicsQueue(), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice());
 }
 
-void icpEditorUiPass::CreateFrameBuffers()
-{
-	auto& swapChainViews = m_rhi->GetSwapChainImageViews();
-	m_swapChainFramebuffers.resize(swapChainViews.size());
-
-	for (uint32_t i = 0; i < swapChainViews.size(); i++)
-	{
-		VkImageView attachment[1];
-		attachment[0] = swapChainViews[i];
-		VkFramebufferCreateInfo framebufferInfo{};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = m_renderPassObj;
-		framebufferInfo.attachmentCount = 1;
-		framebufferInfo.pAttachments = attachment;
-		framebufferInfo.width = m_rhi->GetSwapChainExtent().width;
-		framebufferInfo.height = m_rhi->GetSwapChainExtent().height;
-		framebufferInfo.layers = 1;
-
-		if (vkCreateFramebuffer(m_rhi->GetLogicalDevice(), &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create framebuffer!");
-		}
-	}
-}
 
 void icpEditorUiPass::Cleanup()
 {
 	
 }
 
-void icpEditorUiPass::RecreateSwapChain()
+void icpEditorUiPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
-	for (auto framebuffer : m_swapChainFramebuffers)
-	{
-		vkDestroyFramebuffer(m_rhi->GetLogicalDevice(), framebuffer, nullptr);
-	}
-	CreateFrameBuffers();
-}
-
-
-void icpEditorUiPass::CreateRenderPass()
-{
-	VkAttachmentDescription colorAttachment{};
-	colorAttachment.format = m_rhi->GetSwapChainImageFormat();
-	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	VkAttachmentReference colorAttachmentRef{};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpass{};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
-
-	VkSubpassDependency dependency{};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass = 0;
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.srcAccessMask = 0;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-	std::array<VkAttachmentDescription, 1> attachments{ colorAttachment };
-
-	VkRenderPassCreateInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = 1;
-	renderPassInfo.pAttachments = attachments.data();
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-	renderPassInfo.dependencyCount = 1;
-	renderPassInfo.pDependencies = &dependency;
-
-	if (vkCreateRenderPass(m_rhi->GetLogicalDevice(), &renderPassInfo, nullptr, &m_renderPassObj) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create render pass!");
-	}
-}
-
-void icpEditorUiPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info)
-{
+	auto mgr = m_renderPassMgr.lock();
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
@@ -133,28 +52,19 @@ void icpEditorUiPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, V
 
 	ImGui::Render();
 
-	vkResetCommandBuffer(m_commandBuffers[currentFrame], 0);
-	RecordCommandBuffer(m_commandBuffers[currentFrame], frameBufferIndex);
+	vkResetCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], 0);
+	RecordCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], frameBufferIndex);
 
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_commandBuffers[currentFrame]);
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mgr->m_vMainForwardCommandBuffers[currentFrame]);
 
-	vkCmdEndRenderPass(m_commandBuffers[currentFrame]);
+	vkCmdEndRenderPass(mgr->m_vMainForwardCommandBuffers[currentFrame]);
 
-	VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	VkSubmitInfo submitInfo = {};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_commandBuffers[currentFrame];
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &m_rhi->GetRenderFinishedForPresentationSemaphores()[currentFrame];
-
-	vkEndCommandBuffer(m_commandBuffers[currentFrame]);
-
-	info = submitInfo;
+	vkEndCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame]);
 }
 
 void icpEditorUiPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex)
 {
+	auto mgr = m_renderPassMgr.lock();
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -164,8 +74,8 @@ void icpEditorUiPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_
 
 	VkRenderPassBeginInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	info.renderPass = m_renderPassObj;
-	info.framebuffer = m_swapChainFramebuffers[curFrameIndex];
+	info.renderPass = mgr->m_mainForwardRenderPass;
+	info.framebuffer = mgr->m_vSwapChainFrameBuffers[curFrameIndex];
 	info.renderArea.extent = m_rhi->GetSwapChainExtent();
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { {0.f,0.f,0.f,1.f} };
@@ -198,23 +108,8 @@ void icpEditorUiPass::SetupPipeline()
 	info.QueueFamily = m_rhi->GetQueueFamilyIndices().m_graphicsFamily.value();
 	info.Subpass = 0;
 
-	ImGui_ImplVulkan_Init(&info, m_renderPassObj);
+	ImGui_ImplVulkan_Init(&info, m_renderPassMgr.lock()->m_mainForwardRenderPass);
 }
 
-void icpEditorUiPass::AllocateCommandBuffers()
-{
-	m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-	VkCommandBufferAllocateInfo gAllocInfo{};
-	gAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	gAllocInfo.commandPool = m_rhi->GetGraphicsCommandPool();
-	gAllocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
-	gAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-	if (vkAllocateCommandBuffers(m_rhi->GetLogicalDevice(), &gAllocInfo, m_commandBuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate graphics command buffer!");
-	}
-}
 
 INCEPTION_END_NAMESPACE

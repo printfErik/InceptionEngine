@@ -175,16 +175,24 @@ void icpMeshRendererComponent::createIndexBuffers()
 
 std::shared_ptr<icpMaterialTemplate> icpMeshRendererComponent::addMaterial(eMaterialShadingModel shadingModel)
 {
+	if (m_pMaterial)
+	{
+		m_pMaterial.reset();
+	}
 	auto materialSystem = g_system_container.m_renderSystem->GetMaterialSubSystem();
 	auto instance = materialSystem->createMaterialInstance(shadingModel);
-	m_materials.push_back(instance);
+	m_pMaterial = instance;
 
 	return instance;
 }
 
 void icpMeshRendererComponent::AddMaterial(std::shared_ptr<icpMaterialTemplate> material)
 {
-	m_materials.push_back(material);
+	if (m_pMaterial)
+	{
+		m_pMaterial.reset();
+	}
+	m_pMaterial = material;
 }
 
 INCEPTION_END_NAMESPACE

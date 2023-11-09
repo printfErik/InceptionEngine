@@ -29,14 +29,13 @@ void icpMainForwardPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	m_renderPassMgr = initInfo.renderPassMgr;
 
 	CreateDescriptorSetLayouts();
-	AllocateCommandBuffers();
-	CreateRenderPass();
 	SetupPipeline();
-	CreateFrameBuffers();
 }
 
 void icpMainForwardPass::SetupPipeline()
 {
+	auto renderPassMgr = m_renderPassMgr.lock();
+
 	VkGraphicsPipelineCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
@@ -90,7 +89,7 @@ void icpMainForwardPass::SetupPipeline()
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = m_DSLayouts.size() + 1u; // global scene ds
 
-	std::vector<VkDescriptorSetLayout> layouts{m_renderPassMgr.lock()->m_sceneDSLayout.layout};
+	std::vector<VkDescriptorSetLayout> layouts{renderPassMgr->m_sceneDSLayout.layout};
 	for (auto& layoutInfo : m_DSLayouts)
 	{
 		layouts.push_back(layoutInfo.layout);
@@ -200,7 +199,7 @@ void icpMainForwardPass::SetupPipeline()
 	info.pDynamicState = &dynamicState;
 
 	// RenderPass
-	info.renderPass = m_renderPassObj;
+	info.renderPass = renderPassMgr->m_mainForwardRenderPass;
 	info.subpass = 0;
 
 	info.basePipelineHandle = VK_NULL_HANDLE;
@@ -214,86 +213,24 @@ void icpMainForwardPass::SetupPipeline()
 	vkDestroyShaderModule(m_rhi->GetLogicalDevice(), fragShader.module, nullptr);
 }
 
-void icpMainForwardPass::CreateFrameBuffers()
-{
-	auto& imageViews = m_rhi->GetSwapChainImageViews();
-	m_swapChainFramebuffers.resize(imageViews.size());
-
-	for (size_t i = 0; i < imageViews.size(); i++)
-	{
-		std::array<VkImageView, 2> attachments =
-		{
-			imageViews[i],
-			m_rhi->GetDepthImageView()
-		};
-
-		VkFramebufferCreateInfo framebufferInfo{};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = m_renderPassObj;
-		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-		framebufferInfo.pAttachments = attachments.data();
-		framebufferInfo.width = m_rhi->GetSwapChainExtent().width;
-		framebufferInfo.height = m_rhi->GetSwapChainExtent().height;
-		framebufferInfo.layers = 1;
-
-		if (vkCreateFramebuffer(m_rhi->GetLogicalDevice(), &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create framebuffer!");
-		}
-	}
-}
-
 void icpMainForwardPass::Cleanup()
 {
-	CleanupSwapChain();
-
-	vkDestroyRenderPass(m_rhi->GetLogicalDevice(), m_renderPassObj, nullptr);
 	vkDestroyPipelineLayout(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipelineLayout, nullptr);
 	vkDestroyPipeline(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipeline, nullptr);
 }
 
-void icpMainForwardPass::CleanupSwapChain()
+void icpMainForwardPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
-	for (auto framebuffer : m_swapChainFramebuffers)
-	{
-		vkDestroyFramebuffer(m_rhi->GetLogicalDevice(), framebuffer, nullptr);
-	}
-}
-
-void icpMainForwardPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info)
-{
-	if (acquireImageResult == VK_ERROR_OUT_OF_DATE_KHR)
-	{
-		RecreateSwapChain();
-		return;
-	}
-	else if (acquireImageResult != VK_SUCCESS && acquireImageResult != VK_SUBOPTIMAL_KHR)
-	{
-		throw std::runtime_error("failed to present swap chain image!");
-	}
-
+	auto mgr = m_renderPassMgr.lock();
 	UpdateGlobalBuffers(currentFrame);
 
-	vkResetCommandBuffer(m_commandBuffers[currentFrame], 0);
-	RecordCommandBuffer(m_commandBuffers[currentFrame], frameBufferIndex, currentFrame);
-
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	auto semaphores = m_rhi->GetImageAvailableForRenderingSemaphores();
-	m_waitSemaphores[0] = semaphores[currentFrame];
-	m_waitStages[0] = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT ;
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = m_waitSemaphores;
-	submitInfo.pWaitDstStageMask = m_waitStages;
-
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_commandBuffers[currentFrame];
-
-	info = submitInfo;
+	vkResetCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], 0);
+	RecordCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], frameBufferIndex, currentFrame);
 }
 
 void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
+	auto mgr = m_renderPassMgr.lock();
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -303,8 +240,8 @@ void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint
 
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = m_renderPassObj;
-	renderPassInfo.framebuffer = m_swapChainFramebuffers[imageIndex];
+	renderPassInfo.renderPass = mgr->m_mainForwardRenderPass;
+	renderPassInfo.framebuffer = mgr->m_vSwapChainFrameBuffers[imageIndex];
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = m_rhi->GetSwapChainExtent();
 
@@ -388,28 +325,6 @@ void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint
 	}
 }
 
-void icpMainForwardPass::RecreateSwapChain() {
-
-	int width = 0, height = 0;
-	glfwGetFramebufferSize(m_rhi->GetWindow(), &width, &height);
-	while (width == 0 || height == 0)
-	{
-		glfwGetFramebufferSize(m_rhi->GetWindow(), &width, &height);
-		glfwWaitEvents();
-	}
-
-	vkDeviceWaitIdle(m_rhi->GetLogicalDevice());
-
-	CleanupSwapChain();
-	m_rhi->CleanUpSwapChain();
-
-	m_rhi->CreateSwapChain();
-	m_rhi->CreateSwapChainImageViews();
-	m_rhi->CreateDepthResources();
-	CreateFrameBuffers();
-}
-
-
 void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 {
 	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
@@ -417,6 +332,11 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 	for (auto& entity: view)
 	{
 		auto& meshRenderer = view.get<icpMeshRendererComponent>(entity);
+
+		if (meshRenderer.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
+		{
+			continue;
+		}
 
 		auto& xformComp = view.get<icpXFormComponent>(entity);
 
@@ -429,21 +349,24 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 		memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
 		vmaUnmapMemory(m_rhi->GetVmaAllocator(), meshRenderer.m_perMeshUniformBufferAllocations[curFrame]);
 
-		// todo classify different materialInstance
-		for (auto& material : meshRenderer.m_materials)
-		{
-			//float fShininess = 1.f;
-			void* materialData;
-			vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
-			memcpy(materialData, material->CheckMaterialDataCache(), sizeof(ShaderMaterial));
-			vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
-		}
+		auto material = meshRenderer.m_pMaterial;
+
+		void* materialData;
+		vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
+		memcpy(materialData, material->CheckMaterialDataCache(), sizeof(ShaderMaterial));
+		vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
+
 	}
 	
 	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponent, icpXFormComponent>();
 	for (auto& primitive: primitiveView)
 	{
 		auto& primitiveRender = primitiveView.get<icpPrimitiveRendererComponent>(primitive);
+
+		if (primitiveRender.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
+		{
+			continue;
+		}
 
 		auto& xfom = primitiveRender.m_possessor->accessComponent<icpXFormComponent>();
 
@@ -460,14 +383,12 @@ void icpMainForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
 		memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
 		vmaUnmapMemory(m_rhi->GetVmaAllocator(), primitiveRender.m_uniformBufferAllocations[curFrame]);
 
-		// todo classify different materialInstance
-		for (auto& material : primitiveRender.m_vMaterials)
-		{
-			void* materialData;
-			vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
-			memcpy(materialData, material->CheckMaterialDataCache(), sizeof(ShaderMaterial));
-			vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
-		}
+		auto material = primitiveRender.m_pMaterial;
+
+		void* materialData;
+		vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
+		memcpy(materialData, material->CheckMaterialDataCache(), sizeof(ShaderMaterial));
+		vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
 	}
 }
 
@@ -535,22 +456,6 @@ void icpMainForwardPass::CreateDescriptorSetLayouts()
 		{
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
-	}
-}
-
-void icpMainForwardPass::AllocateCommandBuffers()
-{
-	m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-	VkCommandBufferAllocateInfo gAllocInfo{};
-	gAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	gAllocInfo.commandPool = m_rhi->GetGraphicsCommandPool();
-	gAllocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
-	gAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-	if (vkAllocateCommandBuffers(m_rhi->GetLogicalDevice(), &gAllocInfo, m_commandBuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate graphics command buffer!");
 	}
 }
 
