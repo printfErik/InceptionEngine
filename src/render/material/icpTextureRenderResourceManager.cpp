@@ -209,6 +209,4 @@ void icpTextureRenderResourceManager::InitializeEmptyTexture()
 	m_textureRenderResources[info.m_texId] = info;
 }
 
-
-
 INCEPTION_END_NAMESPACE

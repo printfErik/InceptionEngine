@@ -1,6 +1,8 @@
 #pragma once
 #include "../core/icpMacros.h"
 #include <vulkan/vulkan.hpp>
+
+#include "RHI/icpDescirptorSet.h"
 #include "RHI/Vulkan/icpVkGPUDevice.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -51,23 +53,34 @@ public:
 	~icpRenderPassManager();
 
 	bool initialize(std::shared_ptr<icpGPUDevice> vulkanRHI);
-
-	void CreateSceneCB();
 	void cleanup();
-
-	void UpdateGlobalSceneCB(uint32_t curFrame);
 	void render();
 
+	void CreateSceneCB();
+	void UpdateGlobalSceneCB(uint32_t curFrame);
+
+	void CreateGlobalSceneDescriptorSetLayout();
+	void AllocateGlobalSceneDescriptorSets();
+
+	void CreateForwardRenderPass();
 	std::shared_ptr<icpRenderPassBase> accessRenderPass(eRenderPass passType);
+
 	std::vector<VkBuffer> m_vSceneCBs;
+	icpDescriptorSetLayoutInfo m_sceneDSLayout{};
+	std::vector<VkDescriptorSet> m_sceneDSs;
+
+	std::vector<VkFramebuffer> m_swapChainFramebuffers;
+	VkRenderPass m_renderPassObj{ VK_NULL_HANDLE };
+
+
 private:
 
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
 
 	std::vector<std::shared_ptr<icpRenderPassBase>> m_renderPasses;
 
-	
 	std::vector<VmaAllocation> m_vSceneCBAllocations;
+	
 
 	uint32_t m_currentFrame = 0;
 };

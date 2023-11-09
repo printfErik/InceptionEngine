@@ -13,7 +13,7 @@
 #include "light/icpLightComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	icpRenderPassManager::icpRenderPassManager()
+icpRenderPassManager::icpRenderPassManager()
 {
 }
 
@@ -34,7 +34,7 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	mainPassCreateInfo.passType = eRenderPass::MAIN_FORWARD_PASS;
 	mainPassCreateInfo.renderPassMgr = shared_from_this();
 	std::shared_ptr<icpRenderPassBase> mainForwordPass = std::make_shared<icpMainForwardPass>();
-	mainForwordPass->initializeRenderPass(mainPassCreateInfo);
+	mainForwordPass->InitializeRenderPass(mainPassCreateInfo);
 
 	m_renderPasses.push_back(mainForwordPass);
 
@@ -53,7 +53,7 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	editorUIInfo.passType = eRenderPass::EDITOR_UI_PASS;
 	editorUIInfo.editorUi = std::make_shared<icpEditorUI>();
 	std::shared_ptr<icpRenderPassBase> editorUIPass = std::make_shared<icpEditorUiPass>();
-	editorUIPass->initializeRenderPass(editorUIInfo);
+	editorUIPass->InitializeRenderPass(editorUIInfo);
 
 	m_renderPasses.push_back(editorUIPass);
 
@@ -64,7 +64,7 @@ void icpRenderPassManager::cleanup()
 {
 	for (const auto renderPass: m_renderPasses)
 	{
-		renderPass->cleanup();
+		renderPass->Cleanup();
 	}
 }
 
@@ -87,7 +87,7 @@ void icpRenderPassManager::render()
 	for(const auto renderPass : m_renderPasses)
 	{
 		VkSubmitInfo submitInfo;
-		renderPass->render(index, m_currentFrame, result, submitInfo);
+		renderPass->Render(index, m_currentFrame, result, submitInfo);
 		infos.push_back(submitInfo);
 	}
 
@@ -115,7 +115,7 @@ void icpRenderPassManager::render()
 	{
 		for (const auto renderPass : m_renderPasses)
 		{
-			renderPass->recreateSwapChain();
+			renderPass->RecreateSwapChain();
 		}
 		m_pDevice->m_framebufferResized = false;
 	}
@@ -195,5 +195,109 @@ void icpRenderPassManager::UpdateGlobalSceneCB(uint32_t curFrame)
 	}
 }
 
+void icpRenderPassManager::CreateGlobalSceneDescriptorSetLayout()
+{
+	// perFrame
+	{
+		VkDescriptorSetLayoutBinding perFrameUBOBinding{};
+		perFrameUBOBinding.binding = 0;
+		perFrameUBOBinding.descriptorCount = 1;
+		perFrameUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		perFrameUBOBinding.pImmutableSamplers = nullptr;
+		perFrameUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+		m_sceneDSLayout.bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
 
+		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perFrameUBOBinding };
+
+		VkDescriptorSetLayoutCreateInfo createInfo{};
+		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		createInfo.pBindings = bindings.data();
+		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+		if (vkCreateDescriptorSetLayout(m_pDevice->GetLogicalDevice(), &createInfo, nullptr, &m_sceneDSLayout.layout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+}
+
+
+void icpRenderPassManager::AllocateGlobalSceneDescriptorSets()
+{
+	icpDescriptorSetCreation creation{};
+	creation.layoutInfo = m_sceneDSLayout;
+
+	std::vector<icpBufferRenderResourceInfo> bufferInfos;
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpBufferRenderResourceInfo bufferInfo{};
+		bufferInfo.buffer = m_vSceneCBs[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(perFrameCB);
+		bufferInfos.push_back(bufferInfo);
+	}
+
+	creation.SetUniformBuffer(0, bufferInfos);
+	m_pDevice->CreateDescriptorSet(creation, m_sceneDSs);
+}
+
+void icpRenderPassManager::CreateForwardRenderPass()
+{
+	VkAttachmentDescription colorAttachment{};
+	colorAttachment.format = m_pDevice->GetSwapChainImageFormat();
+	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentDescription depthAttachment{};
+	depthAttachment.format = icpVulkanUtility::findDepthFormat(m_pDevice->GetPhysicalDevice());
+	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference colorAttachmentRef{};
+	colorAttachmentRef.attachment = 0;
+	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference depthAttachmentRef{};
+	depthAttachmentRef.attachment = 1;
+	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpass{};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorAttachmentRef;
+	subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+	std::array<VkAttachmentDescription, 2> attachments{ colorAttachment, depthAttachment };
+
+	VkRenderPassCreateInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+	renderPassInfo.pAttachments = attachments.data();
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
+
+	if (vkCreateRenderPass(m_pDevice->GetLogicalDevice(), &renderPassInfo, nullptr, &m_renderPassObj) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create render pass!");
+	}
+}
 INCEPTION_END_NAMESPACE

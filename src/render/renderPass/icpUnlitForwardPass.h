@@ -21,15 +21,16 @@ public:
 	icpUnlitForwardPass() = default;
 	~icpUnlitForwardPass() override;
 
-	void initializeRenderPass(RenderPassInitInfo initInfo) override;
-	void setupPipeline() override;
-	void cleanup() override;
-	void render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) override;
+	void InitializeRenderPass(RenderPassInitInfo initInfo) override;
+	void SetupPipeline() override;
+	void Cleanup() override;
+	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) override;
 
-	void recreateSwapChain() override;
-
+	void RecreateSwapChain() override;
+	void CreateFrameBuffers();
+	void CreateRenderPass();
 	void CreateDescriptorSetLayouts() override;
-	void AllocateDescriptorSets() override;
+	void AllocateDescriptorSets() override{};
 
 	void AllocateCommandBuffers() override;
 

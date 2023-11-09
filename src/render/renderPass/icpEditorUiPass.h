@@ -10,17 +10,17 @@ public:
 	icpEditorUiPass() = default;
 	virtual ~icpEditorUiPass() override;
 
-	void initializeRenderPass(RenderPassInitInfo initInfo) override;
-	void setupPipeline() override;
-	void cleanup() override;
-	void render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) override;
+	void InitializeRenderPass(RenderPassInitInfo initInfo) override;
+	void SetupPipeline() override;
+	void Cleanup() override;
+	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) override;
 
-	void createFrameBuffers();
+	void CreateFrameBuffers();
 
-	void createRenderPass();
+	void CreateRenderPass();
 
-	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex);
-	void recreateSwapChain() override;
+	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex);
+	void RecreateSwapChain() override;
 
 	void AllocateDescriptorSets() override {}
 	void AllocateCommandBuffers() override;

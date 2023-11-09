@@ -33,18 +33,16 @@ public:
 	icpRenderPassBase() = default;
 	virtual ~icpRenderPassBase() {}
 
-	virtual void initializeRenderPass(RenderPassInitInfo initInfo) = 0;
-	virtual void setupPipeline() = 0;
-	virtual void cleanup() = 0;
-	virtual void render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) = 0;
-	virtual void recreateSwapChain() = 0;
+	virtual void InitializeRenderPass(RenderPassInitInfo initInfo) = 0;
+	virtual void SetupPipeline() = 0;
+	virtual void Cleanup() = 0;
+	virtual void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info) = 0;
+	virtual void RecreateSwapChain() = 0;
 	virtual void CreateDescriptorSetLayouts() = 0;
 	virtual void AllocateDescriptorSets() = 0;
 	virtual void AllocateCommandBuffers() = 0;
 
 	std::vector<VkCommandBuffer> m_commandBuffers;
-	std::vector<VkFramebuffer> m_swapChainFramebuffers;
-	VkRenderPass m_renderPassObj{ VK_NULL_HANDLE };
 
 	RenderPipelineInfo m_pipelineInfo{};
 	std::vector<icpDescriptorSetLayoutInfo> m_DSLayouts;

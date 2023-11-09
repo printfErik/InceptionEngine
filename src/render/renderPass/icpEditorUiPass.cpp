@@ -18,15 +18,15 @@ icpEditorUiPass::~icpEditorUiPass()
 
 }
 
-void icpEditorUiPass::initializeRenderPass(RenderPassInitInfo initInfo)
+void icpEditorUiPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.device;
 
 	m_editorUI = initInfo.editorUi;
 
-	createRenderPass();
-	setupPipeline();
-	createFrameBuffers();
+	CreateRenderPass();
+	SetupPipeline();
+	CreateFrameBuffers();
 
 	AllocateCommandBuffers();
 
@@ -35,7 +35,7 @@ void icpEditorUiPass::initializeRenderPass(RenderPassInitInfo initInfo)
 	icpVulkanUtility::endSingleTimeCommandsAndSubmit(command_buffer, m_rhi->GetGraphicsQueue(), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice());
 }
 
-void icpEditorUiPass::createFrameBuffers()
+void icpEditorUiPass::CreateFrameBuffers()
 {
 	auto& swapChainViews = m_rhi->GetSwapChainImageViews();
 	m_swapChainFramebuffers.resize(swapChainViews.size());
@@ -60,22 +60,22 @@ void icpEditorUiPass::createFrameBuffers()
 	}
 }
 
-void icpEditorUiPass::cleanup()
+void icpEditorUiPass::Cleanup()
 {
 	
 }
 
-void icpEditorUiPass::recreateSwapChain()
+void icpEditorUiPass::RecreateSwapChain()
 {
 	for (auto framebuffer : m_swapChainFramebuffers)
 	{
 		vkDestroyFramebuffer(m_rhi->GetLogicalDevice(), framebuffer, nullptr);
 	}
-	createFrameBuffers();
+	CreateFrameBuffers();
 }
 
 
-void icpEditorUiPass::createRenderPass()
+void icpEditorUiPass::CreateRenderPass()
 {
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = m_rhi->GetSwapChainImageFormat();
@@ -120,7 +120,7 @@ void icpEditorUiPass::createRenderPass()
 	}
 }
 
-void icpEditorUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info)
+void icpEditorUiPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -134,7 +134,7 @@ void icpEditorUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, V
 	ImGui::Render();
 
 	vkResetCommandBuffer(m_commandBuffers[currentFrame], 0);
-	recordCommandBuffer(m_commandBuffers[currentFrame], frameBufferIndex);
+	RecordCommandBuffer(m_commandBuffers[currentFrame], frameBufferIndex);
 
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_commandBuffers[currentFrame]);
 
@@ -153,7 +153,7 @@ void icpEditorUiPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, V
 	info = submitInfo;
 }
 
-void icpEditorUiPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex)
+void icpEditorUiPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -177,7 +177,7 @@ void icpEditorUiPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_
 
 }
 
-void icpEditorUiPass::setupPipeline()
+void icpEditorUiPass::SetupPipeline()
 {
 	ImGui::CreateContext();
 

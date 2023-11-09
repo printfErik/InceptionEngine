@@ -12,9 +12,7 @@
 #include "../../scene/icpXFormComponent.h"
 #include "../icpRenderSystem.h"
 #include "../../mesh/icpPrimitiveRendererComponent.h"
-#include "../light/icpLightComponent.h"
 #include "../RHI/icpDescirptorSet.h"
-#include "../RHI/icpGPUBuffer.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -25,80 +23,19 @@ icpMainForwardPass::~icpMainForwardPass()
 	
 }
 
-void icpMainForwardPass::initializeRenderPass(RenderPassInitInfo initInfo)
+void icpMainForwardPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.device;
 	m_renderPassMgr = initInfo.renderPassMgr;
 
 	CreateDescriptorSetLayouts();
-	AllocateDescriptorSets();
 	AllocateCommandBuffers();
-	createRenderPass();
-	setupPipeline();
-	createFrameBuffers();
+	CreateRenderPass();
+	SetupPipeline();
+	CreateFrameBuffers();
 }
 
-void icpMainForwardPass::createRenderPass()
-{
-	VkAttachmentDescription colorAttachment{};
-	colorAttachment.format = m_rhi->GetSwapChainImageFormat();
-	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentDescription depthAttachment{};
-	depthAttachment.format = icpVulkanUtility::findDepthFormat(m_rhi->GetPhysicalDevice());
-	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentReference colorAttachmentRef{};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentReference depthAttachmentRef{};
-	depthAttachmentRef.attachment = 1;
-	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpass{};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
-	subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-	VkSubpassDependency dependency{};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass = 0;
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	dependency.srcAccessMask = 0;
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-	std::array<VkAttachmentDescription, 2> attachments{ colorAttachment, depthAttachment };
-
-	VkRenderPassCreateInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-	renderPassInfo.pAttachments = attachments.data();
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-	renderPassInfo.dependencyCount = 1;
-	renderPassInfo.pDependencies = &dependency;
-
-	if (vkCreateRenderPass(m_rhi->GetLogicalDevice(), &renderPassInfo, nullptr, &m_renderPassObj) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create render pass!");
-	}
-}
-
-void icpMainForwardPass::setupPipeline()
+void icpMainForwardPass::SetupPipeline()
 {
 	VkGraphicsPipelineCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -151,9 +88,9 @@ void icpMainForwardPass::setupPipeline()
 	// Layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = m_DSLayouts.size();
+	pipelineLayoutInfo.setLayoutCount = m_DSLayouts.size() + 1u; // global scene ds
 
-	std::vector<VkDescriptorSetLayout> layouts;
+	std::vector<VkDescriptorSetLayout> layouts{m_renderPassMgr.lock()->m_sceneDSLayout.layout};
 	for (auto& layoutInfo : m_DSLayouts)
 	{
 		layouts.push_back(layoutInfo.layout);
@@ -277,7 +214,7 @@ void icpMainForwardPass::setupPipeline()
 	vkDestroyShaderModule(m_rhi->GetLogicalDevice(), fragShader.module, nullptr);
 }
 
-void icpMainForwardPass::createFrameBuffers()
+void icpMainForwardPass::CreateFrameBuffers()
 {
 	auto& imageViews = m_rhi->GetSwapChainImageViews();
 	m_swapChainFramebuffers.resize(imageViews.size());
@@ -306,16 +243,16 @@ void icpMainForwardPass::createFrameBuffers()
 	}
 }
 
-void icpMainForwardPass::cleanup()
+void icpMainForwardPass::Cleanup()
 {
-	cleanupSwapChain();
+	CleanupSwapChain();
 
 	vkDestroyRenderPass(m_rhi->GetLogicalDevice(), m_renderPassObj, nullptr);
 	vkDestroyPipelineLayout(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipelineLayout, nullptr);
 	vkDestroyPipeline(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipeline, nullptr);
 }
 
-void icpMainForwardPass::cleanupSwapChain()
+void icpMainForwardPass::CleanupSwapChain()
 {
 	for (auto framebuffer : m_swapChainFramebuffers)
 	{
@@ -323,11 +260,11 @@ void icpMainForwardPass::cleanupSwapChain()
 	}
 }
 
-void icpMainForwardPass::render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info)
+void icpMainForwardPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult, VkSubmitInfo& info)
 {
 	if (acquireImageResult == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		recreateSwapChain();
+		RecreateSwapChain();
 		return;
 	}
 	else if (acquireImageResult != VK_SUCCESS && acquireImageResult != VK_SUBOPTIMAL_KHR)
@@ -338,7 +275,7 @@ void icpMainForwardPass::render(uint32_t frameBufferIndex, uint32_t currentFrame
 	UpdateGlobalBuffers(currentFrame);
 
 	vkResetCommandBuffer(m_commandBuffers[currentFrame], 0);
-	recordCommandBuffer(m_commandBuffers[currentFrame], frameBufferIndex, currentFrame);
+	RecordCommandBuffer(m_commandBuffers[currentFrame], frameBufferIndex, currentFrame);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -355,7 +292,7 @@ void icpMainForwardPass::render(uint32_t frameBufferIndex, uint32_t currentFrame
 	info = submitInfo;
 }
 
-void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
+void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -451,7 +388,7 @@ void icpMainForwardPass::recordCommandBuffer(VkCommandBuffer commandBuffer, uint
 	}
 }
 
-void icpMainForwardPass::recreateSwapChain() {
+void icpMainForwardPass::RecreateSwapChain() {
 
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(m_rhi->GetWindow(), &width, &height);
@@ -463,13 +400,13 @@ void icpMainForwardPass::recreateSwapChain() {
 
 	vkDeviceWaitIdle(m_rhi->GetLogicalDevice());
 
-	cleanupSwapChain();
+	CleanupSwapChain();
 	m_rhi->CleanUpSwapChain();
 
 	m_rhi->CreateSwapChain();
 	m_rhi->CreateSwapChainImageViews();
 	m_rhi->CreateDepthResources();
-	createFrameBuffers();
+	CreateFrameBuffers();
 }
 
 
@@ -599,51 +536,6 @@ void icpMainForwardPass::CreateDescriptorSetLayouts()
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 	}
-
-	// perFrame
-	{
-		// set 2, binding 0 
-		VkDescriptorSetLayoutBinding perFrameUBOBinding{};
-		perFrameUBOBinding.binding = 0;
-		perFrameUBOBinding.descriptorCount = 1;
-		perFrameUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		perFrameUBOBinding.pImmutableSamplers = nullptr;
-		perFrameUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-		m_DSLayouts[eMainForwardPassDSType::PER_FRAME].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
-
-		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perFrameUBOBinding };
-
-		VkDescriptorSetLayoutCreateInfo createInfo{};
-		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-		createInfo.pBindings = bindings.data();
-		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-
-		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[eMainForwardPassDSType::PER_FRAME].layout) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create descriptor set layout!");
-		}
-	}
-}
-
-void icpMainForwardPass::AllocateDescriptorSets()
-{
-	icpDescriptorSetCreation creation{};
-	auto layout = m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_FRAME];
-
-	creation.layoutInfo = layout;
-
-	std::vector<icpBufferRenderResourceInfo> bufferInfos;
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		icpBufferRenderResourceInfo bufferInfo{};
-		bufferInfo.buffer = m_renderPassMgr.lock()->m_vSceneCBs[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(perFrameCB);
-		bufferInfos.push_back(bufferInfo);
-	}
-
-	creation.SetUniformBuffer(0, bufferInfos);
-	m_rhi->CreateDescriptorSet(creation, m_perFrameDSs);
 }
 
 void icpMainForwardPass::AllocateCommandBuffers()
