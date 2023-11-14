@@ -277,10 +277,10 @@ void icpEditorUI::showEditorUI()
 					g_system_container.m_resourceSystem->loadImageResource(ImagePath);
 				}
 			}
-			ImGui::EndMenu();
+			
 
-			static char gltfPath[64] = "";
-			ImGui::InputText("Load GLTF File Path", gltfPath, 64);
+			static char gltfPath[128] = "";
+			ImGui::InputText("Load GLTF File Path", gltfPath, 128);
 			if (ImGui::Button("Load GLTF Files"))
 			{
 				if (std::strlen(gltfPath) == 0 || !checkFilePath(std::string()))

@@ -286,6 +286,7 @@ void icpGLTFLoaderUtil::LoadGLTFTextureSamplers(tinygltf::Model& gltfModel, std:
 void icpGLTFLoaderUtil::LoadGLTFTextures(tinygltf::Model& gltfModel, const std::vector<icpSamplerResource>& samplers,
 	std::vector<icpImageResource>& images)
 {
+	uint32_t TexIndex = 0;
 	for (tinygltf::Texture& tex : gltfModel.textures) 
 	{
 		tinygltf::Image& image = gltfModel.images[tex.source];
@@ -307,7 +308,16 @@ void icpGLTFLoaderUtil::LoadGLTFTextures(tinygltf::Model& gltfModel, const std::
 		icpImageResource imageRes;
 		imageRes.setImageBuffer(image.image.data(), image.image.size(), image.width, image.height, image.component);
 		imageRes.m_sampler = textureSampler;
-		imageRes.m_id = image.uri;
+		if (image.name.empty())
+		{
+			imageRes.m_id = "Anonymous_" + std::to_string(TexIndex);
+			TexIndex++;
+		}
+		else
+		{
+			imageRes.m_id = image.name;
+		}
+
 		images.push_back(imageRes);
 	}
 }

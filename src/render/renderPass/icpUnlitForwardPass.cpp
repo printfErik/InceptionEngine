@@ -330,7 +330,7 @@ void icpUnlitForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uin
 
 	std::vector<VkDeviceSize> offsets{ 0 };
 
-	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &mgr->m_vSceneDSs[curFrame], 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout,2 , 1, &mgr->m_vSceneDSs[curFrame], 0, nullptr);
 
 	auto materialSubSystem = g_system_container.m_renderSystem->GetMaterialSubSystem();
 
