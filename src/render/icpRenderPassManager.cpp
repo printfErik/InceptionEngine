@@ -44,15 +44,15 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 
 	m_renderPasses.push_back(mainForwordPass);
 
-	/*
 	icpRenderPassBase::RenderPassInitInfo unlitPassInfo;
 	unlitPassInfo.device = m_pDevice;
 	unlitPassInfo.passType = eRenderPass::UNLIT_PASS;
+	unlitPassInfo.renderPassMgr = shared_from_this();
 	std::shared_ptr<icpRenderPassBase> unlitPass = std::make_shared<icpUnlitForwardPass>();
 	unlitPass->InitializeRenderPass(unlitPassInfo);
 
 	m_renderPasses.push_back(unlitPass);
-	*/
+	
 
 	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
 	editorUIInfo.device = m_pDevice;
