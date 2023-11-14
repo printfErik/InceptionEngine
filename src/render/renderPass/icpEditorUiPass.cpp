@@ -52,14 +52,14 @@ void icpEditorUiPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, V
 
 	ImGui::Render();
 
-	vkResetCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], 0);
-	RecordCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], frameBufferIndex);
+	//vkResetCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], 0);
+	//RecordCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], frameBufferIndex);
 
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mgr->m_vMainForwardCommandBuffers[currentFrame]);
 
-	vkCmdEndRenderPass(mgr->m_vMainForwardCommandBuffers[currentFrame]);
+	//vkCmdEndRenderPass(mgr->m_vMainForwardCommandBuffers[currentFrame]);
 
-	vkEndCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame]);
+	//vkEndCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame]);
 }
 
 void icpEditorUiPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex)

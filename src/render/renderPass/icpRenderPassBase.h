@@ -39,6 +39,7 @@ public:
 	virtual void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) = 0;
 	virtual void CreateDescriptorSetLayouts() = 0;
 	virtual void AllocateDescriptorSets() = 0;
+	virtual void UpdateRenderPassCB(uint32_t curFrame) = 0;
 
 	RenderPipelineInfo m_pipelineInfo{};
 	std::vector<icpDescriptorSetLayoutInfo> m_DSLayouts;

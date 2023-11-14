@@ -11,9 +11,10 @@
 #include "icpCameraSystem.h"
 #include "../scene/icpSceneSystem.h"
 #include "light/icpLightComponent.h"
+#include "renderPass/icpUnlitForwardPass.h"
 
 INCEPTION_BEGIN_NAMESPACE
-icpRenderPassManager::icpRenderPassManager()
+	icpRenderPassManager::icpRenderPassManager()
 {
 }
 
@@ -28,6 +29,11 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	m_pDevice = vulkanRHI;
 
 	CreateSceneCB();
+	CreateGlobalSceneDescriptorSetLayout();
+	AllocateGlobalSceneDescriptorSets();
+	AllocateCommandBuffers();
+	CreateForwardRenderPass();
+	CreateSwapChainFrameBuffers();
 
 	icpRenderPassBase::RenderPassInitInfo mainPassCreateInfo;
 	mainPassCreateInfo.device = m_pDevice;
@@ -40,18 +46,19 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 
 	/*
 	icpRenderPassBase::RenderPassInitInfo unlitPassInfo;
-	copyPassInfo.rhi = m_rhi;
-	copyPassInfo.passType = eRenderPass::COPY_PASS;
-	std::shared_ptr<icpRenderPassBase> copyPass = std::make_shared<icpRenderToImgPass>();
-	copyPass->initializeRenderPass(copyPassInfo);
+	unlitPassInfo.device = m_pDevice;
+	unlitPassInfo.passType = eRenderPass::UNLIT_PASS;
+	std::shared_ptr<icpRenderPassBase> unlitPass = std::make_shared<icpUnlitForwardPass>();
+	unlitPass->InitializeRenderPass(unlitPassInfo);
 
-	m_renderPasses.push_back(copyPass);
+	m_renderPasses.push_back(unlitPass);
 	*/
 
 	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
 	editorUIInfo.device = m_pDevice;
 	editorUIInfo.passType = eRenderPass::EDITOR_UI_PASS;
 	editorUIInfo.editorUi = std::make_shared<icpEditorUI>();
+	editorUIInfo.renderPassMgr = shared_from_this();
 	std::shared_ptr<icpRenderPassBase> editorUIPass = std::make_shared<icpEditorUiPass>();
 	editorUIPass->InitializeRenderPass(editorUIInfo);
 
@@ -88,10 +95,21 @@ void icpRenderPassManager::render()
 
 	UpdateGlobalSceneCB(m_currentFrame);
 
+	for (const auto renderPass : m_renderPasses)
+	{
+		renderPass->UpdateRenderPassCB(m_currentFrame);
+	}
+
+	ResetThenBeginCommandBuffer();
+	BeginForwardRenderPass(index);
+
 	for(const auto renderPass : m_renderPasses)
 	{
 		renderPass->Render(index, m_currentFrame, result);
 	}
+
+	EndForwardRenderPass();
+	EndRecordingCommandBuffer();
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -108,7 +126,6 @@ void icpRenderPassManager::render()
 
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &m_vMainForwardCommandBuffers[m_currentFrame];
-
 
 	auto& fences = m_pDevice->GetInFlightFences();
 
@@ -267,7 +284,7 @@ void icpRenderPassManager::CreateForwardRenderPass()
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 	VkAttachmentDescription depthAttachment{};
 	depthAttachment.format = icpVulkanUtility::findDepthFormat(m_pDevice->GetPhysicalDevice());
@@ -391,5 +408,52 @@ void icpRenderPassManager::CleanupSwapChain()
 		vkDestroyFramebuffer(m_pDevice->GetLogicalDevice(), framebuffer, nullptr);
 	}
 }
+
+void icpRenderPassManager::ResetThenBeginCommandBuffer()
+{
+	vkResetCommandBuffer(m_vMainForwardCommandBuffers[m_currentFrame], 0);
+
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+	if (vkBeginCommandBuffer(m_vMainForwardCommandBuffers[m_currentFrame], &beginInfo) != VK_SUCCESS) {
+		throw std::runtime_error("failed to begin recording command buffer!");
+	}
+}
+
+void icpRenderPassManager::BeginForwardRenderPass(uint32_t imageIndex)
+{
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = m_mainForwardRenderPass;
+	renderPassInfo.framebuffer = m_vSwapChainFrameBuffers[imageIndex];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = m_pDevice->GetSwapChainExtent();
+
+	std::array<VkClearValue, 2> clearColors{};
+	clearColors[0].color = { {0.f,0.f,0.f,1.f} };
+	clearColors[1].depthStencil = { 1.f, 0 };
+
+	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+	renderPassInfo.pClearValues = clearColors.data();
+
+	vkCmdBeginRenderPass(m_vMainForwardCommandBuffers[m_currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void icpRenderPassManager::EndForwardRenderPass()
+{
+	vkCmdEndRenderPass(m_vMainForwardCommandBuffers[m_currentFrame]);
+}
+
+
+void icpRenderPassManager::EndRecordingCommandBuffer()
+{
+	if (vkEndCommandBuffer(m_vMainForwardCommandBuffers[m_currentFrame]) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to record command buffer!");
+	}
+}
+
+
 
 INCEPTION_END_NAMESPACE

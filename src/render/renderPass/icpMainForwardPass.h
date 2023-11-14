@@ -13,7 +13,6 @@ public:
 	{
 		PER_MESH = 0,
 		PER_MATERIAL,
-		PER_FRAME,
 		LAYOUT_TYPE_COUNT
 	};
 
@@ -29,15 +28,10 @@ public:
 
 	void CreateDescriptorSetLayouts() override;
 	void AllocateDescriptorSets() override{}
-
-	VkSemaphore m_waitSemaphores[1];
-	VkPipelineStageFlags m_waitStages[1];
-
-	std::vector<VkDescriptorSet> m_perFrameDSs;
-
+	void UpdateRenderPassCB(uint32_t curFrame) override;
 private:
 
-	void UpdateGlobalBuffers(uint32_t curFrame);
+	//void UpdateGlobalBuffers(uint32_t curFrame);
 };
 
 INCEPTION_END_NAMESPACE

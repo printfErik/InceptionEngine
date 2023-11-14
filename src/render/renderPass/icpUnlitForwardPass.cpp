@@ -5,7 +5,9 @@
 #include "../../core/icpConfigSystem.h"
 #include "../../mesh/icpMeshData.h"
 #include "../icpRenderPassManager.h"
+#include "../../mesh/icpMeshResource.h"
 #include "../../mesh/icpMeshRendererComponent.h"
+#include "../../mesh/icpPrimitiveRendererComponent.h"
 #include "../../scene/icpXFormComponent.h"
 #include "../icpRenderSystem.h"
 
@@ -143,11 +145,13 @@ void icpUnlitForwardPass::SetupPipeline()
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
-	std::vector<VkDescriptorSetLayout> layouts{m_renderPassMgr.lock()->m_sceneDSLayout.layout};
+	std::vector<VkDescriptorSetLayout> layouts{};
 	for (auto& layoutInfo : m_DSLayouts)
 	{
 		layouts.push_back(layoutInfo.layout);
 	}
+
+	layouts.push_back(m_renderPassMgr.lock()->m_sceneDSLayout.layout);
 
 	pipelineLayoutInfo.pSetLayouts = layouts.data();
 	pipelineLayoutInfo.setLayoutCount = layouts.size();
@@ -277,15 +281,14 @@ void icpUnlitForwardPass::Cleanup()
 void icpUnlitForwardPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
 	auto mgr = m_renderPassMgr.lock();
-	UpdateGlobalBuffers(currentFrame);
-
-	vkResetCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], 0);
+	//vkResetCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], 0);
 	RecordCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], frameBufferIndex, currentFrame);
 }
 
 void icpUnlitForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
 	auto mgr = m_renderPassMgr.lock();
+	/*
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -308,7 +311,7 @@ void icpUnlitForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uin
 	renderPassInfo.pClearValues = clearColors.data();
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
+	*/
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
 
 	VkViewport viewport{};
@@ -327,7 +330,7 @@ void icpUnlitForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uin
 
 	std::vector<VkDeviceSize> offsets{ 0 };
 
-	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &m_perFrameDSs[curFrame], 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &mgr->m_vSceneDSs[curFrame], 0, nullptr);
 
 	auto materialSubSystem = g_system_container.m_renderSystem->GetMaterialSubSystem();
 
@@ -372,15 +375,17 @@ void icpUnlitForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uin
 		}
 	}
 
+	/*
 	vkCmdEndRenderPass(commandBuffer);
 
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to record command buffer!");
 	}
+	*/
 }
 
-void icpUnlitForwardPass::UpdateGlobalBuffers(uint32_t curFrame)
+void icpUnlitForwardPass::UpdateRenderPassCB(uint32_t curFrame)
 {
 	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
 

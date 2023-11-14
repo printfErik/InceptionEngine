@@ -14,7 +14,6 @@ public:
 	{
 		PER_MESH = 0,
 		PER_MATERIAL,
-		PER_FRAME,
 		LAYOUT_TYPE_COUNT
 	};
 
@@ -29,7 +28,7 @@ public:
 	void CreateDescriptorSetLayouts() override;
 	void AllocateDescriptorSets() override{}
 
-	void UpdateGlobalBuffers(uint32_t curFrame);
+	void UpdateRenderPassCB(uint32_t curFrame) override;
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
 
 

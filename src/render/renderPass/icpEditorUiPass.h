@@ -17,7 +17,7 @@ public:
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex);
 	void AllocateDescriptorSets() override {}
 	void CreateDescriptorSetLayouts() override {}
-
+	void UpdateRenderPassCB(uint32_t curFrame) override {}
 private:
 	std::shared_ptr<icpEditorUI> m_editorUI;
 

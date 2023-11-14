@@ -64,8 +64,8 @@ public:
 
 	void CreateForwardRenderPass();
 	void CreateSwapChainFrameBuffers();
-
 	void AllocateCommandBuffers();
+
 	void RecreateSwapChain();
 	void CleanupSwapChain();
 
@@ -82,10 +82,14 @@ public:
 
 private:
 
+	void ResetThenBeginCommandBuffer();
+	void BeginForwardRenderPass(uint32_t imageIndex);
+
+	void EndForwardRenderPass();
+	void EndRecordingCommandBuffer();
+
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
-
 	std::vector<std::shared_ptr<icpRenderPassBase>> m_renderPasses;
-
 	std::vector<VmaAllocation> m_vSceneCBAllocations;
 	
 
