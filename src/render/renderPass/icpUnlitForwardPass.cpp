@@ -307,13 +307,6 @@ void icpUnlitForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uin
 
 	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout,2 , 1, &mgr->m_vSceneDSs[curFrame], 0, nullptr);
 
-	auto materialSubSystem = g_system_container.m_renderSystem->GetMaterialSubSystem();
-
-	for (auto materialInstance : materialSubSystem->m_vMaterialContainer)
-	{
-		vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(materialInstance->m_perMaterialDSs[curFrame]), 0, nullptr);
-	}
-
 	std::vector<std::shared_ptr<icpGameEntity>> rootList;
 	g_system_container.m_sceneSystem->getRootEntityList(rootList);
 
@@ -322,6 +315,12 @@ void icpUnlitForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uin
 		if (entity->hasComponent<icpMeshRendererComponent>())
 		{
 			const auto& meshRender = entity->accessComponent<icpMeshRendererComponent>();
+
+			if (meshRender.m_pMaterial->m_shadingModel != eMaterialShadingModel::UNLIT)
+			{
+				continue;
+			}
+
 			auto& meshResId = meshRender.m_meshResId;
 			auto res = g_system_container.m_resourceSystem->GetResourceContainer()[icpResourceType::MESH][meshResId];
 			auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(res);
@@ -333,20 +332,9 @@ void icpUnlitForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uin
 			vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(meshRender.m_pMaterial->m_perMaterialDSs[curFrame]), 0, nullptr);
+
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshRes->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
-		}
-		else if (entity->hasComponent<icpPrimitiveRendererComponent>())
-		{
-			auto& primitive = entity->accessComponent<icpPrimitiveRendererComponent>();
-			auto vertBuf = primitive.m_vertexBuffer;
-			std::vector<VkBuffer>vertexBuffers{ vertBuf };
-
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
-			vkCmdBindIndexBuffer(commandBuffer, primitive.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-			auto& descriptorSets = primitive.m_descriptorSets;
-			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(primitive.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
 	}
 }

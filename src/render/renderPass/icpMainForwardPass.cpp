@@ -267,6 +267,14 @@ void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint
 		if (entity->hasComponent<icpMeshRendererComponent>())
 		{
 			const auto& meshRender = entity->accessComponent<icpMeshRendererComponent>();
+
+			if (meshRender.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
+			{
+				continue;
+			}
+
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(meshRender.m_pMaterial->m_perMaterialDSs[curFrame]), 0, nullptr);
+
 			auto& meshResId = meshRender.m_meshResId;
 			auto res = g_system_container.m_resourceSystem->GetResourceContainer()[icpResourceType::MESH][meshResId];
 			auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(res);
@@ -278,11 +286,21 @@ void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint
 			vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
+
+
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshRes->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
 		else if (entity->hasComponent<icpPrimitiveRendererComponent>())
 		{
 			auto& primitive = entity->accessComponent<icpPrimitiveRendererComponent>();
+
+			if (primitive.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
+			{
+				continue;
+			}
+
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(primitive.m_pMaterial->m_perMaterialDSs[curFrame]), 0, nullptr);
+
 			auto vertBuf = primitive.m_vertexBuffer;
 			std::vector<VkBuffer>vertexBuffers{ vertBuf };
 
