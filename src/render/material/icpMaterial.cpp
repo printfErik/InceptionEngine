@@ -104,17 +104,33 @@ void icpMaterialInstance::AllocateDescriptorSets()
 
 	std::vector<std::vector<icpTextureRenderResourceInfo>> imgInfosAllFrames;
 
-	AddedTextureDescriptor("baseColorTexture", imgInfosAllFrames);
-	AddedTextureDescriptor("metallicRoughnessTexture", imgInfosAllFrames);
-	AddedTextureDescriptor("metallicTexture", imgInfosAllFrames);
-	AddedTextureDescriptor("roughnessTexture", imgInfosAllFrames);
-	AddedTextureDescriptor("normalTexture", imgInfosAllFrames);
-	AddedTextureDescriptor("occlusionTexture", imgInfosAllFrames);
-	AddedTextureDescriptor("emissiveTexture", imgInfosAllFrames);
+	switch (m_shadingModel)
+	{
+	case eMaterialShadingModel::PBR_LIT:
+		{
+		AddedTextureDescriptor("baseColorTexture", imgInfosAllFrames);
+		AddedTextureDescriptor("metallicRoughnessTexture", imgInfosAllFrames);
+		AddedTextureDescriptor("metallicTexture", imgInfosAllFrames);
+		AddedTextureDescriptor("roughnessTexture", imgInfosAllFrames);
+		AddedTextureDescriptor("normalTexture", imgInfosAllFrames);
+		AddedTextureDescriptor("occlusionTexture", imgInfosAllFrames);
+		AddedTextureDescriptor("emissiveTexture", imgInfosAllFrames);
+		break;
+		}
+	case eMaterialShadingModel::UNLIT:
+		{
+		AddedTextureDescriptor("baseColorTexture", imgInfosAllFrames);
+		break;
+		}
+	default:
+		{
+			break;
+		}
+	}
 
 	for (uint32_t i = 0; i < imgInfosAllFrames.size(); i++)
 	{
-		creation.SetCombinedImageSampler(i + UBOSize > 0 ? 1 : 0, imgInfosAllFrames[i]);
+		creation.SetCombinedImageSampler(i + (UBOSize > 0 ? 1 : 0), imgInfosAllFrames[i]);
 	}
 
 	vulkanRHI->CreateDescriptorSet(creation, m_perMaterialDSs);
@@ -150,13 +166,14 @@ void icpMaterialInstance::AddTexture(const std::string& key, const icpTextureMat
 	auto texRendeResMgr = g_system_container.m_renderSystem->GetTextureRenderResourceManager();
 
 	auto& texID = textureInfo.m_textureID;
-	if(texRendeResMgr->m_textureRenderResources.find(texID) == texRendeResMgr->m_textureRenderResources.end())
+	auto texRes = g_system_container.m_resourceSystem->FindResourceByID(icpResourceType::TEXTURE, texID);
+	if (!texRes)
 	{
 		auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / (texID + ".png");
-		g_system_container.m_resourceSystem->loadImageResource(imgPath);
+		texRes = g_system_container.m_resourceSystem->loadImageResource(imgPath);
 	}
 
-	if (texRendeResMgr->m_textureRenderResources[texID].m_state == eTextureRenderResouceState::UNINITIALIZED)
+	if(texRendeResMgr->m_textureRenderResources.find(texID) == texRendeResMgr->m_textureRenderResources.end())
 	{
 		texRendeResMgr->setupTextureRenderResources(texID);
 	}
@@ -167,7 +184,22 @@ void icpMaterialInstance::AddTexture(const std::string& key, const icpTextureMat
 
 uint64_t icpMaterialInstance::ComputeUBOSize()
 {
-	return sizeof(ShaderMaterial);
+	switch (m_shadingModel)
+	{
+	case eMaterialShadingModel::PBR_LIT:
+	{
+		return sizeof(PBRShaderMaterial);
+	}
+	case eMaterialShadingModel::UNLIT:
+	{
+		return sizeof(UnlitShaderMaterial);
+	}
+	default:
+	{
+		return 0;
+	}
+	}
+	
 }
 
 uint32_t icpMaterialInstance::GetSRVNumber() const

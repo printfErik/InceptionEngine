@@ -32,7 +32,6 @@ void icpEditorUiPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	icpVulkanUtility::endSingleTimeCommandsAndSubmit(command_buffer, m_rhi->GetGraphicsQueue(), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice());
 }
 
-
 void icpEditorUiPass::Cleanup()
 {
 	
@@ -52,39 +51,7 @@ void icpEditorUiPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, V
 
 	ImGui::Render();
 
-	//vkResetCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], 0);
-	//RecordCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], frameBufferIndex);
-
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mgr->m_vMainForwardCommandBuffers[currentFrame]);
-
-	//vkCmdEndRenderPass(mgr->m_vMainForwardCommandBuffers[currentFrame]);
-
-	//vkEndCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame]);
-}
-
-void icpEditorUiPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t curFrameIndex)
-{
-	auto mgr = m_renderPassMgr.lock();
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-		throw std::runtime_error("failed to begin recording command buffer!");
-	}
-
-	VkRenderPassBeginInfo info = {};
-	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	info.renderPass = mgr->m_mainForwardRenderPass;
-	info.framebuffer = mgr->m_vSwapChainFrameBuffers[curFrameIndex];
-	info.renderArea.extent = m_rhi->GetSwapChainExtent();
-	std::array<VkClearValue, 2> clearColors{};
-	clearColors[0].color = { {0.f,0.f,0.f,1.f} };
-	clearColors[1].depthStencil = { 1.f, 0 };
-
-	info.clearValueCount = static_cast<uint32_t>(clearColors.size());
-	info.pClearValues = clearColors.data();
-	vkCmdBeginRenderPass(commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
-
 }
 
 void icpEditorUiPass::SetupPipeline()

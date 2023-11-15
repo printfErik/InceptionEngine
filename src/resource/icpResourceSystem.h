@@ -7,7 +7,8 @@
 #include <TaskScheduler.h>
 
 INCEPTION_BEGIN_NAMESPACE
-class icpResourceSystem;
+	class icpImageResource;
+	class icpResourceSystem;
 
 struct RunPinnedTaskLoopTask : public enki::IPinnedTask
 {
@@ -37,6 +38,8 @@ public:
 	bool Initialize();
 
 	std::shared_ptr<icpResourceBase> loadImageResource(const std::filesystem::path& imgPath);
+	std::shared_ptr<icpResourceBase> LoadImageResource(icpImageResource& res);
+
 	std::shared_ptr<icpResourceBase> loadObjModelResource(const std::filesystem::path& objPath, bool ifLoadRelatedImgRes = false);
 
 	bool LoadGLTFResource(const std::filesystem::path& gltfPath);
@@ -47,6 +50,7 @@ public:
 
 	icpResourceContainer& GetResourceContainer();
 
+	std::shared_ptr<icpResourceBase> FindResourceByID(icpResourceType type, const std::string& resID);
 private:
 	std::unique_ptr<enki::TaskScheduler> m_ekScheduler = nullptr;
 	std::queue<ResourceLoadTask> m_taskLoadingQueue;

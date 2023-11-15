@@ -67,7 +67,8 @@ public:
 	std::vector<VmaAllocation> m_perMaterialUniformBufferAllocations;
 };
 
-struct alignas(16) ShaderMaterial {
+struct alignas(16) PBRShaderMaterial
+{
 	glm::vec4 baseColorFactor = glm::vec4(1.f);
 	glm::vec4 emissiveFactor = glm::vec4(0.f);
 	//glm::vec4 diffuseFactor = glm::vec4(1.f);
@@ -85,6 +86,12 @@ struct alignas(16) ShaderMaterial {
 	float alphaMask = 0.f;
 	float alphaMaskCutoff = 0.f;
 	//float emissiveStrength = 1.f;
+};
+
+struct alignas(16) UnlitShaderMaterial
+{
+	glm::vec4 baseColorFactor = glm::vec4(1.f);
+	float colorTextureSet = -1;
 };
 
 class icpMaterialInstance : public icpMaterialTemplate
@@ -116,7 +123,7 @@ private:
 
 	uint32_t m_nSRVs = 0;
 
-	ShaderMaterial m_pbrDataCache;
+	PBRShaderMaterial m_pbrDataCache;
 };
 
 class icpMaterialSubSystem

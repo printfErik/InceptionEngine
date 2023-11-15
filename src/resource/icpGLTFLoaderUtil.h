@@ -30,9 +30,9 @@ public:
 	static void LoadGLTFTextureSamplers(tinygltf::Model& gltfModel, std::vector<icpSamplerResource>& samplers);
 
 	static void LoadGLTFTextures(tinygltf::Model& gltfModel, const std::vector<icpSamplerResource>& samplers,
-		std::vector<icpImageResource>& images);
+		std::vector<std::string>& imageIDs);
 
-	static void LoadGLTFMaterials(tinygltf::Model& gltfModel, std::vector<icpImageResource>& images, 
+	static void LoadGLTFMaterials(tinygltf::Model& gltfModel, const std::vector<std::string>& images,
 		std::vector<std::shared_ptr<icpMaterialInstance>>& materials);
 
 	static void LoadGLTFScene(tinygltf::Model& gltfModel, std::vector<std::vector<icpMeshResource>>& meshResources);

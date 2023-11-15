@@ -231,30 +231,7 @@ void icpMainForwardPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame
 void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
 	auto mgr = m_renderPassMgr.lock();
-	/*
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-		throw std::runtime_error("failed to begin recording command buffer!");
-	}
-
-	VkRenderPassBeginInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = mgr->m_mainForwardRenderPass;
-	renderPassInfo.framebuffer = mgr->m_vSwapChainFrameBuffers[imageIndex];
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = m_rhi->GetSwapChainExtent();
-
-	std::array<VkClearValue, 2> clearColors{};
-	clearColors[0].color = { {0.f,0.f,0.f,1.f} };
-	clearColors[1].depthStencil = { 1.f, 0 };
-
-	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
-	renderPassInfo.pClearValues = clearColors.data();
-
-	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	*/
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
 
 	VkViewport viewport{};
@@ -317,15 +294,6 @@ void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(primitive.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
 	}
-
-	/*
-	vkCmdEndRenderPass(commandBuffer);
-
-	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to record command buffer!");
-	}
-	*/
 }
 
 void icpMainForwardPass::UpdateRenderPassCB(uint32_t curFrame)
@@ -356,7 +324,7 @@ void icpMainForwardPass::UpdateRenderPassCB(uint32_t curFrame)
 
 		void* materialData;
 		vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
-		memcpy(materialData, material->CheckMaterialDataCache(), sizeof(ShaderMaterial));
+		memcpy(materialData, material->CheckMaterialDataCache(), sizeof(PBRShaderMaterial));
 		vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
 
 	}
@@ -390,7 +358,7 @@ void icpMainForwardPass::UpdateRenderPassCB(uint32_t curFrame)
 
 		void* materialData;
 		vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
-		memcpy(materialData, material->CheckMaterialDataCache(), sizeof(ShaderMaterial));
+		memcpy(materialData, material->CheckMaterialDataCache(), sizeof(PBRShaderMaterial));
 		vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
 	}
 }

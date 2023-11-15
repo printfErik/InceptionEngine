@@ -81,6 +81,14 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::loadImageResource(const std:
 	return imgRes;
 }
 
+std::shared_ptr<icpResourceBase> icpResourceSystem::LoadImageResource(icpImageResource& res)
+{
+	std::shared_ptr<icpResourceBase> pRes = std::make_shared<icpImageResource>(res);
+	m_resources[icpResourceType::TEXTURE][pRes->m_id] = pRes;
+	return pRes;
+}
+
+
 std::shared_ptr<icpResourceBase> icpResourceSystem::loadObjModelResource(const std::filesystem::path& objPath, bool ifLoadRelatedImgRes)
 {
 	auto objName = objPath.stem().string();
@@ -185,7 +193,7 @@ bool icpResourceSystem::LoadGLTFResource(const std::filesystem::path& gltfPath)
 	std::vector<icpSamplerResource> samplers;
 	icpGLTFLoaderUtil::LoadGLTFTextureSamplers(gltfModel, samplers);
 
-	std::vector<icpImageResource> images;
+	std::vector<std::string> images;
 	icpGLTFLoaderUtil::LoadGLTFTextures(gltfModel, samplers, images);
 
 	std::vector<std::shared_ptr<icpMaterialInstance>> materials;
@@ -246,6 +254,17 @@ void RunPinnedTaskLoopTask::Execute()
 		m_pResourceSystem->UpdateSystem();
 	}
 }
+
+std::shared_ptr<icpResourceBase> icpResourceSystem::FindResourceByID(icpResourceType type, const std::string& resID)
+{
+	if (m_resources[type].find(resID) != m_resources[type].end())
+	{
+		return m_resources[type][resID];
+	}
+
+	return nullptr;
+}
+
 
 INCEPTION_END_NAMESPACE
 
