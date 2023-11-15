@@ -88,6 +88,12 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::LoadImageResource(icpImageRe
 	return pRes;
 }
 
+std::shared_ptr<icpResourceBase> icpResourceSystem::LoadModelResource(icpMeshResource& res)
+{
+	std::shared_ptr<icpResourceBase> pRes = std::make_shared<icpMeshResource>(res);
+	m_resources[icpResourceType::MESH][pRes->m_id] = pRes;
+	return pRes;
+}
 
 std::shared_ptr<icpResourceBase> icpResourceSystem::loadObjModelResource(const std::filesystem::path& objPath, bool ifLoadRelatedImgRes)
 {

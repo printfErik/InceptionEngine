@@ -40,6 +40,10 @@ void icpGLTFLoaderUtil::LoadGLTFMeshs(tinygltf::Model& gltfModel, std::vector<st
 			icpMeshResource meshRes;
 			meshRes.m_meshData = meshData;
 			meshRes.m_pMaterial = materials[gltfPrimitive.material];
+			meshRes.m_resType = icpResourceType::MESH;
+			meshRes.m_id = (gltfMesh.name.empty() ? "AnonymousMesh" : gltfMesh.name) + "_Primitive" + std::to_string(primitiveIdx);
+			g_system_container.m_resourceSystem->LoadModelResource(meshRes);
+
 			primitives[primitiveIdx] = meshRes;
 		}
 
@@ -164,9 +168,9 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 
 	std::vector<uint8_t> colorBufferData;
 	int colorAccessorIdx = -1;
-	if (gltfPrimitive.attributes.contains("COLOR0"))
+	if (gltfPrimitive.attributes.contains("COLOR_0"))
 	{
-		colorAccessorIdx = gltfPrimitive.attributes.at("COLOR0");
+		colorAccessorIdx = gltfPrimitive.attributes.at("COLOR_0");
 		const tinygltf::Accessor& accessor = gltfModel.accessors[colorAccessorIdx > -1 ? colorAccessorIdx : 0];
 		assert(accessor.type == TINYGLTF_TYPE_VEC3);
 		assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
@@ -181,9 +185,9 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 
 	std::vector<uint8_t> texCoordBufferData;
 	int tcAccessorIdx = -1;
-	if (gltfPrimitive.attributes.contains("TEXCOORD0"))
+	if (gltfPrimitive.attributes.contains("TEXCOORD_0"))
 	{
-		tcAccessorIdx = gltfPrimitive.attributes.at("TEXCOORD0");
+		tcAccessorIdx = gltfPrimitive.attributes.at("TEXCOORD_0");
 		const tinygltf::Accessor& accessor = gltfModel.accessors[tcAccessorIdx > -1 ? tcAccessorIdx : 0];
 		assert(accessor.type == TINYGLTF_TYPE_VEC2);
 		assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
@@ -206,22 +210,31 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 		vertex.position[1] = *(pPos + (i * 3) + 1);
 		vertex.position[2] = *(pPos + (i * 3) + 2);
 
-		float* pNormal = (float*)normalBufferData.data();
+		if (!normalBufferData.empty())
+		{
+			float* pNormal = (float*)normalBufferData.data();
 
-		vertex.normal[0] = *(pNormal + (i * 3) + 0);
-		vertex.normal[1] = *(pNormal + (i * 3) + 1);
-		vertex.normal[2] = *(pNormal + (i * 3) + 2);
+			vertex.normal[0] = *(pNormal + (i * 3) + 0);
+			vertex.normal[1] = *(pNormal + (i * 3) + 1);
+			vertex.normal[2] = *(pNormal + (i * 3) + 2);
+		}
 
-		float* pColor = (float*)normalBufferData.data();
+		if (!texCoordBufferData.empty())
+		{
+			float* pTc = (float*)texCoordBufferData.data();
 
-		vertex.normal[0] = *(pColor + (i * 3) + 0);
-		vertex.normal[1] = *(pColor + (i * 3) + 1);
-		vertex.normal[2] = *(pColor + (i * 3) + 2);
+			vertex.texCoord[0] = *(pTc + (i * 2) + 0);
+			vertex.texCoord[1] = *(pTc + (i * 2) + 1);
+		}
 
-		float* pTc = (float*)texCoordBufferData.data();
+		if (!colorBufferData.empty())
+		{
+			float* pColor = (float*)colorBufferData.data();
 
-		vertex.texCoord[0] = *(pTc + (i * 2) + 0);
-		vertex.texCoord[1] = *(pTc + (i * 2) + 1);
+			vertex.color[0] = *(pColor + (i * 3) + 0);
+			vertex.color[1] = *(pColor + (i * 3) + 1);
+			vertex.color[2] = *(pColor + (i * 3) + 2);
+		}
 
 		meshData.m_vertices.push_back(vertex);
 	}
@@ -392,21 +405,25 @@ void icpGLTFLoaderUtil::LoadGLTFScene(tinygltf::Model& gltfModel, std::vector<st
 
 	for (int nodeIdx = 0; nodeIdx < scene.nodes.size(); nodeIdx++)
 	{
-		LoadGLTFNode(gltfModel, scene.nodes[nodeIdx], -1, meshResources);
+		LoadGLTFNode(gltfModel, scene.nodes[nodeIdx], icpGuid(), meshResources, true);
 	}
 }
 
-void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, icpGuid parentGuid, std::vector<std::vector<icpMeshResource>>& meshResources)
+void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, icpGuid parentGuid, std::vector<std::vector<icpMeshResource>>& meshResources, bool is_root)
 {
-	const auto view = g_system_container.m_sceneSystem->m_registry.view<icpEntityDataComponent>();
-	const auto it = std::find_if(view.begin(), view.end(), [&view, &parentGuid](auto args)
-		{
-			icpEntityDataComponent& dataComp = view.get<icpEntityDataComponent>(args);
-			return dataComp.m_guid == parentGuid;
-		});
+	icpGameEntity* parentEntity = nullptr;
+	if (!is_root)
+	{
+		const auto view = g_system_container.m_sceneSystem->m_registry.view<icpEntityDataComponent>();
+		const auto it = std::find_if(view.begin(), view.end(), [&view, &parentGuid](auto args)
+			{
+				icpEntityDataComponent& dataComp = view.get<icpEntityDataComponent>(args);
+				return dataComp.m_guid == parentGuid;
+			});
 
-	auto& parentDataComp = view.get<icpEntityDataComponent>(*it);
-	auto parentEntity = parentDataComp.m_possessor;
+		auto& parentDataComp = view.get<icpEntityDataComponent>(*it);
+		parentEntity = parentDataComp.m_possessor;
+	}
 
 	auto& node = gltfModel.nodes[nodeIdx];
 	glm::mat4 worldMtx{1.f};
@@ -432,14 +449,14 @@ void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, ic
 
 		glm::mat4 rotation{ 1.f };
 
-		if (node.rotation.empty())
+		if (!node.rotation.empty())
 		{
 			glm::quat rot(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]);
 			rotation = glm::mat4{ rot };
 		}
 
 		glm::mat4 scale{ 1.f };
-		if (node.scale.empty())
+		if (!node.scale.empty())
 		{
 			scale = glm::scale(scale, glm::vec3{ node.scale[0], node.scale[1], node.scale[2] });
 		}
@@ -459,9 +476,13 @@ void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, ic
 
 			xform.m_mtxTransform = worldMtx;
 
-			auto parentXform = std::make_shared<icpXFormComponent>(parentEntity->accessComponent<icpXFormComponent>());
-			xform.m_parent = parentXform;
-			parentXform->m_children.push_back(std::make_shared<icpXFormComponent>(xform));
+			if (parentEntity)
+			{
+				auto parentXform = std::make_shared<icpXFormComponent>(parentEntity->accessComponent<icpXFormComponent>());
+				xform.m_parent = parentXform;
+				parentXform->m_children.push_back(std::make_shared<icpXFormComponent>(xform));
+			}
+			
 
 			auto& meshComp = entity->installComponent<icpMeshRendererComponent>();
 			meshComp.m_meshResId = primitive.m_id;
@@ -473,6 +494,7 @@ void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, ic
 
 	for (int childIndex = 0; childIndex < node.children.size(); childIndex++)
 	{
+		// todo: correct parent guid
 		LoadGLTFNode(gltfModel, node.children[childIndex], nodeIdx, meshResources);
 	}
 

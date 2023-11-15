@@ -290,7 +290,7 @@ void icpEditorUI::showEditorUI()
 				}
 				else
 				{
-					g_system_container.m_resourceSystem->RequestAsyncLoadResource(icpResourceType::GLTF, gltfPath);
+					g_system_container.m_resourceSystem->LoadGLTFResource(gltfPath); //RequestAsyncLoadResource(icpResourceType::GLTF, gltfPath);
 				}
 			}
 			ImGui::EndMenu();

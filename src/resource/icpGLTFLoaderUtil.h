@@ -37,7 +37,8 @@ public:
 
 	static void LoadGLTFScene(tinygltf::Model& gltfModel, std::vector<std::vector<icpMeshResource>>& meshResources);
 
-	static void LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, icpGuid parentGuid, std::vector<std::vector<icpMeshResource>>& meshResources);
+	static void LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, 
+		icpGuid parentGuid, std::vector<std::vector<icpMeshResource>>& meshResources, bool is_root = false);
 };
 
 INCEPTION_END_NAMESPACE

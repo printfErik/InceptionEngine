@@ -7,6 +7,7 @@
 #include <TaskScheduler.h>
 
 INCEPTION_BEGIN_NAMESPACE
+	class icpMeshResource;
 	class icpImageResource;
 	class icpResourceSystem;
 
@@ -39,7 +40,7 @@ public:
 
 	std::shared_ptr<icpResourceBase> loadImageResource(const std::filesystem::path& imgPath);
 	std::shared_ptr<icpResourceBase> LoadImageResource(icpImageResource& res);
-
+	std::shared_ptr<icpResourceBase> LoadModelResource(icpMeshResource& res);
 	std::shared_ptr<icpResourceBase> loadObjModelResource(const std::filesystem::path& objPath, bool ifLoadRelatedImgRes = false);
 
 	bool LoadGLTFResource(const std::filesystem::path& gltfPath);
