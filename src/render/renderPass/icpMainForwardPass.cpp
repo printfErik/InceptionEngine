@@ -80,7 +80,7 @@ void icpMainForwardPass::SetupPipeline()
 	VkPipelineInputAssemblyStateCreateInfo inputAsm{};
 	inputAsm.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	inputAsm.primitiveRestartEnable = VK_FALSE;
-	inputAsm.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+	inputAsm.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 	info.pInputAssemblyState = &inputAsm;
 
@@ -190,7 +190,8 @@ void icpMainForwardPass::SetupPipeline()
 	{
 		VK_DYNAMIC_STATE_VIEWPORT,
 		VK_DYNAMIC_STATE_SCISSOR,
-		VK_DYNAMIC_STATE_LINE_WIDTH
+		VK_DYNAMIC_STATE_LINE_WIDTH,
+		VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY
 	};
 
 	VkPipelineDynamicStateCreateInfo dynamicState{};
@@ -279,8 +280,7 @@ void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint
 			vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
-
-
+			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshRes->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
 		else if (entity->hasComponent<icpPrimitiveRendererComponent>())
@@ -302,6 +302,9 @@ void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint
 
 			auto& descriptorSets = primitive.m_descriptorSets;
 			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
+
+			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(primitive.m_vertexIndices.size()), 1, 0, 0, 0);
 		}
 	}
