@@ -17,6 +17,7 @@ class icpVkGPUDevice;
 enum class eTextureRenderResouceState
 {
 	UNINITIALIZED = 0,
+	LINKED,
 	READY,
 	DISCARD
 };
@@ -47,10 +48,16 @@ public:
 	void deleteTexture(const std::string& texId);
 
 	void InitializeEmptyTexture();
+	bool RegisterTextureResource(const std::string& texID);
+
+	icpTextureRenderResourceInfo GetTextureRenderResByID(const std::string& texID);
+
+	void UpdateManager();
 
 	std::shared_ptr<icpGPUDevice> m_rhi = nullptr;
 	std::map<std::string, icpTextureRenderResourceInfo> m_textureRenderResources;
 
+	std::mutex m_textureRenderResLock;
 };
 
 INCEPTION_END_NAMESPACE

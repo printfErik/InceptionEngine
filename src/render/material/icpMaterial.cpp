@@ -58,12 +58,12 @@ void icpMaterialInstance::AddedTextureDescriptor(const std::string& textureType,
 
 	if (!m_vTextureParameterValues.contains(textureType))
 	{
-		info = texRenderResMgr->m_textureRenderResources["empty2D001"];
+		info = texRenderResMgr->GetTextureRenderResByID("empty2D001"];
 	}
 	else
 	{
 		auto& texture = m_vTextureParameterValues[textureType];
-		info = texRenderResMgr->m_textureRenderResources[texture.m_textureID];
+		info = texRenderResMgr->GetTextureRenderResByID(texture.m_textureID);
 	}
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -173,14 +173,10 @@ void icpMaterialInstance::AddTexture(const std::string& key, const icpTextureMat
 		texRes = g_system_container.m_resourceSystem->loadImageResource(imgPath);
 	}
 
-	if(texRendeResMgr->m_textureRenderResources.find(texID) == texRendeResMgr->m_textureRenderResources.end())
-	{
-		texRendeResMgr->setupTextureRenderResources(texID);
-	}
+	texRendeResMgr->RegisterTextureResource(texID);
 
 	m_vTextureParameterValues[key] = textureInfo;
 }
-
 
 uint64_t icpMaterialInstance::ComputeUBOSize()
 {
