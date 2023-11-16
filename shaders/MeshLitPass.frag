@@ -82,7 +82,8 @@ vec3 getNormalFromMap()
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
-    float roughnessSq = roughness * roughness;
+    float a2 = roughness * roughness;
+    float roughnessSq = a2 * a2;
     float NdotH = max(dot(N, H), 0.0);
     float NdotH2 = NdotH*NdotH;
 
@@ -137,7 +138,7 @@ void main()
             texture(RoughnessSampler, fragTexCoord).r * uboPerMaterial.roughnessFactor :
             uboPerMaterial.roughnessFactor;
     
-    float AlphaRoughness = PerceptualRoughness * PerceptualRoughness;
+    //float AlphaRoughness = PerceptualRoughness * PerceptualRoughness;
 
     vec3 F0 = vec3(0.04);
     vec3 SpecularColor = mix(F0, BaseColor, Metallic);
@@ -147,14 +148,14 @@ void main()
     vec3 L = normalize(uboPerFrame.directionalLit.direction.xyz);
     vec3 H = normalize(V + L);
 
-    float NdotL = clamp(dot(N, L), 0.001, 1.0);
-    float NdotV = clamp(dot(N, V), 0.001, 1.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float NdotV = max(dot(N, V), 0.0);
     float NdotH = clamp(dot(N, H), 0.0, 1.0);
     float LdotH = clamp(dot(L, H), 0.0, 1.0);
-    float VdotH = clamp(dot(V, H), 0.0, 1.0);
+    float VdotH = max(dot(V, H), 0.0);
     
-    float NDF = DistributionGGX(N, H, AlphaRoughness);
-    float G = GeometrySmith(N, V, L, AlphaRoughness);
+    float NDF = DistributionGGX(N, H, PerceptualRoughness);
+    float G = GeometrySmith(N, V, L, PerceptualRoughness);
     vec3 F = fresnelSchlick(VdotH, SpecularColor);
 
     vec3 numerator = NDF * G * F; 
@@ -170,7 +171,9 @@ void main()
     // if AO texture exists
     float AO = uboPerMaterial.occlusionTextureSet > -1 ? 
         texture(AoSampler, fragTexCoord).r : 1.f;
-    vec3 color = Lo * AO;
+
+    vec3 ambient = vec3(0.03) * BaseColor * vec3(AO);
+    vec3 color = Lo * vec3(AO) + ambient;
 
     vec3 Emissive = uboPerMaterial.emissiveTextureSet > -1 ? 
         pow(texture(EmissiveSampler, fragTexCoord).rgb, vec3(2.2)) * uboPerMaterial.emissiveFactor.rgb :
