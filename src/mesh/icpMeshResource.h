@@ -6,8 +6,6 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-enum class ePrimitiveType;
-
 class icpMeshResource : public icpResourceBase
 {
 public:

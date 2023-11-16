@@ -394,6 +394,8 @@ void icpSceneSystem::LoadDefaultScene()
 		material->AddTexture("metallicTexture", { "rustediron2_metallic" });
 		material->AddTexture("normalTexture", { "rustediron2_normal" });
 		material->AddTexture("roughnessTexture", { "rustediron2_roughness" });
+
+		g_system_container.m_renderSystem->GetTextureRenderResourceManager()->UpdateManager();
 		material->SetupMaterialRenderResources();
 	}
 	

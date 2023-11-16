@@ -35,25 +35,26 @@ bool icpRenderSystem::initializeRenderSystem()
 
 	return true;
 }
-// example for typical loops in rendering
-/*
-for each view{
-  bind view resources          // camera, environment...
-  for each shader {
-	bind shader pipeline
-	bind shader resources      // shader control values
-	for each material {
-	  bind material resources  // material parameters and textures
-	  for each object {
-		bind object resources  // object transforms
-		draw object
-	  }
+
+void icpRenderSystem::BuildRendererCompRenderResources()
+{
+	/*
+	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
+	for (auto& entity : view)
+	{
+		auto& meshRenderer = view.get<icpMeshRendererComponent>(entity);
+		if (meshRenderer.m_state == eRendererState::LINKED)
+		{
+			meshRenderer.prepareRenderResourceForMesh();
+		}
+
 	}
-  }
+	*/
 }
-*/
+
 void icpRenderSystem::drawFrame()
 {
+	BuildRendererCompRenderResources();
 	m_pRenderPassManager->render();
 	m_textureRenderResourceManager->checkAndcleanAllDiscardedRenderResources();
 }

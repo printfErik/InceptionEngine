@@ -57,6 +57,8 @@ private:
 	std::queue<ResourceLoadTask> m_taskLoadingQueue;
 
 	RunPinnedTaskLoopTask m_run_pinned_task;
+
+	std::mutex m_resourcesLock;
 	icpResourceContainer m_resources;
 };
 

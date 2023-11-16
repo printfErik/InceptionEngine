@@ -26,7 +26,6 @@ struct UBOMeshRenderResource
 	glm::mat4 normalMatrix;
 };
 
-
 class icpMeshRendererComponent : public icpComponentBase
 {
 public:

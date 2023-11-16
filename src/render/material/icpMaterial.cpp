@@ -58,7 +58,7 @@ void icpMaterialInstance::AddedTextureDescriptor(const std::string& textureType,
 
 	if (!m_vTextureParameterValues.contains(textureType))
 	{
-		info = texRenderResMgr->GetTextureRenderResByID("empty2D001"];
+		info = texRenderResMgr->GetTextureRenderResByID("empty2D001");
 	}
 	else
 	{

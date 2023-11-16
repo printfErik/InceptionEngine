@@ -17,6 +17,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <tiny_gltf.h>
+#include "icpGLTFSceneResoruce.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -84,6 +85,8 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::loadImageResource(const std:
 std::shared_ptr<icpResourceBase> icpResourceSystem::LoadImageResource(icpImageResource& res)
 {
 	std::shared_ptr<icpResourceBase> pRes = std::make_shared<icpImageResource>(res);
+
+	std::scoped_lock<std::mutex> lck(m_resourcesLock);
 	m_resources[icpResourceType::TEXTURE][pRes->m_id] = pRes;
 	return pRes;
 }
@@ -91,6 +94,7 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::LoadImageResource(icpImageRe
 std::shared_ptr<icpResourceBase> icpResourceSystem::LoadModelResource(icpMeshResource& res)
 {
 	std::shared_ptr<icpResourceBase> pRes = std::make_shared<icpMeshResource>(res);
+	std::scoped_lock<std::mutex> lck(m_resourcesLock);
 	m_resources[icpResourceType::MESH][pRes->m_id] = pRes;
 	return pRes;
 }
@@ -208,7 +212,16 @@ bool icpResourceSystem::LoadGLTFResource(const std::filesystem::path& gltfPath)
 	std::vector<std::vector<icpMeshResource>> meshResources;
 	icpGLTFLoaderUtil::LoadGLTFMeshs(gltfModel, materials, meshResources);
 
-	icpGLTFLoaderUtil::LoadGLTFScene(gltfModel, meshResources);
+
+	auto gltfRes = std::make_shared<icpGLTFSceneResource>();
+	gltfRes->m_gltfModel = std::make_unique<tinygltf::Model>(gltfModel);
+
+	{
+		std::scoped_lock<std::mutex> lck(m_resourcesLock);
+		m_resources[icpResourceType::GLTF]["Scene"] = gltfRes;
+	}
+
+	//icpGLTFLoaderUtil::LoadGLTFScene(gltfModel, meshResources);
 
 	return true;
 }

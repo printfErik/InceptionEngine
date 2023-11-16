@@ -71,7 +71,8 @@ void icpGLTFLoaderUtil::LoadGLTFBuffer(
 
 	outBuffer.resize(indexCount * elementSize);
 
-	for (int i = 0; i < indexCount; i++) {
+	for (int i = 0; i < indexCount; i++) 
+	{
 		uint8_t* dataindex = dataPtr + stride * i;
 		uint8_t* targetptr = outBuffer.data() + elementSize * i;
 
@@ -486,7 +487,6 @@ void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, ic
 
 			auto& meshComp = entity->installComponent<icpMeshRendererComponent>();
 			meshComp.m_meshResId = primitive.m_id;
-
 			meshComp.prepareRenderResourceForMesh();
 			meshComp.AddMaterial(primitive.m_pMaterial);
 		}

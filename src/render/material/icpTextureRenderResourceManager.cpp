@@ -15,7 +15,7 @@ icpTextureRenderResourceManager::icpTextureRenderResourceManager(std::shared_ptr
 
 void icpTextureRenderResourceManager::setupTextureRenderResources(const std::string& texId)
 {
-	std::lock_guard<std::mutex> lock_guard(m_textureRenderResLock);
+	//std::lock_guard<std::mutex> lock_guard(m_textureRenderResLock);
 	auto& info = m_textureRenderResources[texId];
 
 	VkBuffer stagingBuffer;
@@ -89,7 +89,7 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 		throw std::runtime_error("failed to create sampler!");
 	}
 
-	info.m_state = eTextureRenderResouceState::READY;
+	info.m_state = eTextureRenderResourceState::READY;
 }
 
 void icpTextureRenderResourceManager::checkAndcleanAllDiscardedRenderResources()
@@ -100,7 +100,7 @@ void icpTextureRenderResourceManager::checkAndcleanAllDiscardedRenderResources()
 		auto& name = renderRes.first;
 		auto& info = renderRes.second;
 
-		if (info.m_state == eTextureRenderResouceState::DISCARD)
+		if (info.m_state == eTextureRenderResourceState::DISCARD)
 		{
 			vkDestroySampler(m_rhi->GetLogicalDevice(), info.m_texSampler, nullptr);
 			vkDestroyImageView(m_rhi->GetLogicalDevice(), info.m_texImageView, nullptr);
@@ -115,7 +115,7 @@ void icpTextureRenderResourceManager::deleteTexture(const std::string& texId)
 {
 	auto& info = m_textureRenderResources[texId];
 
-	info.m_state = eTextureRenderResouceState::DISCARD;
+	info.m_state = eTextureRenderResourceState::DISCARD;
 }
 
 void icpTextureRenderResourceManager::InitializeEmptyTexture()
@@ -196,7 +196,7 @@ void icpTextureRenderResourceManager::InitializeEmptyTexture()
 		throw std::runtime_error("failed to create sampler!");
 	}
 
-	info.m_state = eTextureRenderResouceState::READY;
+	info.m_state = eTextureRenderResourceState::READY;
 
 	std::lock_guard<std::mutex> lock_guard(m_textureRenderResLock);
 	m_textureRenderResources[info.m_texId] = info;
@@ -213,7 +213,7 @@ bool icpTextureRenderResourceManager::RegisterTextureResource(const std::string&
 	icpTextureRenderResourceInfo info{};
 	info.m_texId = texID;
 
-	info.m_texImageRes = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->GetResourceContainer()[icpResourceType::TEXTURE][texId]);
+	info.m_texImageRes = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->GetResourceContainer()[icpResourceType::TEXTURE][texID]);
 
 	if (!info.m_texImageRes)
 	{
@@ -221,7 +221,7 @@ bool icpTextureRenderResourceManager::RegisterTextureResource(const std::string&
 		return false;
 	}
 
-	info.m_state = eTextureRenderResouceState::LINKED;
+	info.m_state = eTextureRenderResourceState::LINKED;
 
 	
 	m_textureRenderResources[info.m_texId] = info;
@@ -235,7 +235,7 @@ void icpTextureRenderResourceManager::UpdateManager()
 	std::lock_guard<std::mutex> lock_guard(m_textureRenderResLock);
 	for(auto& textureRenderRes: m_textureRenderResources)
 	{
-		if (textureRenderRes.second.m_state == eTextureRenderResouceState::LINKED)
+		if (textureRenderRes.second.m_state == eTextureRenderResourceState::LINKED)
 		{
 			setupTextureRenderResources(textureRenderRes.first);
 		}

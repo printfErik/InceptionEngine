@@ -14,7 +14,7 @@ INCEPTION_BEGIN_NAMESPACE
 class icpImageResource;
 class icpVkGPUDevice;
 
-enum class eTextureRenderResouceState
+enum class eTextureRenderResourceState
 {
 	UNINITIALIZED = 0,
 	LINKED,
@@ -32,7 +32,7 @@ struct icpTextureRenderResourceInfo
 	std::shared_ptr<icpImageResource> m_texImageRes = nullptr;
 	std::string m_texId;
 
-	eTextureRenderResouceState m_state = eTextureRenderResouceState::UNINITIALIZED;
+	eTextureRenderResourceState m_state = eTextureRenderResourceState::UNINITIALIZED;
 };
 
 

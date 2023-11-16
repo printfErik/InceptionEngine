@@ -15,6 +15,7 @@ public:
 	~icpRenderSystem();
 
 	bool initializeRenderSystem();
+	void BuildRendererCompRenderResources();
 	void drawFrame();
 	void setFrameBufferResized(bool _isResized);
 
