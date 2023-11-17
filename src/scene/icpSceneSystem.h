@@ -31,6 +31,7 @@ public:
 	void getRootEntityList(std::vector<std::shared_ptr<icpGameEntity>>& list);
 	void createMeshEntityFromResource(std::shared_ptr<icpResourceBase> meshRes);
 	void LoadDefaultScene();
+	void LoadGLTFScene();
 
 	std::shared_ptr<icpGameEntity> FindEntity(icpGuid guid);
 
