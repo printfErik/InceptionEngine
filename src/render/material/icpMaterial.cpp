@@ -205,8 +205,13 @@ uint32_t icpMaterialInstance::GetSRVNumber() const
 
 void icpMaterialInstance::SetupMaterialRenderResources()
 {
-	CreateUniformBuffers();
-	AllocateDescriptorSets();
+	if (!m_bRenderResourcesReady)
+	{
+		CreateUniformBuffers();
+		AllocateDescriptorSets();
+
+		m_bRenderResourcesReady = true;
+	}
 }
 
 void icpMaterialInstance::MemCopyToBuffer(void* dst, void* src, size_t size)
@@ -253,6 +258,15 @@ void icpMaterialInstance::FillPBRDataCache()
 	m_pbrDataCache.alphaMask = m_vScalarParameterValues.contains("alphaMask") ? m_vScalarParameterValues["alphaMask"].m_fValue : m_pbrDataCache.alphaMask;
 	m_pbrDataCache.alphaMaskCutoff = m_vScalarParameterValues.contains("alphaMaskCutoff") ? m_vScalarParameterValues["alphaMaskCutoff"].m_fValue : m_pbrDataCache.alphaMaskCutoff;
 	//m_pbrDataCache.emissiveStrength = m_vScalarParameterValues.contains("baseColorFactor") ? m_vScalarParameterValues["baseColorFactor"].m_fValue : m_pbrDataCache.baseColorFactor;
+}
+
+
+void icpMaterialSubSystem::PrepareMaterialRenderResources()
+{
+	for (auto material : m_vMaterialContainer)
+	{
+		material->SetupMaterialRenderResources();
+	}
 }
 
 

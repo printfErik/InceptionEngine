@@ -65,6 +65,8 @@ public:
 
 	std::vector<VkBuffer> m_perMaterialUniformBuffers;
 	std::vector<VmaAllocation> m_perMaterialUniformBufferAllocations;
+
+	bool m_bRenderResourcesReady = false;
 };
 
 struct alignas(16) PBRShaderMaterial
@@ -134,6 +136,8 @@ public:
 
 	void initializeMaterialSubSystem();
 	std::shared_ptr<icpMaterialTemplate> createMaterialInstance(eMaterialShadingModel shadingModel);
+
+	void PrepareMaterialRenderResources();
 
 	std::vector<std::shared_ptr<icpMaterialTemplate>> m_vMaterialContainer;
 

@@ -56,7 +56,8 @@ void icpRenderSystem::BuildRendererCompRenderResources()
 
 void icpRenderSystem::drawFrame()
 {
-	BuildRendererCompRenderResources();
+	m_textureRenderResourceManager->UpdateManager();
+	m_materialSystem->PrepareMaterialRenderResources();
 	m_pSceneRenderer->Render();
 	m_textureRenderResourceManager->checkAndcleanAllDiscardedRenderResources();
 }
