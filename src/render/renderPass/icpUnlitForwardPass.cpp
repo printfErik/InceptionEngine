@@ -4,7 +4,7 @@
 #include "../../core/icpSystemContainer.h"
 #include "../../core/icpConfigSystem.h"
 #include "../../mesh/icpMeshData.h"
-#include "../icpRenderPassManager.h"
+#include "../icpSceneRenderer.h"
 #include "../../mesh/icpMeshResource.h"
 #include "../../mesh/icpMeshRendererComponent.h"
 #include "../../mesh/icpPrimitiveRendererComponent.h"
@@ -21,7 +21,7 @@ icpUnlitForwardPass::~icpUnlitForwardPass()
 void icpUnlitForwardPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.device;
-	m_renderPassMgr = initInfo.renderPassMgr;
+	m_pSceneRenderer = initInfo.sceneRenderer;
 
 	CreateDescriptorSetLayouts();
 	SetupPipeline();
@@ -151,7 +151,7 @@ void icpUnlitForwardPass::SetupPipeline()
 		layouts.push_back(layoutInfo.layout);
 	}
 
-	layouts.push_back(m_renderPassMgr.lock()->m_sceneDSLayout.layout);
+	layouts.push_back(m_pSceneRenderer.lock()->GetSceneDSLayout().layout);
 
 	pipelineLayoutInfo.pSetLayouts = layouts.data();
 	pipelineLayoutInfo.setLayoutCount = layouts.size();
@@ -258,7 +258,7 @@ void icpUnlitForwardPass::SetupPipeline()
 	info.pDynamicState = &dynamicState;
 
 	// RenderPass
-	info.renderPass = m_renderPassMgr.lock()->m_mainForwardRenderPass;
+	info.renderPass = m_pSceneRenderer.lock()->GetMainForwardRenderPass();
 	info.subpass = 0;
 
 	info.basePipelineHandle = VK_NULL_HANDLE;
@@ -280,13 +280,13 @@ void icpUnlitForwardPass::Cleanup()
 
 void icpUnlitForwardPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
-	auto mgr = m_renderPassMgr.lock();
-	RecordCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], frameBufferIndex, currentFrame);
+	auto mgr = m_pSceneRenderer.lock();
+	RecordCommandBuffer(mgr->GetMainForwardCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
 }
 
 void icpUnlitForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
-	auto mgr = m_renderPassMgr.lock();
+	auto mgr = m_pSceneRenderer.lock();
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
 
 	VkViewport viewport{};
@@ -305,7 +305,8 @@ void icpUnlitForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uin
 
 	std::vector<VkDeviceSize> offsets{ 0 };
 
-	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout,2 , 1, &mgr->m_vSceneDSs[curFrame], 0, nullptr);
+	auto sceneDS = mgr->GetSceneDescriptorSet(curFrame);
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout,2 , 1, &sceneDS, 0, nullptr);
 
 	std::vector<std::shared_ptr<icpGameEntity>> rootList;
 	g_system_container.m_sceneSystem->getRootEntityList(rootList);

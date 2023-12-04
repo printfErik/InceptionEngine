@@ -212,9 +212,9 @@ bool icpResourceSystem::LoadGLTFResource(const std::filesystem::path& gltfPath)
 	std::vector<std::vector<icpMeshResource>> meshResources;
 	icpGLTFLoaderUtil::LoadGLTFMeshs(gltfModel, materials, meshResources);
 
-
 	auto gltfRes = std::make_shared<icpGLTFSceneResource>();
 	gltfRes->m_gltfModel = std::make_unique<tinygltf::Model>(gltfModel);
+	gltfRes->m_meshResourceList = meshResources;
 
 	{
 		std::scoped_lock<std::mutex> lck(m_resourcesLock);

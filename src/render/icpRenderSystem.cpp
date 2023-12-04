@@ -1,4 +1,6 @@
 #include "icpRenderSystem.h"
+
+#include "icpForwardSceneRenderer.h"
 #include "RHI/Vulkan/icpVkGPUDevice.h"
 #include "../core/icpSystemContainer.h"
 #include "../scene/icpSceneSystem.h"
@@ -15,7 +17,7 @@ icpRenderSystem::icpRenderSystem()
 
 icpRenderSystem::~icpRenderSystem()
 {
-	m_pRenderPassManager.reset();
+	m_pSceneRenderer.reset();
 	m_pGPUDevice.reset();
 }
 
@@ -24,8 +26,8 @@ bool icpRenderSystem::initializeRenderSystem()
 	m_pGPUDevice = std::make_shared<icpVkGPUDevice>();
 	m_pGPUDevice->Initialize(g_system_container.m_windowSystem);
 
-	m_pRenderPassManager = std::make_shared<icpRenderPassManager>();
-	m_pRenderPassManager->initialize(m_pGPUDevice);
+	m_pSceneRenderer = std::make_shared<icpForwardSceneRenderer>();
+	m_pSceneRenderer->Initialize(m_pGPUDevice);
 
 	m_textureRenderResourceManager = std::make_shared<icpTextureRenderResourceManager>(m_pGPUDevice);
 	m_textureRenderResourceManager->InitializeEmptyTexture();
@@ -55,7 +57,7 @@ void icpRenderSystem::BuildRendererCompRenderResources()
 void icpRenderSystem::drawFrame()
 {
 	BuildRendererCompRenderResources();
-	m_pRenderPassManager->render();
+	m_pSceneRenderer->Render();
 	m_textureRenderResourceManager->checkAndcleanAllDiscardedRenderResources();
 }
 
@@ -103,9 +105,9 @@ std::shared_ptr<icpGPUDevice> icpRenderSystem::GetGPUDevice()
 	return m_pGPUDevice;
 }
 
-std::shared_ptr<icpRenderPassManager> icpRenderSystem::GetRenderPassManager()
+std::shared_ptr<icpSceneRenderer> icpRenderSystem::GetSceneRenderer()
 {
-	return m_pRenderPassManager;
+	return m_pSceneRenderer;
 }
 
 std::shared_ptr<icpMaterialSubSystem> icpRenderSystem::GetMaterialSubSystem()

@@ -26,7 +26,7 @@ icpMainForwardPass::~icpMainForwardPass()
 void icpMainForwardPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.device;
-	m_renderPassMgr = initInfo.renderPassMgr;
+	m_pSceneRenderer = initInfo.sceneRenderer;
 
 	CreateDescriptorSetLayouts();
 	SetupPipeline();
@@ -34,7 +34,7 @@ void icpMainForwardPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 
 void icpMainForwardPass::SetupPipeline()
 {
-	auto renderPassMgr = m_renderPassMgr.lock();
+	auto renderPassMgr = m_pSceneRenderer.lock();
 
 	VkGraphicsPipelineCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -95,7 +95,7 @@ void icpMainForwardPass::SetupPipeline()
 		layouts.push_back(layoutInfo.layout);
 	}
 
-	layouts.push_back(renderPassMgr->m_sceneDSLayout.layout);
+	layouts.push_back(renderPassMgr->GetSceneDSLayout().layout);
 	pipelineLayoutInfo.setLayoutCount = layouts.size(); // global scene ds
 	pipelineLayoutInfo.pSetLayouts = layouts.data();
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
@@ -202,7 +202,7 @@ void icpMainForwardPass::SetupPipeline()
 	info.pDynamicState = &dynamicState;
 
 	// RenderPass
-	info.renderPass = renderPassMgr->m_mainForwardRenderPass;
+	info.renderPass = renderPassMgr->GetMainForwardRenderPass();
 	info.subpass = 0;
 
 	info.basePipelineHandle = VK_NULL_HANDLE;
@@ -224,14 +224,14 @@ void icpMainForwardPass::Cleanup()
 
 void icpMainForwardPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
-	auto mgr = m_renderPassMgr.lock();
+	auto mgr = m_pSceneRenderer.lock();
 	//vkResetCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], 0);
-	RecordCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], frameBufferIndex, currentFrame);
+	RecordCommandBuffer(mgr->GetMainForwardCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
 }
 
 void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
-	auto mgr = m_renderPassMgr.lock();
+	auto mgr = m_pSceneRenderer.lock();
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
 
@@ -251,7 +251,8 @@ void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint
 
 	std::vector<VkDeviceSize> offsets{ 0 };
 
-	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &mgr->m_vSceneDSs[curFrame], 0, nullptr);
+	auto sceneDS = mgr->GetSceneDescriptorSet(curFrame);
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &sceneDS, 0, nullptr);
 
 	std::vector<std::shared_ptr<icpGameEntity>> rootList;
 	g_system_container.m_sceneSystem->getRootEntityList(rootList);

@@ -394,6 +394,7 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, const std:
 		glm::vec4 emissiveFactor = glm::make_vec4(material.emissiveFactor.data());
 		instance->AddVector4Value( "emissiveFactor", { emissiveFactor });
 
+		g_system_container.m_renderSystem->GetTextureRenderResourceManager()->UpdateManager();
 		instance->SetupMaterialRenderResources();
 
 		materials.push_back(std::static_pointer_cast<icpMaterialInstance>(instance));
@@ -466,7 +467,7 @@ void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, ic
 		memcpy(&worldMtx, &transformMatrix, sizeof(glm::mat4));
 	}
 
-	icpGuid parentGuid = icpGuid(0u);
+	icpGuid thisGuid = icpGuid(0u);
 
 	if (node.mesh > -1)
 	{
@@ -491,14 +492,14 @@ void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, ic
 			meshComp.prepareRenderResourceForMesh();
 			meshComp.AddMaterial(primitive.m_pMaterial);
 
-			parentGuid = entity->accessComponent<icpEntityDataComponent>().m_guid;
+			thisGuid = entity->accessComponent<icpEntityDataComponent>().m_guid;
 		}
 	}
 
 	for (int childIndex = 0; childIndex < node.children.size(); childIndex++)
 	{
 		// todo: correct parent guid
-		LoadGLTFNode(gltfModel, node.children[childIndex], parentGuid, meshResources);
+		LoadGLTFNode(gltfModel, node.children[childIndex], thisGuid, meshResources);
 	}
 
 }

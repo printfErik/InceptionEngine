@@ -3,7 +3,7 @@
 #include "../mesh/icpMeshRendererComponent.h"
 
 #include "RHI/icpGPUDevice.h"
-#include "icpRenderPassManager.h"
+#include "icpSceneRenderer.h"
 
 INCEPTION_BEGIN_NAMESPACE
 class icpPrimitiveRendererComponent;
@@ -24,15 +24,15 @@ public:
 	void createDirLight();
 
 	std::shared_ptr<icpGPUDevice> GetGPUDevice();
-	std::shared_ptr<icpRenderPassManager> GetRenderPassManager();
+	std::shared_ptr<icpSceneRenderer> GetSceneRenderer();
 	std::shared_ptr<icpMaterialSubSystem> GetMaterialSubSystem();
 	std::shared_ptr<icpTextureRenderResourceManager> GetTextureRenderResourceManager();
 
 private:
-	std::shared_ptr<icpGPUDevice> m_pGPUDevice;
-	std::shared_ptr<icpRenderPassManager> m_pRenderPassManager;
-	std::shared_ptr<icpTextureRenderResourceManager> m_textureRenderResourceManager;
-	std::shared_ptr<icpMaterialSubSystem> m_materialSystem;
+	std::shared_ptr<icpGPUDevice> m_pGPUDevice = nullptr;
+	std::shared_ptr<icpSceneRenderer> m_pSceneRenderer = nullptr;
+	std::shared_ptr<icpTextureRenderResourceManager> m_textureRenderResourceManager = nullptr;
+	std::shared_ptr<icpMaterialSubSystem> m_materialSystem = nullptr;
 
 private:
 };

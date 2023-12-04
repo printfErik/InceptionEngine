@@ -3,9 +3,9 @@
 #include "../RHI/Vulkan/icpVkGPUDevice.h"
 #include "../RHI/icpDescirptorSet.h"
 
-
 INCEPTION_BEGIN_NAMESPACE
-class icpRenderPassManager;
+
+class icpSceneRenderer;
 enum class eRenderPass;
 
 class icpEditorUI;
@@ -18,7 +18,7 @@ public:
 	{
 		std::shared_ptr<icpGPUDevice> device{ nullptr };
 		eRenderPass passType;
-		std::weak_ptr<icpRenderPassManager> renderPassMgr;
+		std::weak_ptr<icpSceneRenderer> sceneRenderer;
 		std::shared_ptr<icpRenderPassBase> dependency{ nullptr };
 		std::shared_ptr<icpEditorUI> editorUi{ nullptr };
 	};
@@ -44,11 +44,11 @@ public:
 	RenderPipelineInfo m_pipelineInfo{};
 	std::vector<icpDescriptorSetLayoutInfo> m_DSLayouts;
 
-	std::shared_ptr<icpRenderPassBase> m_dependency{ nullptr };
+	std::shared_ptr<icpRenderPassBase> m_dependency = nullptr;
 
 protected:
-	std::weak_ptr<icpRenderPassManager> m_renderPassMgr;
-	std::shared_ptr<icpGPUDevice> m_rhi;
+	std::weak_ptr<icpSceneRenderer> m_pSceneRenderer;
+	std::shared_ptr<icpGPUDevice> m_rhi = nullptr;
 };
 
 INCEPTION_END_NAMESPACE

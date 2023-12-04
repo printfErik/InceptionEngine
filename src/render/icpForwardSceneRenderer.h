@@ -4,16 +4,9 @@
 
 #include "RHI/icpDescirptorSet.h"
 #include "RHI/Vulkan/icpVkGPUDevice.h"
+#include "icpSceneRenderer.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-enum class eRenderPass
-{
-	MAIN_FORWARD_PASS = 0,
-	UNLIT_PASS,
-	EDITOR_UI_PASS,
-	RENDER_PASS_COUNT
-};
 
 class icpRenderPassBase;
 
@@ -46,15 +39,21 @@ struct perFrameCB
 	PointLightRenderResource pointLight[MAX_POINT_LIGHT_COUNT];
 };
 
-class icpRenderPassManager : public std::enable_shared_from_this<icpRenderPassManager>
+class icpForwardSceneRenderer : public std::enable_shared_from_this<icpForwardSceneRenderer>, public icpSceneRenderer
 {
 public:
-	icpRenderPassManager();
-	~icpRenderPassManager();
+	icpForwardSceneRenderer();
+	virtual ~icpForwardSceneRenderer() override;
 
-	bool initialize(std::shared_ptr<icpGPUDevice> vulkanRHI);
-	void cleanup();
-	void render();
+	bool Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI) override;
+	void Cleanup() override;
+	void Render() override;
+
+	VkCommandBuffer GetMainForwardCommandBuffer(uint32_t curFrame) override;
+	VkRenderPass GetMainForwardRenderPass() override;
+	VkDescriptorSet GetSceneDescriptorSet(uint32_t curFrame) override;
+
+	icpDescriptorSetLayoutInfo& GetSceneDSLayout() override;
 
 	void CreateSceneCB();
 	void UpdateGlobalSceneCB(uint32_t curFrame);
@@ -69,20 +68,6 @@ public:
 	void RecreateSwapChain();
 	void CleanupSwapChain();
 
-	void SubmitCommandList();
-	void Present(uint32_t imageIndex);
-
-	std::shared_ptr<icpRenderPassBase> accessRenderPass(eRenderPass passType);
-
-	std::vector<VkBuffer> m_vSceneCBs;
-	icpDescriptorSetLayoutInfo m_sceneDSLayout{};
-	std::vector<VkDescriptorSet> m_vSceneDSs;
-
-	VkRenderPass m_mainForwardRenderPass{ VK_NULL_HANDLE };
-
-	std::vector<VkFramebuffer> m_vSwapChainFrameBuffers;
-	std::vector<VkCommandBuffer> m_vMainForwardCommandBuffers;
-
 private:
 
 	void ResetThenBeginCommandBuffer();
@@ -91,10 +76,19 @@ private:
 	void EndForwardRenderPass();
 	void EndRecordingCommandBuffer();
 
-	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
-	std::vector<std::shared_ptr<icpRenderPassBase>> m_renderPasses;
+	void SubmitCommandList();
+	void Present(uint32_t imageIndex);
+
 	std::vector<VmaAllocation> m_vSceneCBAllocations;
-	
+
+	std::vector<VkCommandBuffer> m_vMainForwardCommandBuffers;
+	VkRenderPass m_mainForwardRenderPass{ VK_NULL_HANDLE };
+
+	std::vector<VkDescriptorSet> m_vSceneDSs;
+	std::vector<VkBuffer> m_vSceneCBs;
+	std::vector<VkFramebuffer> m_vSwapChainFrameBuffers;
+
+	icpDescriptorSetLayoutInfo m_sceneDSLayout{};
 
 	uint32_t m_currentFrame = 0;
 };

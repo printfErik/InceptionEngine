@@ -9,7 +9,7 @@
 #include <backends/imgui_impl_vulkan.h>
 #include <backends/imgui_impl_glfw.h>
 
-#include "../icpRenderPassManager.h"
+#include "../icpSceneRenderer.h"
 #include "../../ui/editorUI/icpEditorUI.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -23,7 +23,7 @@ void icpEditorUiPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.device;
 	m_editorUI = initInfo.editorUi;
-	m_renderPassMgr = initInfo.renderPassMgr;
+	m_pSceneRenderer = initInfo.sceneRenderer;
 
 	SetupPipeline();
 
@@ -39,7 +39,7 @@ void icpEditorUiPass::Cleanup()
 
 void icpEditorUiPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
-	auto mgr = m_renderPassMgr.lock();
+	auto mgr = m_pSceneRenderer.lock();
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
@@ -51,7 +51,7 @@ void icpEditorUiPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, V
 
 	ImGui::Render();
 
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mgr->m_vMainForwardCommandBuffers[currentFrame]);
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mgr->GetMainForwardCommandBuffer(currentFrame));
 }
 
 void icpEditorUiPass::SetupPipeline()
@@ -75,7 +75,7 @@ void icpEditorUiPass::SetupPipeline()
 	info.QueueFamily = m_rhi->GetQueueFamilyIndices().m_graphicsFamily.value();
 	info.Subpass = 0;
 
-	ImGui_ImplVulkan_Init(&info, m_renderPassMgr.lock()->m_mainForwardRenderPass);
+	ImGui_ImplVulkan_Init(&info, m_pSceneRenderer.lock()->GetMainForwardRenderPass());
 }
 
 

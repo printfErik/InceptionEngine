@@ -1,4 +1,4 @@
-#include "icpRenderPassManager.h"
+#include "icpForwardSceneRenderer.h"
 #include "RHI/Vulkan/icpVkGPUDevice.h"
 #include "RHI/Vulkan/icpVulkanUtility.h"
 #include "renderPass/icpMainForwardPass.h"
@@ -14,17 +14,17 @@
 #include "renderPass/icpUnlitForwardPass.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	icpRenderPassManager::icpRenderPassManager()
+icpForwardSceneRenderer::icpForwardSceneRenderer()
 {
 }
 
 
-icpRenderPassManager::~icpRenderPassManager()
+icpForwardSceneRenderer::~icpForwardSceneRenderer()
 {
-	cleanup();
+	Cleanup();
 }
 
-bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
+bool icpForwardSceneRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 {
 	m_pDevice = vulkanRHI;
 
@@ -38,7 +38,7 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	icpRenderPassBase::RenderPassInitInfo mainPassCreateInfo;
 	mainPassCreateInfo.device = m_pDevice;
 	mainPassCreateInfo.passType = eRenderPass::MAIN_FORWARD_PASS;
-	mainPassCreateInfo.renderPassMgr = shared_from_this();
+	mainPassCreateInfo.sceneRenderer = shared_from_this();
 	std::shared_ptr<icpRenderPassBase> mainForwordPass = std::make_shared<icpMainForwardPass>();
 	mainForwordPass->InitializeRenderPass(mainPassCreateInfo);
 
@@ -47,7 +47,7 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	icpRenderPassBase::RenderPassInitInfo unlitPassInfo;
 	unlitPassInfo.device = m_pDevice;
 	unlitPassInfo.passType = eRenderPass::UNLIT_PASS;
-	unlitPassInfo.renderPassMgr = shared_from_this();
+	unlitPassInfo.sceneRenderer = shared_from_this();
 	std::shared_ptr<icpRenderPassBase> unlitPass = std::make_shared<icpUnlitForwardPass>();
 	unlitPass->InitializeRenderPass(unlitPassInfo);
 
@@ -58,7 +58,7 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	editorUIInfo.device = m_pDevice;
 	editorUIInfo.passType = eRenderPass::EDITOR_UI_PASS;
 	editorUIInfo.editorUi = std::make_shared<icpEditorUI>();
-	editorUIInfo.renderPassMgr = shared_from_this();
+	editorUIInfo.sceneRenderer = shared_from_this();
 	std::shared_ptr<icpRenderPassBase> editorUIPass = std::make_shared<icpEditorUiPass>();
 	editorUIPass->InitializeRenderPass(editorUIInfo);
 
@@ -67,15 +67,34 @@ bool icpRenderPassManager::initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	return true;
 }
 
-void icpRenderPassManager::cleanup()
+void icpForwardSceneRenderer::Cleanup()
 {
-	for (const auto renderPass: m_renderPasses)
-	{
-		renderPass->Cleanup();
-	}
+	icpSceneRenderer::Cleanup();
 }
 
-void icpRenderPassManager::render()
+VkCommandBuffer icpForwardSceneRenderer::GetMainForwardCommandBuffer(uint32_t curFrame)
+{
+	return m_vMainForwardCommandBuffers[curFrame];
+}
+
+VkRenderPass icpForwardSceneRenderer::GetMainForwardRenderPass()
+{
+	return m_mainForwardRenderPass;
+}
+
+VkDescriptorSet icpForwardSceneRenderer::GetSceneDescriptorSet(uint32_t curFrame)
+{
+	return m_vSceneDSs[curFrame];
+}
+
+
+icpDescriptorSetLayoutInfo& icpForwardSceneRenderer::GetSceneDSLayout()
+{
+	return m_sceneDSLayout;
+}
+
+
+void icpForwardSceneRenderer::Render()
 {
 	m_pDevice->WaitForFence(m_currentFrame);
 
@@ -118,7 +137,7 @@ void icpRenderPassManager::render()
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void icpRenderPassManager::SubmitCommandList()
+void icpForwardSceneRenderer::SubmitCommandList()
 {
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -141,7 +160,7 @@ void icpRenderPassManager::SubmitCommandList()
 	vkQueueSubmit(m_pDevice->GetGraphicsQueue(), 1, &submitInfo, fences[m_currentFrame]);
 }
 
-void icpRenderPassManager::Present(uint32_t imageIndex)
+void icpForwardSceneRenderer::Present(uint32_t imageIndex)
 {
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -170,13 +189,7 @@ void icpRenderPassManager::Present(uint32_t imageIndex)
 	}
 }
 
-
-std::shared_ptr<icpRenderPassBase> icpRenderPassManager::accessRenderPass(eRenderPass passType)
-{
-	return m_renderPasses[static_cast<int>(passType)];
-}
-
-void icpRenderPassManager::CreateSceneCB()
+void icpForwardSceneRenderer::CreateSceneCB()
 {
 	auto perFrameSize = sizeof(perFrameCB);
 	VkSharingMode mode = m_pDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == m_pDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
@@ -202,7 +215,7 @@ void icpRenderPassManager::CreateSceneCB()
 	}
 }
 
-void icpRenderPassManager::UpdateGlobalSceneCB(uint32_t curFrame)
+void icpForwardSceneRenderer::UpdateGlobalSceneCB(uint32_t curFrame)
 {
 	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
 
@@ -239,7 +252,7 @@ void icpRenderPassManager::UpdateGlobalSceneCB(uint32_t curFrame)
 	}
 }
 
-void icpRenderPassManager::CreateGlobalSceneDescriptorSetLayout()
+void icpForwardSceneRenderer::CreateGlobalSceneDescriptorSetLayout()
 {
 	// perFrame
 	{
@@ -266,7 +279,7 @@ void icpRenderPassManager::CreateGlobalSceneDescriptorSetLayout()
 }
 
 
-void icpRenderPassManager::AllocateGlobalSceneDescriptorSets()
+void icpForwardSceneRenderer::AllocateGlobalSceneDescriptorSets()
 {
 	icpDescriptorSetCreation creation{};
 	creation.layoutInfo = m_sceneDSLayout;
@@ -285,7 +298,7 @@ void icpRenderPassManager::AllocateGlobalSceneDescriptorSets()
 	m_pDevice->CreateDescriptorSet(creation, m_vSceneDSs);
 }
 
-void icpRenderPassManager::CreateForwardRenderPass()
+void icpForwardSceneRenderer::CreateForwardRenderPass()
 {
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = m_pDevice->GetSwapChainImageFormat();
@@ -345,7 +358,7 @@ void icpRenderPassManager::CreateForwardRenderPass()
 	}
 }
 
-void icpRenderPassManager::CreateSwapChainFrameBuffers()
+void icpForwardSceneRenderer::CreateSwapChainFrameBuffers()
 {
 	auto& imageViews = m_pDevice->GetSwapChainImageViews();
 	m_vSwapChainFrameBuffers.resize(imageViews.size());
@@ -375,7 +388,7 @@ void icpRenderPassManager::CreateSwapChainFrameBuffers()
 }
 
 
-void icpRenderPassManager::AllocateCommandBuffers()
+void icpForwardSceneRenderer::AllocateCommandBuffers()
 {
 	m_vMainForwardCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -391,7 +404,7 @@ void icpRenderPassManager::AllocateCommandBuffers()
 	}
 }
 
-void icpRenderPassManager::RecreateSwapChain()
+void icpForwardSceneRenderer::RecreateSwapChain()
 {
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(m_pDevice->GetWindow(), &width, &height);
@@ -412,7 +425,7 @@ void icpRenderPassManager::RecreateSwapChain()
 	CreateSwapChainFrameBuffers();
 }
 
-void icpRenderPassManager::CleanupSwapChain()
+void icpForwardSceneRenderer::CleanupSwapChain()
 {
 	for (auto framebuffer : m_vSwapChainFrameBuffers)
 	{
@@ -420,7 +433,7 @@ void icpRenderPassManager::CleanupSwapChain()
 	}
 }
 
-void icpRenderPassManager::ResetThenBeginCommandBuffer()
+void icpForwardSceneRenderer::ResetThenBeginCommandBuffer()
 {
 	vkResetCommandBuffer(m_vMainForwardCommandBuffers[m_currentFrame], 0);
 
@@ -432,7 +445,7 @@ void icpRenderPassManager::ResetThenBeginCommandBuffer()
 	}
 }
 
-void icpRenderPassManager::BeginForwardRenderPass(uint32_t imageIndex)
+void icpForwardSceneRenderer::BeginForwardRenderPass(uint32_t imageIndex)
 {
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -451,13 +464,13 @@ void icpRenderPassManager::BeginForwardRenderPass(uint32_t imageIndex)
 	vkCmdBeginRenderPass(m_vMainForwardCommandBuffers[m_currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void icpRenderPassManager::EndForwardRenderPass()
+void icpForwardSceneRenderer::EndForwardRenderPass()
 {
 	vkCmdEndRenderPass(m_vMainForwardCommandBuffers[m_currentFrame]);
 }
 
 
-void icpRenderPassManager::EndRecordingCommandBuffer()
+void icpForwardSceneRenderer::EndRecordingCommandBuffer()
 {
 	if (vkEndCommandBuffer(m_vMainForwardCommandBuffers[m_currentFrame]) != VK_SUCCESS)
 	{
