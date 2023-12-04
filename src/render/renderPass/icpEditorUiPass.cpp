@@ -28,7 +28,7 @@ void icpEditorUiPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	SetupPipeline();
 
 	VkCommandBuffer command_buffer = icpVulkanUtility::beginSingleTimeCommands(m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice());
-	ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
+	ImGui_ImplVulkan_CreateFontsTexture();
 	icpVulkanUtility::endSingleTimeCommandsAndSubmit(command_buffer, m_rhi->GetGraphicsQueue(), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice());
 }
 
@@ -46,8 +46,8 @@ void icpEditorUiPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, V
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	//ImGui::ShowDemoWindow();
-	m_editorUI->showEditorUI();
+	ImGui::ShowDemoWindow();
+	//m_editorUI->showEditorUI();
 
 	ImGui::Render();
 
