@@ -25,7 +25,7 @@
 #include "../resource/icpGLTFSceneResoruce.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
+void icpSceneSystem::initializeScene(const std::filesystem::path& mapPath)
 {
 	//loadSceneFromMapPath("E:\\Development\\InceptionEngine\\test\\testflat");
 	LoadDefaultScene();
@@ -420,7 +420,7 @@ std::shared_ptr<icpGameEntity> icpSceneSystem::FindEntity(icpGuid guid)
 
 void icpSceneSystem::LoadGLTFScene()
 {
-	auto& gltfs = g_system_container.m_resourceSystem->GetResourceContainer()[icpResourceType::GLTF];
+	auto gltfs = g_system_container.m_resourceSystem->GetResourceContainer()[icpResourceType::GLTF];
 	for(auto& res : gltfs)
 	{
 		auto gltf = std::dynamic_pointer_cast<icpGLTFSceneResource>(res.second);
@@ -428,9 +428,14 @@ void icpSceneSystem::LoadGLTFScene()
 		{
 			icpGLTFLoaderUtil::LoadGLTFScene(*(gltf->m_gltfModel), gltf->m_meshResourceList);
 			gltf->m_sceneLoaded = true;
-			gltf->m_gltfModel.reset();//release();
+			gltf->m_gltfModel.reset();
 		}
 	}
+}
+
+void icpSceneSystem::UpdateSceneSystem()
+{
+	LoadGLTFScene();
 }
 
 

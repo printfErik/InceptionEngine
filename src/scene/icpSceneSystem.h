@@ -35,6 +35,8 @@ public:
 
 	std::shared_ptr<icpGameEntity> FindEntity(icpGuid guid);
 
+	void UpdateSceneSystem();
+
 	entt::registry m_registry;
 
 	std::vector<std::shared_ptr<icpGameEntity>> m_sceneRoots;

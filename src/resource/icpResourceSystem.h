@@ -7,9 +7,10 @@
 #include <TaskScheduler.h>
 
 INCEPTION_BEGIN_NAMESPACE
-	class icpMeshResource;
-	class icpImageResource;
-	class icpResourceSystem;
+
+class icpMeshResource;
+class icpImageResource;
+class icpResourceSystem;
 
 struct RunPinnedTaskLoopTask : public enki::IPinnedTask
 {

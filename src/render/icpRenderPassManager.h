@@ -69,6 +69,9 @@ public:
 	void RecreateSwapChain();
 	void CleanupSwapChain();
 
+	void SubmitCommandList();
+	void Present(uint32_t imageIndex);
+
 	std::shared_ptr<icpRenderPassBase> accessRenderPass(eRenderPass passType);
 
 	std::vector<VkBuffer> m_vSceneCBs;

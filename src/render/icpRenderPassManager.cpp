@@ -111,6 +111,15 @@ void icpRenderPassManager::render()
 	EndForwardRenderPass();
 	EndRecordingCommandBuffer();
 
+	SubmitCommandList();
+
+	Present(index);
+
+	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void icpRenderPassManager::SubmitCommandList()
+{
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	auto& semaphores = m_pDevice->GetImageAvailableForRenderingSemaphores();
@@ -130,7 +139,10 @@ void icpRenderPassManager::render()
 	auto& fences = m_pDevice->GetInFlightFences();
 
 	vkQueueSubmit(m_pDevice->GetGraphicsQueue(), 1, &submitInfo, fences[m_currentFrame]);
+}
 
+void icpRenderPassManager::Present(uint32_t imageIndex)
+{
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
@@ -143,22 +155,21 @@ void icpRenderPassManager::render()
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 
-	presentInfo.pImageIndices = &index;
+	presentInfo.pImageIndices = &imageIndex;
 
-	result = vkQueuePresentKHR(m_pDevice->GetPresentQueue(), &presentInfo);
+	VkResult result = vkQueuePresentKHR(m_pDevice->GetPresentQueue(), &presentInfo);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_pDevice->m_framebufferResized)
 	{
 		m_pDevice->m_framebufferResized = false;
 		RecreateSwapChain();
 	}
-	else if (result != VK_SUCCESS) 
+	else if (result != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to present swap chain image!");
 	}
-
-	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
+
 
 std::shared_ptr<icpRenderPassBase> icpRenderPassManager::accessRenderPass(eRenderPass passType)
 {
@@ -453,7 +464,6 @@ void icpRenderPassManager::EndRecordingCommandBuffer()
 		throw std::runtime_error("failed to record command buffer!");
 	}
 }
-
 
 
 INCEPTION_END_NAMESPACE

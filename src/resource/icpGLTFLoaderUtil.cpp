@@ -406,7 +406,7 @@ void icpGLTFLoaderUtil::LoadGLTFScene(tinygltf::Model& gltfModel, std::vector<st
 
 	for (int nodeIdx = 0; nodeIdx < scene.nodes.size(); nodeIdx++)
 	{
-		LoadGLTFNode(gltfModel, scene.nodes[nodeIdx], icpGuid(), meshResources, true);
+		LoadGLTFNode(gltfModel, scene.nodes[nodeIdx], icpGuid(0u), meshResources, true);
 	}
 }
 
@@ -466,6 +466,8 @@ void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, ic
 		memcpy(&worldMtx, &transformMatrix, sizeof(glm::mat4));
 	}
 
+	icpGuid parentGuid = icpGuid(0u);
+
 	if (node.mesh > -1)
 	{
 		auto& primitives = meshResources[node.mesh];
@@ -483,19 +485,20 @@ void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, ic
 				xform.m_parent = parentXform;
 				parentXform->m_children.push_back(std::make_shared<icpXFormComponent>(xform));
 			}
-			
 
 			auto& meshComp = entity->installComponent<icpMeshRendererComponent>();
 			meshComp.m_meshResId = primitive.m_id;
 			meshComp.prepareRenderResourceForMesh();
 			meshComp.AddMaterial(primitive.m_pMaterial);
+
+			parentGuid = entity->accessComponent<icpEntityDataComponent>().m_guid;
 		}
 	}
 
 	for (int childIndex = 0; childIndex < node.children.size(); childIndex++)
 	{
 		// todo: correct parent guid
-		LoadGLTFNode(gltfModel, node.children[childIndex], nodeIdx, meshResources);
+		LoadGLTFNode(gltfModel, node.children[childIndex], parentGuid, meshResources);
 	}
 
 }
