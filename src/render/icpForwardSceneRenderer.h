@@ -55,6 +55,8 @@ public:
 
 	icpDescriptorSetLayoutInfo& GetSceneDSLayout() override;
 
+	VkRenderPass GetGBufferRenderPass() override { return VK_NULL_HANDLE; }
+
 	void CreateSceneCB();
 	void UpdateGlobalSceneCB(uint32_t curFrame);
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../core/icpMacros.h"
+#include "../core/icpMacros.h"
 #include "icpSceneRenderer.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -9,9 +9,9 @@ class icpDeferredRenderer : public std::enable_shared_from_this<icpDeferredRende
 {
 public:
 	icpDeferredRenderer() = default;
-	virtual ~icpDeferredRenderer() = 0;
+	virtual ~icpDeferredRenderer() override;
 
-	bool Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI) override{}
+	bool Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI) override;
 	void Cleanup() override{}
 	void Render() override{}
 
@@ -22,9 +22,28 @@ public:
 	VkRenderPass GetGBufferRenderPass() override;
 	icpDescriptorSetLayoutInfo& GetSceneDSLayout() override{}
 
+	
+
 private:
 
+	void CreateGBufferAttachments();
 
+	void CreateDeferredRenderPass();
+	//void CreateDeferredCompositeRenderPass();
+
+	VkImage m_gBufferA{ VK_NULL_HANDLE };
+	VkImageView m_gBufferAView{ VK_NULL_HANDLE };
+	VmaAllocation m_gBufferAAllocation{ VK_NULL_HANDLE };
+
+	VkImage m_gBufferB{ VK_NULL_HANDLE };
+	VkImageView m_gBufferBView{ VK_NULL_HANDLE };
+	VmaAllocation m_gBufferBAllocation{ VK_NULL_HANDLE };
+
+	VkImage m_gBufferC{ VK_NULL_HANDLE };
+	VkImageView m_gBufferCView{ VK_NULL_HANDLE };
+	VmaAllocation m_gBufferCAllocation{ VK_NULL_HANDLE };
+
+	VkRenderPass m_deferredRenderPass{ VK_NULL_HANDLE };
 };
 
 
