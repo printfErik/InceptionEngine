@@ -87,7 +87,6 @@ void icpMainForwardPass::SetupPipeline()
 	// Layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	
 
 	std::vector<VkDescriptorSetLayout> layouts{};
 	for (auto& layoutInfo : m_DSLayouts)

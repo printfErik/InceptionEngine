@@ -19,6 +19,7 @@ public:
 	VkRenderPass GetMainForwardRenderPass() override{}
 	VkDescriptorSet GetSceneDescriptorSet(uint32_t curFrame) override{}
 
+	VkRenderPass GetGBufferRenderPass() override;
 	icpDescriptorSetLayoutInfo& GetSceneDSLayout() override{}
 
 private:
