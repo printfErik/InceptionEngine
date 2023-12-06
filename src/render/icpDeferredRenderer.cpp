@@ -1,10 +1,13 @@
 #include "icpDeferredRenderer.h"
 
 #include "RHI/Vulkan/icpVulkanUtility.h"
+#include "../ui/editorUI/icpEditorUI.h"
+#include "renderPass/icpDeferredCompositePass.h"
+#include "renderPass/icpEditorUiPass.h"
+#include "renderPass/icpGBufferPass.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-icpDeferredRenderer::~icpDeferredRenderer()
+	icpDeferredRenderer::~icpDeferredRenderer()
 {
 	Cleanup();
 }
@@ -14,12 +17,45 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 {
 	m_pDevice = vulkanRHI;
 
+	CreateSceneCB();
+	CreateGlobalSceneDescriptorSetLayout();
+	AllocateGlobalSceneDescriptorSets();
+	AllocateCommandBuffers();
+
+	CreateGBufferAttachments();
 	CreateDeferredRenderPass();
-	//CreateDeferredCompositeRenderPass();
+	CreateDeferredFrameBuffer();
+
+	icpRenderPassBase::RenderPassInitInfo gbufferPassCreateInfo;
+	gbufferPassCreateInfo.device = m_pDevice;
+	gbufferPassCreateInfo.passType = eRenderPass::GBUFFER_PASS;
+	gbufferPassCreateInfo.sceneRenderer = shared_from_this();
+	std::shared_ptr<icpRenderPassBase> gbufferPass = std::make_shared<icpGBufferPass>();
+	gbufferPass->InitializeRenderPass(gbufferPassCreateInfo);
+
+	m_renderPasses.push_back(gbufferPass);
+
+	icpRenderPassBase::RenderPassInitInfo deferredCompositePassCreateInfo;
+	deferredCompositePassCreateInfo.device = m_pDevice;
+	deferredCompositePassCreateInfo.passType = eRenderPass::DEFERRED_COMPOSITION_PASS;
+	deferredCompositePassCreateInfo.sceneRenderer = shared_from_this();
+	std::shared_ptr<icpRenderPassBase> deferredCompositePass = std::make_shared<icpDeferredCompositePass>();
+	deferredCompositePass->InitializeRenderPass(deferredCompositePassCreateInfo);
+
+	m_renderPasses.push_back(deferredCompositePass);
+
+	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
+	editorUIInfo.device = m_pDevice;
+	editorUIInfo.passType = eRenderPass::EDITOR_UI_PASS;
+	editorUIInfo.editorUi = std::make_shared<icpEditorUI>();
+	editorUIInfo.sceneRenderer = shared_from_this();
+	std::shared_ptr<icpRenderPassBase> editorUIPass = std::make_shared<icpEditorUiPass>();
+	editorUIPass->InitializeRenderPass(editorUIInfo);
+
+	m_renderPasses.push_back(editorUIPass);
 
 	return true;
 }
-
 
 VkRenderPass icpDeferredRenderer::GetGBufferRenderPass()
 {
@@ -288,7 +324,69 @@ void icpDeferredRenderer::CreateDeferredFrameBuffer()
 void icpDeferredRenderer::Render()
 {
 	m_pDevice->WaitForFence(m_currentFrame);
+
+	VkResult result;
+	auto index = m_pDevice->AcquireNextImageFromSwapchain(m_currentFrame, result);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		RecreateSwapChain();
+		return;
+	}
+
+	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		throw std::runtime_error("failed to present swap chain image!");
+	}
+
+	UpdateGlobalSceneCB(m_currentFrame);
+
 }
 
+
+void icpDeferredRenderer::RecreateSwapChain()
+{
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(m_pDevice->GetWindow(), &width, &height);
+	while (width == 0 || height == 0)
+	{
+		glfwGetFramebufferSize(m_pDevice->GetWindow(), &width, &height);
+		glfwWaitEvents();
+	}
+
+	vkDeviceWaitIdle(m_pDevice->GetLogicalDevice());
+
+	CleanupSwapChain();
+	m_pDevice->CleanUpSwapChain();
+
+	m_pDevice->CreateSwapChain();
+	m_pDevice->CreateSwapChainImageViews();
+	m_pDevice->CreateDepthResources();
+	CreateDeferredFrameBuffer();
+}
+
+void icpDeferredRenderer::CleanupSwapChain()
+{
+	for (auto framebuffer : m_vDeferredFrameBuffers)
+	{
+		vkDestroyFramebuffer(m_pDevice->GetLogicalDevice(), framebuffer, nullptr);
+	}
+}
+
+void icpDeferredRenderer::AllocateCommandBuffers()
+{
+	m_vDeferredCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkCommandBufferAllocateInfo gAllocInfo{};
+	gAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	gAllocInfo.commandPool = m_pDevice->GetGraphicsCommandPool();
+	gAllocInfo.commandBufferCount = (uint32_t)m_vDeferredCommandBuffers.size();
+	gAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	if (vkAllocateCommandBuffers(m_pDevice->GetLogicalDevice(), &gAllocInfo, m_vDeferredCommandBuffers.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate graphics command buffer!");
+	}
+}
 
 INCEPTION_END_NAMESPACE

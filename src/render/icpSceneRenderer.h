@@ -8,11 +8,42 @@ INCEPTION_BEGIN_NAMESPACE
 
 class icpRenderPassBase;
 
+#define MAX_POINT_LIGHT_COUNT 4
+
+struct DirectionalLightRenderResource
+{
+	glm::vec4 direction;
+	glm::vec4 color;
+};
+
+struct PointLightRenderResource
+{
+	glm::vec3 position;
+	glm::vec3 ambient;
+	glm::vec3 diffuse;
+	glm::vec3 specular;
+	float constant = 0.f;
+	float linear = 0.f;
+	float quadratic = 0.f;
+};
+
+struct perFrameCB
+{
+	glm::mat4 view;
+	glm::mat4 projection;
+	glm::vec3 camPos;
+	float pointLightNumber = 0.f;
+	DirectionalLightRenderResource dirLight;
+	PointLightRenderResource pointLight[MAX_POINT_LIGHT_COUNT];
+};
+
 
 enum class eRenderPass
 {
 	MAIN_FORWARD_PASS = 0,
 	UNLIT_PASS,
+	GBUFFER_PASS,
+	DEFERRED_COMPOSITION_PASS,
 	EDITOR_UI_PASS,
 	RENDER_PASS_COUNT
 };
@@ -38,10 +69,20 @@ public:
 
 	std::shared_ptr<icpRenderPassBase> AccessRenderPass(eRenderPass passType);
 
-protected:
+	void CreateSceneCB();
+	void UpdateGlobalSceneCB(uint32_t curFrame);
+	void CreateGlobalSceneDescriptorSetLayout();
+	void AllocateGlobalSceneDescriptorSets();
 
+protected:
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
 	std::vector<std::shared_ptr<icpRenderPassBase>> m_renderPasses;
+
+	std::vector<VkBuffer> m_vSceneCBs;
+	std::vector<VmaAllocation> m_vSceneCBAllocations;
+
+	icpDescriptorSetLayoutInfo m_sceneDSLayout{};
+	std::vector<VkDescriptorSet> m_vSceneDSs;
 
 	uint32_t m_currentFrame = 0;
 private:

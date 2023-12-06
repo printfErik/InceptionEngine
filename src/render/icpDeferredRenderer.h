@@ -12,7 +12,7 @@ public:
 	virtual ~icpDeferredRenderer() override;
 
 	bool Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI) override;
-	void Cleanup() override{}
+	void Cleanup() override;
 	void Render() override;
 
 	VkCommandBuffer GetMainForwardCommandBuffer(uint32_t curFrame) override{}
@@ -22,8 +22,10 @@ public:
 	VkRenderPass GetGBufferRenderPass() override;
 	icpDescriptorSetLayoutInfo& GetSceneDSLayout() override{}
 
-	
+	void RecreateSwapChain();
+	void CleanupSwapChain();
 
+	void AllocateCommandBuffers();
 private:
 
 	void CreateGBufferAttachments();
@@ -46,6 +48,10 @@ private:
 	VkRenderPass m_deferredRenderPass{ VK_NULL_HANDLE };
 
 	std::vector<VkFramebuffer> m_vDeferredFrameBuffers;
+
+	icpDescriptorSetLayoutInfo m_sceneDeferredDSLayout{};
+
+	std::vector<VkCommandBuffer> m_vDeferredCommandBuffers;
 };
 
 

@@ -10,35 +10,6 @@ INCEPTION_BEGIN_NAMESPACE
 
 class icpRenderPassBase;
 
-#define MAX_POINT_LIGHT_COUNT 4
-
-struct DirectionalLightRenderResource
-{
-	glm::vec4 direction;
-	glm::vec4 color;
-};
-
-struct PointLightRenderResource
-{
-	glm::vec3 position;
-	glm::vec3 ambient;
-	glm::vec3 diffuse;
-	glm::vec3 specular;
-	float constant = 0.f;
-	float linear = 0.f;
-	float quadratic = 0.f;
-};
-
-struct perFrameCB
-{
-	glm::mat4 view;
-	glm::mat4 projection;
-	glm::vec3 camPos;
-	float pointLightNumber = 0.f;
-	DirectionalLightRenderResource dirLight;
-	PointLightRenderResource pointLight[MAX_POINT_LIGHT_COUNT];
-};
-
 class icpForwardSceneRenderer : public std::enable_shared_from_this<icpForwardSceneRenderer>, public icpSceneRenderer
 {
 public:
@@ -56,12 +27,6 @@ public:
 	icpDescriptorSetLayoutInfo& GetSceneDSLayout() override;
 
 	VkRenderPass GetGBufferRenderPass() override { return VK_NULL_HANDLE; }
-
-	void CreateSceneCB();
-	void UpdateGlobalSceneCB(uint32_t curFrame);
-
-	void CreateGlobalSceneDescriptorSetLayout();
-	void AllocateGlobalSceneDescriptorSets();
 
 	void CreateForwardRenderPass();
 	void CreateSwapChainFrameBuffers();
@@ -81,17 +46,10 @@ private:
 	void SubmitCommandList();
 	void Present(uint32_t imageIndex);
 
-	std::vector<VmaAllocation> m_vSceneCBAllocations;
-
 	std::vector<VkCommandBuffer> m_vMainForwardCommandBuffers;
 	VkRenderPass m_mainForwardRenderPass{ VK_NULL_HANDLE };
-
-	std::vector<VkDescriptorSet> m_vSceneDSs;
-	std::vector<VkBuffer> m_vSceneCBs;
+	
 	std::vector<VkFramebuffer> m_vSwapChainFrameBuffers;
-
-	icpDescriptorSetLayoutInfo m_sceneDSLayout{};
-
 };
 
 INCEPTION_END_NAMESPACE
