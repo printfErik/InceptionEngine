@@ -82,18 +82,6 @@ VkRenderPass icpForwardSceneRenderer::GetMainForwardRenderPass()
 	return m_mainForwardRenderPass;
 }
 
-VkDescriptorSet icpForwardSceneRenderer::GetSceneDescriptorSet(uint32_t curFrame)
-{
-	return m_vSceneDSs[curFrame];
-}
-
-
-icpDescriptorSetLayoutInfo& icpForwardSceneRenderer::GetSceneDSLayout()
-{
-	return m_sceneDSLayout;
-}
-
-
 void icpForwardSceneRenderer::Render()
 {
 	m_pDevice->WaitForFence(m_currentFrame);

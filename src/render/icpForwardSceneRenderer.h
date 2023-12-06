@@ -22,11 +22,9 @@ public:
 
 	VkCommandBuffer GetMainForwardCommandBuffer(uint32_t curFrame) override;
 	VkRenderPass GetMainForwardRenderPass() override;
-	VkDescriptorSet GetSceneDescriptorSet(uint32_t curFrame) override;
-
-	icpDescriptorSetLayoutInfo& GetSceneDSLayout() override;
 
 	VkRenderPass GetGBufferRenderPass() override { return VK_NULL_HANDLE; }
+	VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) override { return VK_NULL_HANDLE;}
 
 	void CreateForwardRenderPass();
 	void CreateSwapChainFrameBuffers();

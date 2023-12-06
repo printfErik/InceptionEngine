@@ -57,9 +57,19 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	return true;
 }
 
+void icpDeferredRenderer::Cleanup()
+{
+	icpSceneRenderer::Cleanup();
+}
+
 VkRenderPass icpDeferredRenderer::GetGBufferRenderPass()
 {
 	return m_deferredRenderPass;
+}
+
+VkCommandBuffer icpDeferredRenderer::GetDeferredCommandBuffer(uint32_t curFrame)
+{
+	return m_vDeferredCommandBuffers[curFrame];
 }
 
 void icpDeferredRenderer::CreateGBufferAttachments()
@@ -341,6 +351,10 @@ void icpDeferredRenderer::Render()
 
 	UpdateGlobalSceneCB(m_currentFrame);
 
+	for (const auto renderPass : m_renderPasses)
+	{
+		renderPass->UpdateRenderPassCB(m_currentFrame);
+	}
 }
 
 
@@ -386,6 +400,55 @@ void icpDeferredRenderer::AllocateCommandBuffers()
 	if (vkAllocateCommandBuffers(m_pDevice->GetLogicalDevice(), &gAllocInfo, m_vDeferredCommandBuffers.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate graphics command buffer!");
+	}
+}
+
+void icpDeferredRenderer::ResetThenBeginCommandBuffer()
+{
+	vkResetCommandBuffer(m_vDeferredCommandBuffers[m_currentFrame], 0);
+
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+	if (vkBeginCommandBuffer(m_vDeferredCommandBuffers[m_currentFrame], &beginInfo) != VK_SUCCESS) {
+		throw std::runtime_error("failed to begin recording command buffer!");
+	}
+}
+
+void icpDeferredRenderer::BeginForwardRenderPass(uint32_t imageIndex)
+{
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = m_deferredRenderPass;
+	renderPassInfo.framebuffer = m_vDeferredFrameBuffers[imageIndex];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = m_pDevice->GetSwapChainExtent();
+
+	std::array<VkClearValue, 5> clearColors{};
+	clearColors[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+	clearColors[1].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+	clearColors[2].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+	clearColors[3].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
+	clearColors[4].depthStencil = { 1.f, 0 };
+
+	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+	renderPassInfo.pClearValues = clearColors.data();
+
+	vkCmdBeginRenderPass(m_vDeferredCommandBuffers[m_currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+
+void icpDeferredRenderer::EndForwardRenderPass()
+{
+	vkCmdEndRenderPass(m_vDeferredCommandBuffers[m_currentFrame]);
+}
+
+
+void icpDeferredRenderer::EndRecordingCommandBuffer()
+{
+	if (vkEndCommandBuffer(m_vDeferredCommandBuffers[m_currentFrame]) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to record command buffer!");
 	}
 }
 

@@ -129,5 +129,17 @@ void icpSceneRenderer::AllocateGlobalSceneDescriptorSets()
 	m_pDevice->CreateDescriptorSet(creation, m_vSceneDSs);
 }
 
+icpDescriptorSetLayoutInfo& icpSceneRenderer::GetSceneDSLayout()
+{
+	return m_sceneDSLayout;
+}
+
+VkDescriptorSet icpSceneRenderer::GetSceneDescriptorSet(uint32_t curFrame)
+{
+	return m_vSceneDSs[curFrame];
+}
+
+
+
 
 INCEPTION_END_NAMESPACE

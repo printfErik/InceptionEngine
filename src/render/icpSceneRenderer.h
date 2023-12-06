@@ -61,11 +61,10 @@ public:
 	// Forward
 	virtual VkCommandBuffer GetMainForwardCommandBuffer(uint32_t curFrame) = 0;
 	virtual VkRenderPass GetMainForwardRenderPass() = 0;
-	virtual icpDescriptorSetLayoutInfo& GetSceneDSLayout() = 0;
-	virtual VkDescriptorSet GetSceneDescriptorSet(uint32_t curFrame) = 0;
 
 	// Deferred
 	virtual VkRenderPass GetGBufferRenderPass() = 0;
+	virtual VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) = 0;
 
 	std::shared_ptr<icpRenderPassBase> AccessRenderPass(eRenderPass passType);
 
@@ -73,6 +72,9 @@ public:
 	void UpdateGlobalSceneCB(uint32_t curFrame);
 	void CreateGlobalSceneDescriptorSetLayout();
 	void AllocateGlobalSceneDescriptorSets();
+
+	VkDescriptorSet GetSceneDescriptorSet(uint32_t curFrame);
+	icpDescriptorSetLayoutInfo& GetSceneDSLayout();
 
 protected:
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;

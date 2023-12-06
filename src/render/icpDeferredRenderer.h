@@ -15,12 +15,11 @@ public:
 	void Cleanup() override;
 	void Render() override;
 
-	VkCommandBuffer GetMainForwardCommandBuffer(uint32_t curFrame) override{}
-	VkRenderPass GetMainForwardRenderPass() override{}
-	VkDescriptorSet GetSceneDescriptorSet(uint32_t curFrame) override{}
+	VkCommandBuffer GetMainForwardCommandBuffer(uint32_t curFrame) override{ return VK_NULL_HANDLE; }
+	VkRenderPass GetMainForwardRenderPass() override{ return VK_NULL_HANDLE; }
 
 	VkRenderPass GetGBufferRenderPass() override;
-	icpDescriptorSetLayoutInfo& GetSceneDSLayout() override{}
+	VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) override;
 
 	void RecreateSwapChain();
 	void CleanupSwapChain();
@@ -31,7 +30,12 @@ private:
 	void CreateGBufferAttachments();
 	void CreateDeferredFrameBuffer();
 	void CreateDeferredRenderPass();
-	//void CreateDeferredCompositeRenderPass();
+
+	void ResetThenBeginCommandBuffer();
+	void BeginForwardRenderPass(uint32_t imageIndex);
+
+	void EndForwardRenderPass();
+	void EndRecordingCommandBuffer();
 
 	VkImage m_gBufferA{ VK_NULL_HANDLE };
 	VkImageView m_gBufferAView{ VK_NULL_HANDLE };

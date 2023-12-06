@@ -3,9 +3,24 @@
 #include "../../core/icpConfigSystem.h"
 #include "../../mesh/icpMeshData.h"
 #include "../icpSceneRenderer.h"
+#include "../../mesh/icpMeshRendererComponent.h"
+#include "../../scene/icpXFormComponent.h"
+#include "../../mesh/icpPrimitiveRendererComponent.h"
+#include "../../mesh/icpMeshResource.h"
 INCEPTION_BEGIN_NAMESPACE
 
 static constexpr uint32_t GBUFFER_RT_COUNT = 4;
+
+icpGBufferPass::icpGBufferPass()
+{
+	
+}
+
+
+icpGBufferPass::~icpGBufferPass()
+{
+	
+}
 
 void icpGBufferPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
@@ -14,6 +29,12 @@ void icpGBufferPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 
 	CreateDescriptorSetLayouts();
 	SetupPipeline();
+}
+
+void icpGBufferPass::Cleanup()
+{
+	vkDestroyPipelineLayout(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipelineLayout, nullptr);
+	vkDestroyPipeline(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipeline, nullptr);
 }
 
 void icpGBufferPass::SetupPipeline()
@@ -190,6 +211,238 @@ void icpGBufferPass::SetupPipeline()
 	gbufferPipeline.subpass = 0;
 
 	gbufferPipeline.basePipelineHandle = VK_NULL_HANDLE;
+
+	if (vkCreateGraphicsPipelines(m_rhi->GetLogicalDevice(), VK_NULL_HANDLE, 1, &gbufferPipeline, VK_NULL_HANDLE, &m_pipelineInfo.m_pipeline) != VK_SUCCESS)
+	{
+		throw std::runtime_error("create renderPipeline failed");
+	}
+
+	vkDestroyShaderModule(m_rhi->GetLogicalDevice(), vertShader.module, nullptr);
+	vkDestroyShaderModule(m_rhi->GetLogicalDevice(), fragShader.module, nullptr);
 }
+
+void icpGBufferPass::CreateDescriptorSetLayouts()
+{
+	m_DSLayouts.resize(2);
+	auto logicDevice = m_rhi->GetLogicalDevice();
+	// per mesh
+	{
+		// set 0, binding 0 
+		VkDescriptorSetLayoutBinding perObjectSSBOBinding{};
+		perObjectSSBOBinding.binding = 0;
+		perObjectSSBOBinding.descriptorCount = 1;
+		perObjectSSBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		perObjectSSBOBinding.pImmutableSamplers = nullptr;
+		perObjectSSBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+		m_DSLayouts[0].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+
+		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perObjectSSBOBinding };
+
+		VkDescriptorSetLayoutCreateInfo createInfo{};
+		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		createInfo.pBindings = bindings.data();
+		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[0].layout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+
+	// per Material
+	{
+		// set 1, binding 0 
+		VkDescriptorSetLayoutBinding perMaterialUBOBinding{};
+		perMaterialUBOBinding.binding = 0;
+		perMaterialUBOBinding.descriptorCount = 1;
+		perMaterialUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		perMaterialUBOBinding.pImmutableSamplers = nullptr;
+		perMaterialUBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
+		m_DSLayouts[1].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+
+		std::vector<VkDescriptorSetLayoutBinding> bindings {perMaterialUBOBinding};
+
+		for (int i = 0; i < 7; i++)
+		{
+			// set 1, binding i
+			VkDescriptorSetLayoutBinding perMaterialTextureSamplerLayoutBinding{};
+			perMaterialTextureSamplerLayoutBinding.binding = i + 1;
+			perMaterialTextureSamplerLayoutBinding.descriptorCount = 1;
+			perMaterialTextureSamplerLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			perMaterialTextureSamplerLayoutBinding.pImmutableSamplers = nullptr;
+			perMaterialTextureSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+			m_DSLayouts[1].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER });
+
+			bindings.push_back(perMaterialTextureSamplerLayoutBinding);
+		}
+
+		VkDescriptorSetLayoutCreateInfo createInfo{};
+		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		createInfo.pBindings = bindings.data();
+		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[1].layout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+}
+
+void icpGBufferPass::UpdateRenderPassCB(uint32_t curFrame)
+{
+	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
+
+	for (auto& entity : view)
+	{
+		auto& meshRenderer = view.get<icpMeshRendererComponent>(entity);
+
+		if (meshRenderer.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
+		{
+			continue;
+		}
+
+		auto& xformComp = view.get<icpXFormComponent>(entity);
+
+		UBOMeshRenderResource ubo{};
+		ubo.model = xformComp.m_mtxTransform;
+		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
+
+		void* data;
+		vmaMapMemory(m_rhi->GetVmaAllocator(), meshRenderer.m_perMeshUniformBufferAllocations[curFrame], &data);
+		memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
+		vmaUnmapMemory(m_rhi->GetVmaAllocator(), meshRenderer.m_perMeshUniformBufferAllocations[curFrame]);
+
+		auto material = meshRenderer.m_pMaterial;
+
+		void* materialData;
+		vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
+		memcpy(materialData, material->CheckMaterialDataCache(), sizeof(PBRShaderMaterial));
+		vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
+
+	}
+
+	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponent, icpXFormComponent>();
+	for (auto& primitive : primitiveView)
+	{
+		auto& primitiveRender = primitiveView.get<icpPrimitiveRendererComponent>(primitive);
+
+		if (primitiveRender.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
+		{
+			continue;
+		}
+
+		auto& xfom = primitiveRender.m_possessor->accessComponent<icpXFormComponent>();
+
+		UBOMeshRenderResource ubo{};
+		ubo.model = glm::mat4(1.f);
+
+		ubo.model = glm::translate(ubo.model, xfom.m_translation);
+		ubo.model = glm::scale(ubo.model, xfom.m_scale);
+		auto mat = glm::mat3(ubo.model);
+		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
+
+		void* data;
+		vmaMapMemory(m_rhi->GetVmaAllocator(), primitiveRender.m_uniformBufferAllocations[curFrame], &data);
+		memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
+		vmaUnmapMemory(m_rhi->GetVmaAllocator(), primitiveRender.m_uniformBufferAllocations[curFrame]);
+
+		auto material = primitiveRender.m_pMaterial;
+
+		void* materialData;
+		vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
+		memcpy(materialData, material->CheckMaterialDataCache(), sizeof(PBRShaderMaterial));
+		vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
+	}
+}
+
+void icpGBufferPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
+{
+	auto mgr = m_pSceneRenderer.lock();
+	//vkResetCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], 0);
+	RecordCommandBuffer(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
+}
+
+void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
+{
+	auto mgr = m_pSceneRenderer.lock();
+
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
+
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = (float)m_rhi->GetSwapChainExtent().width;
+	viewport.height = (float)m_rhi->GetSwapChainExtent().height;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = m_rhi->GetSwapChainExtent();
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	std::vector<VkDeviceSize> offsets{ 0 };
+
+	auto sceneDS = mgr->GetSceneDescriptorSet(curFrame);
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &sceneDS, 0, nullptr);
+
+	std::vector<std::shared_ptr<icpGameEntity>> rootList;
+	g_system_container.m_sceneSystem->getRootEntityList(rootList);
+
+	for (auto entity : rootList)
+	{
+		if (entity->hasComponent<icpMeshRendererComponent>())
+		{
+			const auto& meshRender = entity->accessComponent<icpMeshRendererComponent>();
+
+			if (meshRender.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
+			{
+				continue;
+			}
+
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(meshRender.m_pMaterial->m_perMaterialDSs[curFrame]), 0, nullptr);
+
+			auto& meshResId = meshRender.m_meshResId;
+			auto res = g_system_container.m_resourceSystem->GetResourceContainer()[icpResourceType::MESH][meshResId];
+			auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(res);
+
+			auto vertBuf = meshRender.m_vertexBuffer;
+			std::vector<VkBuffer>vertexBuffers{ vertBuf };
+
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
+			vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
+			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshRes->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
+		}
+		else if (entity->hasComponent<icpPrimitiveRendererComponent>())
+		{
+			auto& primitive = entity->accessComponent<icpPrimitiveRendererComponent>();
+
+			if (primitive.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
+			{
+				continue;
+			}
+
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(primitive.m_pMaterial->m_perMaterialDSs[curFrame]), 0, nullptr);
+
+			auto vertBuf = primitive.m_vertexBuffer;
+			std::vector<VkBuffer>vertexBuffers{ vertBuf };
+
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
+			vkCmdBindIndexBuffer(commandBuffer, primitive.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+			auto& descriptorSets = primitive.m_descriptorSets;
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
+
+			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(primitive.m_vertexIndices.size()), 1, 0, 0, 0);
+		}
+	}
+}
+
 
 INCEPTION_END_NAMESPACE

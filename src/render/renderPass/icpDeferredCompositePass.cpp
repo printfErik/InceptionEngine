@@ -5,6 +5,36 @@
 #include "../icpSceneRenderer.h"
 INCEPTION_BEGIN_NAMESPACE
 
+icpDeferredCompositePass::icpDeferredCompositePass()
+{
+	
+}
+
+icpDeferredCompositePass::~icpDeferredCompositePass()
+{
+
+}
+
+void icpDeferredCompositePass::Cleanup()
+{
+	
+}
+
+void icpDeferredCompositePass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
+{
+	
+}
+
+void icpDeferredCompositePass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
+{
+	
+}
+
+void icpDeferredCompositePass::UpdateRenderPassCB(uint32_t curFrame)
+{
+	
+}
+
 void icpDeferredCompositePass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.device;
@@ -112,7 +142,7 @@ void icpDeferredCompositePass::SetupPipeline()
 
 	compositePipeline.pViewportState = &viewportState;
 
-	// Rsterization State
+	// Rasterization State
 	VkPipelineRasterizationStateCreateInfo rastInfo{};
 	rastInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rastInfo.rasterizerDiscardEnable = VK_FALSE;
@@ -161,9 +191,8 @@ void icpDeferredCompositePass::SetupPipeline()
 		| VkColorComponentFlagBits::VK_COLOR_COMPONENT_A_BIT;
 	attBlendState.blendEnable = VK_FALSE;
 
-	std::vector<VkPipelineColorBlendAttachmentState> attBlendStates(GBUFFER_RT_COUNT, attBlendState);
-	colorBlend.attachmentCount = GBUFFER_RT_COUNT;
-	colorBlend.pAttachments = attBlendStates.data();
+	colorBlend.attachmentCount = 1;
+	colorBlend.pAttachments = &attBlendState;
 
 	compositePipeline.pColorBlendState = &colorBlend;
 
@@ -188,22 +217,74 @@ void icpDeferredCompositePass::SetupPipeline()
 	compositePipeline.subpass = 1;
 
 	compositePipeline.basePipelineHandle = VK_NULL_HANDLE;
+
+	if (vkCreateGraphicsPipelines(m_rhi->GetLogicalDevice(), VK_NULL_HANDLE, 1, &compositePipeline, VK_NULL_HANDLE, &m_pipelineInfo.m_pipeline) != VK_SUCCESS)
+	{
+		throw std::runtime_error("create renderPipeline failed");
+	}
+
+	vkDestroyShaderModule(m_rhi->GetLogicalDevice(), vertShader.module, nullptr);
+	vkDestroyShaderModule(m_rhi->GetLogicalDevice(), fragShader.module, nullptr);
 }
 
 void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 {
 	m_DSLayouts.resize(3);
 	auto logicDevice = m_rhi->GetLogicalDevice();
-	// per mesh
+
+	// todo remove magic number
+	// gbuffer
 	{
 		// set 0, binding 0 
+		VkDescriptorSetLayoutBinding gbufferABinding{};
+		gbufferABinding.binding = 0;
+		gbufferABinding.descriptorCount = 1;
+		gbufferABinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		gbufferABinding.pImmutableSamplers = nullptr;
+		gbufferABinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+		m_DSLayouts[0].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT });
+
+		// set 0, binding 1 
+		VkDescriptorSetLayoutBinding gbufferBBinding{};
+		gbufferBBinding.binding = 1;
+		gbufferBBinding.descriptorCount = 1;
+		gbufferBBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		gbufferBBinding.pImmutableSamplers = nullptr;
+		gbufferBBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+		m_DSLayouts[0].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT });
+
+		// set 0, binding 2
+		VkDescriptorSetLayoutBinding gbufferCBinding{};
+		gbufferCBinding.binding = 2;
+		gbufferCBinding.descriptorCount = 1;
+		gbufferCBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		gbufferCBinding.pImmutableSamplers = nullptr;
+		gbufferCBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+		m_DSLayouts[0].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT });
+
+		std::array<VkDescriptorSetLayoutBinding, 3> bindings{ gbufferABinding, gbufferBBinding, gbufferCBinding };
+
+		VkDescriptorSetLayoutCreateInfo createInfo{};
+		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		createInfo.pBindings = bindings.data();
+		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[0].layout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+
+	// per mesh
+	{
+		// set 1, binding 0 
 		VkDescriptorSetLayoutBinding perObjectSSBOBinding{};
 		perObjectSSBOBinding.binding = 0;
 		perObjectSSBOBinding.descriptorCount = 1;
 		perObjectSSBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		perObjectSSBOBinding.pImmutableSamplers = nullptr;
 		perObjectSSBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
-		m_DSLayouts[eMainForwardPassDSType::PER_MESH].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+		m_DSLayouts[1].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
 
 		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perObjectSSBOBinding };
 
@@ -212,7 +293,7 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 		createInfo.pBindings = bindings.data();
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 
-		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[eMainForwardPassDSType::PER_MESH].layout) != VK_SUCCESS)
+		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[1].layout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
@@ -220,27 +301,27 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 
 	// per Material
 	{
-		// set 1, binding 0 
+		// set 2, binding 0 
 		VkDescriptorSetLayoutBinding perMaterialUBOBinding{};
 		perMaterialUBOBinding.binding = 0;
 		perMaterialUBOBinding.descriptorCount = 1;
 		perMaterialUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		perMaterialUBOBinding.pImmutableSamplers = nullptr;
 		perMaterialUBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
-		m_DSLayouts[eMainForwardPassDSType::PER_MATERIAL].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+		m_DSLayouts[2].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
 
 		std::vector<VkDescriptorSetLayoutBinding> bindings {perMaterialUBOBinding};
 
-		for (int i = 0; i < PBR_MATERIAL_TEXTURE_NUMBER; i++)
+		for (int i = 0; i < 7; i++) // todo remove magic number
 		{
-			// set 1, binding i
+			// set 2, binding i
 			VkDescriptorSetLayoutBinding perMaterialTextureSamplerLayoutBinding{};
 			perMaterialTextureSamplerLayoutBinding.binding = i + 1;
 			perMaterialTextureSamplerLayoutBinding.descriptorCount = 1;
 			perMaterialTextureSamplerLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			perMaterialTextureSamplerLayoutBinding.pImmutableSamplers = nullptr;
 			perMaterialTextureSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-			m_DSLayouts[eMainForwardPassDSType::PER_MATERIAL].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER });
+			m_DSLayouts[2].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER });
 
 			bindings.push_back(perMaterialTextureSamplerLayoutBinding);
 		}
@@ -250,7 +331,7 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 		createInfo.pBindings = bindings.data();
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 
-		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[eMainForwardPassDSType::PER_MATERIAL].layout) != VK_SUCCESS)
+		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[2].layout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
