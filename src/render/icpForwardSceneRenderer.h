@@ -92,7 +92,6 @@ private:
 
 	icpDescriptorSetLayoutInfo m_sceneDSLayout{};
 
-	uint32_t m_currentFrame = 0;
 };
 
 INCEPTION_END_NAMESPACE

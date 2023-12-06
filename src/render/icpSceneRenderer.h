@@ -42,6 +42,8 @@ protected:
 
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
 	std::vector<std::shared_ptr<icpRenderPassBase>> m_renderPasses;
+
+	uint32_t m_currentFrame = 0;
 private:
 };
 

@@ -143,8 +143,8 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	attachments[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	attachments[4].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	// Three subpasses
-	std::array<VkSubpassDescription, 3> subpassDescriptions{};
+	// Two subpasses
+	std::array<VkSubpassDescription, 2> subpassDescriptions{};
 
 	// First subpass: Fill G-Buffer components
 	// ----------------------------------------------------------------------------------------
@@ -179,6 +179,7 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	subpassDescriptions[1].inputAttachmentCount = 3;
 	subpassDescriptions[1].pInputAttachments = inputReferences;
 
+	/*
 	// Third subpass: Forward transparency
 	// ----------------------------------------------------------------------------------------
 	colorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
@@ -192,10 +193,11 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	// Use the color/depth attachments filled in the first pass as input attachments
 	subpassDescriptions[2].inputAttachmentCount = 1;
 	subpassDescriptions[2].pInputAttachments = inputReferences;
-
+	*/
 	// Subpass dependencies for layout transitions
-	std::array<VkSubpassDependency, 5> dependencies;
+	std::array<VkSubpassDependency, 3> dependencies;
 
+	/*
 	// This makes sure that writes to the depth image are done before we try to write to it again
 	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
 	dependencies[0].dstSubpass = 0;
@@ -204,40 +206,41 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	dependencies[0].srcAccessMask = 0;
 	dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	dependencies[0].dependencyFlags = 0;
-
-	dependencies[1].srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependencies[1].dstSubpass = 0;
-	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[1].srcAccessMask = 0;
-	dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[1].dependencyFlags = 0;
+	*/
+	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependencies[0].dstSubpass = 0;
+	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[0].srcAccessMask = 0;
+	dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 	// This dependency transitions the input attachment from color attachment to input attachment read
-	dependencies[2].srcSubpass = 0;
-	dependencies[2].dstSubpass = 1;
+	dependencies[1].srcSubpass = 0;
+	dependencies[1].dstSubpass = 1;
+	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[1].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+	dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	dependencies[2].srcSubpass = 1;
+	dependencies[2].dstSubpass = VK_SUBPASS_EXTERNAL;
 	dependencies[2].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[2].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	dependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[2].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+	dependencies[2].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	dependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[2].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 	dependencies[2].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-	dependencies[3].srcSubpass = 1;
-	dependencies[3].dstSubpass = 2;
+	/*
+	dependencies[3].srcSubpass = 2;
+	dependencies[3].dstSubpass = VK_SUBPASS_EXTERNAL;
 	dependencies[3].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[3].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	dependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[3].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+	dependencies[3].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	dependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[3].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 	dependencies[3].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-	dependencies[4].srcSubpass = 2;
-	dependencies[4].dstSubpass = VK_SUBPASS_EXTERNAL;
-	dependencies[4].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[4].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-	dependencies[4].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[4].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	dependencies[4].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
+	*/
 	VkRenderPassCreateInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -250,6 +253,42 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	vkCreateRenderPass(m_pDevice->GetLogicalDevice(), &renderPassInfo, nullptr, &m_deferredRenderPass);
 }
 
+void icpDeferredRenderer::CreateDeferredFrameBuffer()
+{
+	auto& imageViews = m_pDevice->GetSwapChainImageViews();
+	m_vDeferredFrameBuffers.resize(imageViews.size());
+
+	for (size_t i = 0; i < imageViews.size(); i++)
+	{
+		std::array<VkImageView, 5> attachments =
+		{
+			imageViews[i],
+			m_gBufferAView,
+			m_gBufferBView,
+			m_gBufferCView,
+			m_pDevice->GetDepthImageView()
+		};
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = m_deferredRenderPass;
+		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		framebufferInfo.pAttachments = attachments.data();
+		framebufferInfo.width = m_pDevice->GetSwapChainExtent().width;
+		framebufferInfo.height = m_pDevice->GetSwapChainExtent().height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_pDevice->GetLogicalDevice(), &framebufferInfo, nullptr, &m_vDeferredFrameBuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create framebuffer!");
+		}
+	}
+}
+
+void icpDeferredRenderer::Render()
+{
+	m_pDevice->WaitForFence(m_currentFrame);
+}
 
 
 INCEPTION_END_NAMESPACE

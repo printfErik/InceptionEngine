@@ -13,7 +13,7 @@ public:
 
 	bool Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI) override;
 	void Cleanup() override{}
-	void Render() override{}
+	void Render() override;
 
 	VkCommandBuffer GetMainForwardCommandBuffer(uint32_t curFrame) override{}
 	VkRenderPass GetMainForwardRenderPass() override{}
@@ -27,7 +27,7 @@ public:
 private:
 
 	void CreateGBufferAttachments();
-
+	void CreateDeferredFrameBuffer();
 	void CreateDeferredRenderPass();
 	//void CreateDeferredCompositeRenderPass();
 
@@ -44,6 +44,8 @@ private:
 	VmaAllocation m_gBufferCAllocation{ VK_NULL_HANDLE };
 
 	VkRenderPass m_deferredRenderPass{ VK_NULL_HANDLE };
+
+	std::vector<VkFramebuffer> m_vDeferredFrameBuffers;
 };
 
 
