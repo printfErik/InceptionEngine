@@ -32,6 +32,8 @@ struct icpDescriptorSetCreation
 		const std::vector<icpBufferRenderResourceInfo>& ub);
 	icpDescriptorSetCreation& SetCombinedImageSampler(uint16_t binding,
 		const std::vector<icpTextureRenderResourceInfo>& imgInfos);
+	icpDescriptorSetCreation& SetInputAttachment(uint16_t binding,
+		const std::vector<icpTextureRenderResourceInfo>& inputAttachmentInfos);
 };
 
 INCEPTION_END_NAMESPACE

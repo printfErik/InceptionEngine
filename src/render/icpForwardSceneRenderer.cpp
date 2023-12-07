@@ -110,6 +110,8 @@ void icpForwardSceneRenderer::Render()
 	ResetThenBeginCommandBuffer();
 	BeginForwardRenderPass(index);
 
+	SetViewportAndScissor();
+
 	for(const auto renderPass : m_renderPasses)
 	{
 		renderPass->Render(index, m_currentFrame, result);
@@ -355,6 +357,23 @@ void icpForwardSceneRenderer::EndRecordingCommandBuffer()
 	{
 		throw std::runtime_error("failed to record command buffer!");
 	}
+}
+
+void icpForwardSceneRenderer::SetViewportAndScissor()
+{
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = (float)m_pDevice->GetSwapChainExtent().width;
+	viewport.height = (float)m_pDevice->GetSwapChainExtent().height;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(m_vMainForwardCommandBuffers[m_currentFrame], 0, 1, &viewport);
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = m_pDevice->GetSwapChainExtent();
+	vkCmdSetScissor(m_vMainForwardCommandBuffers[m_currentFrame], 0, 1, &scissor);
 }
 
 

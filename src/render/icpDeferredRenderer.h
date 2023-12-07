@@ -25,6 +25,8 @@ public:
 	void CleanupSwapChain();
 
 	void AllocateCommandBuffers();
+
+	VkImageView GetGBufferAView();
 private:
 
 	void CreateGBufferAttachments();

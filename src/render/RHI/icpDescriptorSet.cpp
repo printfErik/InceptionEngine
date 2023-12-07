@@ -31,6 +31,17 @@ icpDescriptorSetCreation& icpDescriptorSetCreation::SetCombinedImageSampler(uint
 	return *this;
 }
 
+icpDescriptorSetCreation& icpDescriptorSetCreation::SetInputAttachment(uint16_t binding, const std::vector<icpTextureRenderResourceInfo>& imgInfos)
+{
+	bindings.push_back(binding);
 
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		std::variant<icpBufferRenderResourceInfo, icpTextureRenderResourceInfo> v = imgInfos[i];
+		resources.push_back(v);
+	}
+
+	return *this;
+}
 
 INCEPTION_END_NAMESPACE

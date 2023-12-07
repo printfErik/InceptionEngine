@@ -355,6 +355,14 @@ void icpDeferredRenderer::Render()
 	{
 		renderPass->UpdateRenderPassCB(m_currentFrame);
 	}
+
+	ResetThenBeginCommandBuffer();
+	BeginForwardRenderPass(index);
+
+	for (const auto renderPass : m_renderPasses)
+	{
+		renderPass->Render(index, m_currentFrame, result);
+	}
 }
 
 

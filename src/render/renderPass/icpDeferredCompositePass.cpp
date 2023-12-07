@@ -22,12 +22,20 @@ void icpDeferredCompositePass::Cleanup()
 
 void icpDeferredCompositePass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
-	
+	auto mgr = m_pSceneRenderer.lock();
+	RecordCommandBuffer(mgr->GetMainForwardCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
 }
 
 void icpDeferredCompositePass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
-	
+	auto mgr = m_pSceneRenderer.lock();
+
+	vkCmdNextSubpass(commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
+
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
+		m_pipelineInfo.m_pipelineLayout, 0, 1, &)
 }
 
 void icpDeferredCompositePass::UpdateRenderPassCB(uint32_t curFrame)
@@ -337,5 +345,24 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 		}
 	}
 }
+
+
+void icpDeferredCompositePass::AllocateDescriptorSets()
+{
+	icpDescriptorSetCreation creation{};
+	creation.layoutInfo = m_DSLayouts[0];
+
+	std::vector<icpTextureRenderResourceInfo> textureInfos;
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpTextureRenderResourceInfo texInfo{};
+		texInfo.m_texSampler = ;
+		texInfo.m_texImageView = m_pSceneRenderer.lock()->GetGBufferRenderPass()
+	}
+
+	creation.SetUniformBuffer(0, bufferInfos);
+	m_rhi->CreateDescriptorSet(creation, m_vSceneDSs);
+}
+
 
 INCEPTION_END_NAMESPACE

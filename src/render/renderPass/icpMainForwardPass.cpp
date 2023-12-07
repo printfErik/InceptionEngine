@@ -224,7 +224,6 @@ void icpMainForwardPass::Cleanup()
 void icpMainForwardPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
 	auto mgr = m_pSceneRenderer.lock();
-	//vkResetCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], 0);
 	RecordCommandBuffer(mgr->GetMainForwardCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
 }
 
@@ -233,20 +232,6 @@ void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint
 	auto mgr = m_pSceneRenderer.lock();
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
-
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = (float)m_rhi->GetSwapChainExtent().width;
-	viewport.height = (float)m_rhi->GetSwapChainExtent().height;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-	VkRect2D scissor{};
-	scissor.offset = { 0, 0 };
-	scissor.extent = m_rhi->GetSwapChainExtent();
-	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	std::vector<VkDeviceSize> offsets{ 0 };
 

@@ -44,6 +44,8 @@ private:
 	void SubmitCommandList();
 	void Present(uint32_t imageIndex);
 
+	void SetViewportAndScissor();
+
 	std::vector<VkCommandBuffer> m_vMainForwardCommandBuffers;
 	VkRenderPass m_mainForwardRenderPass{ VK_NULL_HANDLE };
 	
