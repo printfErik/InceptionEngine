@@ -28,14 +28,20 @@ void icpDeferredCompositePass::Render(uint32_t frameBufferIndex, uint32_t curren
 
 void icpDeferredCompositePass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
-	auto mgr = m_pSceneRenderer.lock();
+	auto renderer = m_pSceneRenderer.lock();
 
 	vkCmdNextSubpass(commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
 
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
-		m_pipelineInfo.m_pipelineLayout, 0, 1, &)
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_pipelineInfo.m_pipelineLayout, 0, 1, &m_vGBufferDSs[curFrame], 0, nullptr);
+
+	auto sceneDs = renderer->GetSceneDescriptorSet(curFrame);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_pipelineInfo.m_pipelineLayout, 1, 1, &sceneDs, 0, nullptr);
+
+	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 }
 
 void icpDeferredCompositePass::UpdateRenderPassCB(uint32_t curFrame)
@@ -282,7 +288,7 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 	}
-
+	/*
 	// per mesh
 	{
 		// set 1, binding 0 
@@ -344,6 +350,7 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 	}
+	*/
 }
 
 
@@ -352,16 +359,35 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 	icpDescriptorSetCreation creation{};
 	creation.layoutInfo = m_DSLayouts[0];
 
-	std::vector<icpTextureRenderResourceInfo> textureInfos;
+	std::vector<icpTextureRenderResourceInfo> gbufferAInfos;
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		icpTextureRenderResourceInfo texInfo{};
-		texInfo.m_texSampler = ;
-		texInfo.m_texImageView = m_pSceneRenderer.lock()->GetGBufferRenderPass()
+		texInfo.m_texSampler = VK_NULL_HANDLE;
+		texInfo.m_texImageView = m_pSceneRenderer.lock()->GetGBufferAView();
+		gbufferAInfos.push_back(texInfo);
 	}
+	creation.SetInputAttachment(0, gbufferAInfos);
+	std::vector<icpTextureRenderResourceInfo> gbufferBInfos;
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpTextureRenderResourceInfo texInfo{};
+		texInfo.m_texSampler = VK_NULL_HANDLE;
+		texInfo.m_texImageView = m_pSceneRenderer.lock()->GetGBufferAView();
+		gbufferBInfos.push_back(texInfo);
+	}
+	creation.SetInputAttachment(1, gbufferBInfos);
+	std::vector<icpTextureRenderResourceInfo> gbufferCInfos;
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpTextureRenderResourceInfo texInfo{};
+		texInfo.m_texSampler = VK_NULL_HANDLE;
+		texInfo.m_texImageView = m_pSceneRenderer.lock()->GetGBufferAView();
+		gbufferCInfos.push_back(texInfo);
+	}
+	creation.SetInputAttachment(2, gbufferCInfos);
 
-	creation.SetUniformBuffer(0, bufferInfos);
-	m_rhi->CreateDescriptorSet(creation, m_vSceneDSs);
+	m_rhi->CreateDescriptorSet(creation, m_vGBufferDSs);
 }
 
 

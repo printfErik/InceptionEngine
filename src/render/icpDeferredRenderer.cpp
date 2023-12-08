@@ -411,6 +411,22 @@ void icpDeferredRenderer::AllocateCommandBuffers()
 	}
 }
 
+VkImageView icpDeferredRenderer::GetGBufferAView()
+{
+	return m_gBufferAView;
+}
+
+VkImageView icpDeferredRenderer::GetGBufferBView()
+{
+	return m_gBufferBView;
+}
+
+VkImageView icpDeferredRenderer::GetGBufferCView()
+{
+	return m_gBufferCView;
+}
+
+
 void icpDeferredRenderer::ResetThenBeginCommandBuffer()
 {
 	vkResetCommandBuffer(m_vDeferredCommandBuffers[m_currentFrame], 0);

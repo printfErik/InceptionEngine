@@ -22,6 +22,8 @@ public:
 	void UpdateRenderPassCB(uint32_t curFrame) override;
 
 private:
+
+	std::vector<VkDescriptorSet> m_vGBufferDSs;
 };
 
 INCEPTION_END_NAMESPACE

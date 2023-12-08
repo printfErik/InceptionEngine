@@ -26,7 +26,9 @@ public:
 
 	void AllocateCommandBuffers();
 
-	VkImageView GetGBufferAView();
+	VkImageView GetGBufferAView() override;
+	VkImageView GetGBufferBView() override;
+	VkImageView GetGBufferCView() override;
 private:
 
 	void CreateGBufferAttachments();

@@ -65,6 +65,9 @@ public:
 	// Deferred
 	virtual VkRenderPass GetGBufferRenderPass() = 0;
 	virtual VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) = 0;
+	virtual VkImageView GetGBufferAView() = 0;
+	virtual VkImageView GetGBufferBView() = 0;
+	virtual VkImageView GetGBufferCView() = 0;
 
 	std::shared_ptr<icpRenderPassBase> AccessRenderPass(eRenderPass passType);
 
