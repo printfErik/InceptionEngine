@@ -37,6 +37,9 @@ void icpDeferredCompositePass::RecordCommandBuffer(VkCommandBuffer commandBuffer
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		m_pipelineInfo.m_pipelineLayout, 0, 1, &m_vGBufferDSs[curFrame], 0, nullptr);
 
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_pipelineInfo.m_pipelineLayout, 1, 1, &, 0, nullptr);
+
 	auto sceneDs = renderer->GetSceneDescriptorSet(curFrame);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		m_pipelineInfo.m_pipelineLayout, 1, 1, &sceneDs, 0, nullptr);
@@ -255,7 +258,7 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 		gbufferABinding.descriptorCount = 1;
 		gbufferABinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
 		gbufferABinding.pImmutableSamplers = nullptr;
-		gbufferABinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+		gbufferABinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 		m_DSLayouts[0].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT });
 
 		// set 0, binding 1 
@@ -264,7 +267,7 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 		gbufferBBinding.descriptorCount = 1;
 		gbufferBBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
 		gbufferBBinding.pImmutableSamplers = nullptr;
-		gbufferBBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+		gbufferBBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 		m_DSLayouts[0].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT });
 
 		// set 0, binding 2
@@ -273,10 +276,19 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 		gbufferCBinding.descriptorCount = 1;
 		gbufferCBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
 		gbufferCBinding.pImmutableSamplers = nullptr;
-		gbufferCBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+		gbufferCBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 		m_DSLayouts[0].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT });
 
-		std::array<VkDescriptorSetLayoutBinding, 3> bindings{ gbufferABinding, gbufferBBinding, gbufferCBinding };
+		// set 0, binding 3
+		VkDescriptorSetLayoutBinding depthBinding{};
+		depthBinding.binding = 3;
+		depthBinding.descriptorCount = 1;
+		depthBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		depthBinding.pImmutableSamplers = nullptr;
+		depthBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
+		m_DSLayouts[0].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT });
+
+		std::array<VkDescriptorSetLayoutBinding, 4> bindings{ gbufferABinding, gbufferBBinding, gbufferCBinding, depthBinding };
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -368,6 +380,7 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 		gbufferAInfos.push_back(texInfo);
 	}
 	creation.SetInputAttachment(0, gbufferAInfos);
+
 	std::vector<icpTextureRenderResourceInfo> gbufferBInfos;
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -377,6 +390,7 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 		gbufferBInfos.push_back(texInfo);
 	}
 	creation.SetInputAttachment(1, gbufferBInfos);
+
 	std::vector<icpTextureRenderResourceInfo> gbufferCInfos;
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -386,6 +400,16 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 		gbufferCInfos.push_back(texInfo);
 	}
 	creation.SetInputAttachment(2, gbufferCInfos);
+
+	std::vector<icpTextureRenderResourceInfo> depthInfos;
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpTextureRenderResourceInfo texInfo{};
+		texInfo.m_texSampler = VK_NULL_HANDLE;
+		texInfo.m_texImageView = m_rhi->GetDepthImageView();
+		gbufferCInfos.push_back(texInfo);
+	}
+	creation.SetInputAttachment(3, depthInfos);
 
 	m_rhi->CreateDescriptorSet(creation, m_vGBufferDSs);
 }

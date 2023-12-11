@@ -649,7 +649,7 @@ void icpVkGPUDevice::CreateDepthResources() {
 		1,
 		depthFormat, 
 		VK_IMAGE_TILING_OPTIMAL, 
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
 		m_vmaAllocator,
 		m_depthImage, 
 		m_depthBufferAllocation

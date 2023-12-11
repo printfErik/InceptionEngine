@@ -1,22 +1,5 @@
 #version 450
 
-struct DirectionalLightRenderResource
-{
-    vec4 direction;
-    vec4 color;
-};
-
-struct PointLightRenderResource
-{
-    vec3 position;
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
-	float constant;
-	float linear;
-	float quadratic;
-};
-
 layout(std140, set = 1, binding = 0) uniform UBOPerMaterial
 {
     vec4 baseColorFactor;
@@ -41,16 +24,6 @@ layout(set = 1, binding = 4) uniform sampler2D RoughnessSampler;
 layout(set = 1, binding = 5) uniform sampler2D NormalSampler;
 layout(set = 1, binding = 6) uniform sampler2D AoSampler;
 layout(set = 1, binding = 7) uniform sampler2D EmissiveSampler;
-
-layout(std140, set = 2, binding = 0) uniform PerFrameCB
-{
-    mat4 viewMatrix;
-    mat4 projMatrix;
-    vec3 camPos;
-    float pointLightNumber;
-    DirectionalLightRenderResource directionalLit;
-    PointLightRenderResource pointLight[max_point_light_count];
-} uboPerFrame;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;

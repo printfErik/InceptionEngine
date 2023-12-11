@@ -183,7 +183,7 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	attachments[4].format = icpVulkanUtility::findDepthFormat(m_pDevice->GetPhysicalDevice());
 	attachments[4].samples = VK_SAMPLE_COUNT_1_BIT;
 	attachments[4].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[4].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[4].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachments[4].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments[4].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	attachments[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -212,17 +212,18 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 
 	VkAttachmentReference colorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
-	VkAttachmentReference inputReferences[3];
+	VkAttachmentReference inputReferences[4];
 	inputReferences[0] = { 1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 	inputReferences[1] = { 2, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 	inputReferences[2] = { 3, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+	inputReferences[3] = { 4, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL };
 
 	subpassDescriptions[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpassDescriptions[1].colorAttachmentCount = 1;
 	subpassDescriptions[1].pColorAttachments = &colorReference;
 	subpassDescriptions[1].pDepthStencilAttachment = &depthReference;
 	// Use the color attachments filled in the first pass as input attachments
-	subpassDescriptions[1].inputAttachmentCount = 3;
+	subpassDescriptions[1].inputAttachmentCount = 4;
 	subpassDescriptions[1].pInputAttachments = inputReferences;
 
 	/*
@@ -264,9 +265,9 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	// This dependency transitions the input attachment from color attachment to input attachment read
 	dependencies[1].srcSubpass = 0;
 	dependencies[1].dstSubpass = 1;
-	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	dependencies[1].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
 	dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
