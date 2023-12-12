@@ -7,6 +7,13 @@ INCEPTION_BEGIN_NAMESPACE
 class icpDeferredCompositePass : public icpRenderPassBase
 {
 public:
+
+	enum eDeferredCompositePassDSType : uint8_t
+	{
+		GBUFFER = 0,
+		LAYOUT_TYPE_COUNT
+	};
+
     icpDeferredCompositePass();
     virtual ~icpDeferredCompositePass();
 

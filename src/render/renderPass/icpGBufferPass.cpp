@@ -223,7 +223,7 @@ void icpGBufferPass::SetupPipeline()
 
 void icpGBufferPass::CreateDescriptorSetLayouts()
 {
-	m_DSLayouts.resize(2);
+	m_DSLayouts.resize(eGBufferPassDSType::LAYOUT_TYPE_COUNT);
 	auto logicDevice = m_rhi->GetLogicalDevice();
 	// per mesh
 	{
@@ -234,7 +234,7 @@ void icpGBufferPass::CreateDescriptorSetLayouts()
 		perObjectSSBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		perObjectSSBOBinding.pImmutableSamplers = nullptr;
 		perObjectSSBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
-		m_DSLayouts[0].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+		m_DSLayouts[eGBufferPassDSType::PER_MESH].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
 
 		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perObjectSSBOBinding };
 
@@ -243,7 +243,7 @@ void icpGBufferPass::CreateDescriptorSetLayouts()
 		createInfo.pBindings = bindings.data();
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 
-		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[0].layout) != VK_SUCCESS)
+		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[eGBufferPassDSType::PER_MESH].layout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
@@ -258,7 +258,7 @@ void icpGBufferPass::CreateDescriptorSetLayouts()
 		perMaterialUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		perMaterialUBOBinding.pImmutableSamplers = nullptr;
 		perMaterialUBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
-		m_DSLayouts[1].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+		m_DSLayouts[eGBufferPassDSType::PER_MATERIAL].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
 
 		std::vector<VkDescriptorSetLayoutBinding> bindings {perMaterialUBOBinding};
 
@@ -271,7 +271,7 @@ void icpGBufferPass::CreateDescriptorSetLayouts()
 			perMaterialTextureSamplerLayoutBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			perMaterialTextureSamplerLayoutBinding.pImmutableSamplers = nullptr;
 			perMaterialTextureSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-			m_DSLayouts[1].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER });
+			m_DSLayouts[eGBufferPassDSType::PER_MATERIAL].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER });
 
 			bindings.push_back(perMaterialTextureSamplerLayoutBinding);
 		}
@@ -281,7 +281,7 @@ void icpGBufferPass::CreateDescriptorSetLayouts()
 		createInfo.pBindings = bindings.data();
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 
-		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[1].layout) != VK_SUCCESS)
+		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[eGBufferPassDSType::PER_MATERIAL].layout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}

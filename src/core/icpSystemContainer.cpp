@@ -7,6 +7,7 @@
 #include "icpLogSystem.h"
 
 #include "icpConfigSystem.h"
+#include "../render/light/icpLightSystem.h"
 #include "../ui/icpUiSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -38,6 +39,8 @@ void icpSystemContainer::initializeAllSystems(const std::filesystem::path& _conf
 
 	m_cameraSystem = std::make_shared<icpCameraSystem>();
 	m_cameraSystem->initialize();
+
+	m_lightSystem = std::make_shared<icpLightSystem>();
 
 	m_uiSystem = std::make_shared<icpUiSystem>();
 	m_uiSystem->initializeUiCanvas();

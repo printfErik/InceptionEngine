@@ -1,10 +1,12 @@
 #include "icpCameraSystem.h"
 #include "../scene/icpSceneSystem.h"
 #include "../core/icpSystemContainer.h"
+#include "icpSceneRenderer.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
-void icpCameraComponent::initializeCamera() // todo read from mapfile
+// todo: move to constructor
+void icpCameraComponent::initializeCamera() 
 {
 	m_position = glm::vec3(0.f, 0.f, 5.f);
 	m_viewDir = glm::vec3(0.f, 0.f, -1.f);
@@ -74,5 +76,17 @@ void icpCameraSystem::rotateCamera(std::shared_ptr<icpCameraComponent> camera, d
 
 	camera->m_rotation = pitch * camera->m_rotation * yaw;
 }
+
+void icpCameraSystem::UpdateCameraCB(perFrameCB& CBPerFrame, float aspectRatio)
+{
+	auto camera = getCurrentCamera();
+
+	CBPerFrame.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
+	CBPerFrame.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
+	CBPerFrame.projection[1][1] *= -1;
+
+	CBPerFrame.camPos = camera->m_position;
+}
+
 
 INCEPTION_END_NAMESPACE

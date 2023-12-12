@@ -7,6 +7,14 @@ INCEPTION_BEGIN_NAMESPACE
 class icpGBufferPass : public icpRenderPassBase
 {
 public:
+
+	enum eGBufferPassDSType : uint8_t
+	{
+		PER_MESH = 0,
+		PER_MATERIAL,
+		LAYOUT_TYPE_COUNT
+	};
+
 	icpGBufferPass();
 	virtual ~icpGBufferPass();
 

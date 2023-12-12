@@ -5,10 +5,10 @@
 #include "RHI/Vulkan/icpVulkanUtility.h"
 
 #include "icpCameraSystem.h"
+#include "light/icpLightSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-std::shared_ptr<icpRenderPassBase> icpSceneRenderer::AccessRenderPass(eRenderPass passType)
+	std::shared_ptr<icpRenderPassBase> icpSceneRenderer::AccessRenderPass(eRenderPass passType)
 {
 	return m_renderPasses[static_cast<int>(passType)];
 }
@@ -49,39 +49,19 @@ void icpSceneRenderer::CreateSceneCB()
 
 void icpSceneRenderer::UpdateGlobalSceneCB(uint32_t curFrame)
 {
-	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
-
 	perFrameCB CBPerFrame{};
 
-	CBPerFrame.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
 	auto aspectRatio = (float)m_pDevice->GetSwapChainExtent().width / (float)m_pDevice->GetSwapChainExtent().height;
-	CBPerFrame.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
-	CBPerFrame.projection[1][1] *= -1;
+	auto cameraSys = g_system_container.m_cameraSystem;
+	cameraSys->UpdateCameraCB(CBPerFrame, aspectRatio);
 
-	CBPerFrame.camPos = camera->m_position;
+	auto lightSys = g_system_container.m_lightSystem;
+	lightSys->UpdateLightCB(CBPerFrame);
 
-	auto lightView = g_system_container.m_sceneSystem->m_registry.view<icpDirectionalLightComponent>();
-
-	int index = 0;
-	for (auto& light : lightView)
-	{
-		auto& lightComp = lightView.get<icpDirectionalLightComponent>(light);
-		auto dirL = dynamic_cast<icpDirectionalLightComponent&>(lightComp);
-		CBPerFrame.dirLight.color = glm::vec4(dirL.m_color, 1.f);
-		CBPerFrame.dirLight.direction = glm::vec4(dirL.m_direction, 0.f);
-
-		// todo add point lights
-	}
-
-	CBPerFrame.pointLightNumber = 0.f;
-
-	if (!lightView.empty())
-	{
-		void* data;
-		vmaMapMemory(m_pDevice->GetVmaAllocator(), m_vSceneCBAllocations[curFrame], &data);
-		memcpy(data, &CBPerFrame, sizeof(perFrameCB));
-		vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_vSceneCBAllocations[curFrame]);
-	}
+	void* data;
+	vmaMapMemory(m_pDevice->GetVmaAllocator(), m_vSceneCBAllocations[curFrame], &data);
+	memcpy(data, &CBPerFrame, sizeof(perFrameCB));
+	vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_vSceneCBAllocations[curFrame]);
 }
 
 void icpSceneRenderer::CreateGlobalSceneDescriptorSetLayout()

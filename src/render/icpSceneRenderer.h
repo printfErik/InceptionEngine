@@ -19,9 +19,7 @@ struct DirectionalLightRenderResource
 struct PointLightRenderResource
 {
 	glm::vec3 position;
-	glm::vec3 ambient;
-	glm::vec3 diffuse;
-	glm::vec3 specular;
+	glm::vec4 color;
 	float constant = 0.f;
 	float linear = 0.f;
 	float quadratic = 0.f;

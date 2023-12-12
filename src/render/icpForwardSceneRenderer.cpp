@@ -164,7 +164,8 @@ void icpForwardSceneRenderer::Present(uint32_t imageIndex)
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 
-	presentInfo.pImageIndices = &imageIndex;
+	uint32_t _imageIndex = imageIndex;
+	presentInfo.pImageIndices = &_imageIndex;
 
 	VkResult result = vkQueuePresentKHR(m_pDevice->GetPresentQueue(), &presentInfo);
 

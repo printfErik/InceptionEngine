@@ -7,7 +7,7 @@
 #include "renderPass/icpGBufferPass.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	icpDeferredRenderer::~icpDeferredRenderer()
+icpDeferredRenderer::~icpDeferredRenderer()
 {
 	Cleanup();
 }
@@ -364,6 +364,15 @@ void icpDeferredRenderer::Render()
 	{
 		renderPass->Render(index, m_currentFrame, result);
 	}
+
+	EndForwardRenderPass();
+	EndRecordingCommandBuffer();
+
+	SubmitCommandList();
+
+	Present(index);
+
+	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 
@@ -474,6 +483,59 @@ void icpDeferredRenderer::EndRecordingCommandBuffer()
 	if (vkEndCommandBuffer(m_vDeferredCommandBuffers[m_currentFrame]) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to record command buffer!");
+	}
+}
+
+void icpDeferredRenderer::SubmitCommandList()
+{
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	auto& semaphores = m_pDevice->GetImageAvailableForRenderingSemaphores();
+	auto waitSemaphore = semaphores[m_currentFrame];
+
+	VkPipelineStageFlags waitStage = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &waitSemaphore;
+	submitInfo.pWaitDstStageMask = &waitStage;
+
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &m_pDevice->GetRenderFinishedForPresentationSemaphores()[m_currentFrame];
+
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &m_vDeferredCommandBuffers[m_currentFrame];
+
+	auto& fences = m_pDevice->GetInFlightFences();
+
+	vkQueueSubmit(m_pDevice->GetGraphicsQueue(), 1, &submitInfo, fences[m_currentFrame]);
+}
+
+void icpDeferredRenderer::Present(uint32_t imageIndex)
+{
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	presentInfo.waitSemaphoreCount = 1;
+
+	auto& RenderFinishedForPresentationSemaphores = m_pDevice->GetRenderFinishedForPresentationSemaphores();
+	presentInfo.pWaitSemaphores = &RenderFinishedForPresentationSemaphores[m_currentFrame];
+
+	VkSwapchainKHR swapChains[] = { m_pDevice->GetSwapChain() };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+
+	uint32_t _imageIndex = imageIndex;
+	presentInfo.pImageIndices = &_imageIndex;
+
+	VkResult result = vkQueuePresentKHR(m_pDevice->GetPresentQueue(), &presentInfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_pDevice->m_framebufferResized)
+	{
+		m_pDevice->m_framebufferResized = false;
+		RecreateSwapChain();
+	}
+	else if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to present swap chain image!");
 	}
 }
 

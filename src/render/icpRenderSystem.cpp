@@ -79,7 +79,6 @@ void icpRenderSystem::drawCube()
 
 	auto& primitive = cubeEntity->installComponent<icpPrimitiveRendererComponent>();
 
-	// todo: implicit doing following steps
 	primitive.m_primitive = ePrimitiveType::CUBE;
 
 	primitive.FillInPrimitiveData(glm::vec3(1,0,1));

@@ -11,6 +11,7 @@
 #include <glm/gtx/euler_angles.hpp>
 
 INCEPTION_BEGIN_NAMESPACE
+	struct perFrameCB;
 
 class icpCameraComponent : public icpComponentBase
 {
@@ -48,9 +49,11 @@ public:
 
 	glm::mat4 getCameraViewMatrix(std::shared_ptr<icpCameraComponent> camera);
 
+	void UpdateCameraCB(perFrameCB& CBPerFrame, float aspectRatio);
 
 private:
 
+	
 	std::vector<std::shared_ptr<icpCameraComponent>> m_cameras;
 
 };

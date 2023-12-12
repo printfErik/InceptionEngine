@@ -498,7 +498,6 @@ void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, ic
 
 	for (int childIndex = 0; childIndex < node.children.size(); childIndex++)
 	{
-		// todo: correct parent guid
 		LoadGLTFNode(gltfModel, node.children[childIndex], thisGuid, meshResources);
 	}
 

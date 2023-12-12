@@ -8,6 +8,14 @@ INCEPTION_BEGIN_NAMESPACE
 class icpDeferredRenderer : public std::enable_shared_from_this<icpDeferredRenderer>, public icpSceneRenderer
 {
 public:
+
+	enum class eDeferredLightingType
+	{
+		SIMPLE = 0,
+		TILE,
+		CLUSTER
+	};
+
 	icpDeferredRenderer() = default;
 	virtual ~icpDeferredRenderer() override;
 
@@ -20,15 +28,15 @@ public:
 
 	VkRenderPass GetGBufferRenderPass() override;
 	VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) override;
+	VkImageView GetGBufferAView() override;
+	VkImageView GetGBufferBView() override;
+	VkImageView GetGBufferCView() override;
 
 	void RecreateSwapChain();
 	void CleanupSwapChain();
 
 	void AllocateCommandBuffers();
-
-	VkImageView GetGBufferAView() override;
-	VkImageView GetGBufferBView() override;
-	VkImageView GetGBufferCView() override;
+	
 private:
 
 	void CreateGBufferAttachments();
@@ -40,6 +48,9 @@ private:
 
 	void EndForwardRenderPass();
 	void EndRecordingCommandBuffer();
+
+	void SubmitCommandList();
+	void Present(uint32_t imageIndex);
 
 	VkImage m_gBufferA{ VK_NULL_HANDLE };
 	VkImageView m_gBufferAView{ VK_NULL_HANDLE };

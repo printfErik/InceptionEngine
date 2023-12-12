@@ -14,6 +14,8 @@ public:
 	std::filesystem::path m_shaderFolderPath;
 	std::filesystem::path m_imageResourcePath;
 	std::filesystem::path m_modelResourcePath;
+
+	bool isDeferredRender = true;
 };
 
 

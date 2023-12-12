@@ -25,6 +25,9 @@ public:
 
 	VkRenderPass GetGBufferRenderPass() override { return VK_NULL_HANDLE; }
 	VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) override { return VK_NULL_HANDLE;}
+	VkImageView GetGBufferAView() override { return VK_NULL_HANDLE; }
+	VkImageView GetGBufferBView() override { return VK_NULL_HANDLE; }
+	VkImageView GetGBufferCView() override { return VK_NULL_HANDLE; }
 
 	void CreateForwardRenderPass();
 	void CreateSwapChainFrameBuffers();
