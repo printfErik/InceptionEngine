@@ -65,7 +65,6 @@ private:
 	VmaAllocation m_gBufferCAllocation{ VK_NULL_HANDLE };
 
 	VkRenderPass m_deferredRenderPass{ VK_NULL_HANDLE };
-
 	std::vector<VkFramebuffer> m_vDeferredFrameBuffers;
 
 	icpDescriptorSetLayoutInfo m_sceneDeferredDSLayout{};

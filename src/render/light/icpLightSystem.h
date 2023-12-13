@@ -5,6 +5,8 @@
 INCEPTION_BEGIN_NAMESPACE
 struct perFrameCB;
 
+static constexpr uint32_t MAX_POINT_LIGHT_NUMBER = 8;
+
 class icpLightSystem
 {
 public:

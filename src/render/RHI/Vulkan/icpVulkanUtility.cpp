@@ -51,6 +51,7 @@ void icpVulkanUtility::CreateGPUImage(
 	uint32_t width,
 	uint32_t height,
 	uint32_t mipmapLevel,
+	uint32_t layerCount,
 	VkFormat format,
 	VkImageTiling tiling,
 	VkImageUsageFlags usage,
@@ -66,7 +67,7 @@ void icpVulkanUtility::CreateGPUImage(
 	imageInfo.extent.height = height;
 	imageInfo.extent.depth = 1;
 	imageInfo.mipLevels = mipmapLevel;
-	imageInfo.arrayLayers = 1;
+	imageInfo.arrayLayers = layerCount;
 	imageInfo.format = format;
 	imageInfo.tiling = tiling;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -130,16 +131,18 @@ void icpVulkanUtility::endSingleTimeCommandsAndSubmit(
 }
 
 VkImageView icpVulkanUtility::CreateGPUImageView(
-	VkImage image, 
+	VkImage image,
+	VkImageViewType viewType,
 	VkFormat format,
 	VkImageAspectFlags aspectFlags,
 	uint32_t mipmapLevel,
+	uint32_t layerCount,
 	VkDevice& device)
 {
 	VkImageViewCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	createInfo.image = image;
-	createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	createInfo.viewType = viewType;
 	createInfo.format = format;
 	createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 	createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -149,7 +152,7 @@ VkImageView icpVulkanUtility::CreateGPUImageView(
 	createInfo.subresourceRange.baseMipLevel = 0;
 	createInfo.subresourceRange.levelCount = mipmapLevel;
 	createInfo.subresourceRange.baseArrayLayer = 0;
-	createInfo.subresourceRange.layerCount = 1;
+	createInfo.subresourceRange.layerCount = layerCount;
 
 	VkImageView view;
 	if (vkCreateImageView(device, &createInfo, nullptr, &view) != VK_SUCCESS) {

@@ -183,7 +183,7 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	attachments[4].format = icpVulkanUtility::findDepthFormat(m_pDevice->GetPhysicalDevice());
 	attachments[4].samples = VK_SAMPLE_COUNT_1_BIT;
 	attachments[4].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[4].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[4].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	attachments[4].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments[4].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	attachments[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;

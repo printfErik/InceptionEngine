@@ -19,7 +19,6 @@ public:
 		std::shared_ptr<icpGPUDevice> device{ nullptr };
 		eRenderPass passType;
 		std::weak_ptr<icpSceneRenderer> sceneRenderer;
-		std::shared_ptr<icpRenderPassBase> dependency{ nullptr };
 		std::shared_ptr<icpEditorUI> editorUi{ nullptr };
 	};
 
@@ -43,8 +42,6 @@ public:
 
 	RenderPipelineInfo m_pipelineInfo{};
 	std::vector<icpDescriptorSetLayoutInfo> m_DSLayouts;
-
-	std::shared_ptr<icpRenderPassBase> m_dependency = nullptr;
 
 protected:
 	std::weak_ptr<icpSceneRenderer> m_pSceneRenderer;

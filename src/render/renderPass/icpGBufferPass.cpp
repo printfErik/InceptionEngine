@@ -9,7 +9,7 @@
 #include "../../mesh/icpMeshResource.h"
 INCEPTION_BEGIN_NAMESPACE
 
-static constexpr uint32_t GBUFFER_RT_COUNT = 4;
+static constexpr uint32_t GBUFFER_RT_COUNT = 3;
 
 icpGBufferPass::icpGBufferPass()
 {
