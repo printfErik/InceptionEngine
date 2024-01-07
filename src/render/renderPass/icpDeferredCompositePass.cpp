@@ -155,7 +155,7 @@ void icpDeferredCompositePass::SetupPipeline()
 	rastInfo.depthClampEnable = VK_FALSE;
 	rastInfo.depthBiasEnable = VK_FALSE;
 	rastInfo.lineWidth = 1.f;
-	rastInfo.cullMode = VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT;
+	rastInfo.cullMode = VkCullModeFlagBits::VK_CULL_MODE_NONE;
 	rastInfo.frontFace = VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rastInfo.polygonMode = VkPolygonMode::VK_POLYGON_MODE_FILL;
 

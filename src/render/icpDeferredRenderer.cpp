@@ -44,7 +44,7 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 
 	m_renderPasses.push_back(deferredCompositePass);
 
-	/*
+	
 	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
 	editorUIInfo.device = m_pDevice;
 	editorUIInfo.passType = eRenderPass::EDITOR_UI_PASS;
@@ -54,7 +54,7 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	editorUIPass->InitializeRenderPass(editorUIInfo);
 
 	m_renderPasses.push_back(editorUIPass);
-	*/
+	
 	return true;
 }
 
