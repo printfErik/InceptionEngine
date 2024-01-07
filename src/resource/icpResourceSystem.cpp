@@ -27,7 +27,7 @@ icpResourceSystem::icpResourceSystem()
 
 icpResourceSystem::~icpResourceSystem()
 {
-
+	m_run_pinned_task.execute = false;
 }
 
 static constexpr uint32_t RESOURCE_LOAD_THREAD_NUM = 1u;
@@ -42,7 +42,6 @@ bool icpResourceSystem::Initialize()
 	m_ekScheduler->Initialize(config);
 
 	m_run_pinned_task.threadNum = 1;
-	m_run_pinned_task.task_scheduler = m_ekScheduler.get();
 	m_run_pinned_task.m_pResourceSystem = this;
 	m_ekScheduler->AddPinnedTask(&m_run_pinned_task);
 
@@ -266,10 +265,8 @@ icpResourceContainer& icpResourceSystem::GetResourceContainer()
 
 void RunPinnedTaskLoopTask::Execute()
 {
-	printf("This will run on the main thread\n");
+	//ICP_LOG_INFO("Resource Thread Initialized.");
 	while (execute) {
-		//task_scheduler->WaitForNewPinnedTasks(); // this thread will 'sleep' until there are new pinned tasks
-		//task_scheduler->RunPinnedTasks();
 		m_pResourceSystem->UpdateSystem();
 	}
 }

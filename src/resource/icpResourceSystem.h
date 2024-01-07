@@ -16,10 +16,8 @@ struct RunPinnedTaskLoopTask : public enki::IPinnedTask
 {
 	void Execute() override;
 	icpResourceSystem* m_pResourceSystem = nullptr;
-	enki::TaskScheduler* task_scheduler = nullptr;
-	bool                    execute = true;
-}; // struct RunPinnedTaskLoopTask
-
+	std::atomic<bool> execute = true;
+}; 
 
 typedef std::map<icpResourceType, std::map<std::string, std::shared_ptr<icpResourceBase>>> icpResourceContainer;
 
