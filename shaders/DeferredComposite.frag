@@ -1,5 +1,7 @@
 #version 450
 
+#include "Lighting.h"
+
 struct DirectionalLightRenderResource
 {
     vec4 direction;
@@ -23,7 +25,7 @@ layout (input_attachment_index = 2, set = 0, binding = 2) uniform subpassInput g
 layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput depthTex;
 
 
-layout(std140, set = 2, binding = 0) uniform PerFrameCB
+layout(std140, set = 1, binding = 0) uniform PerFrameCB
 {
     mat4 viewMatrix;
     mat4 projMatrix;
@@ -36,6 +38,8 @@ layout(std140, set = 2, binding = 0) uniform PerFrameCB
 layout(location = 0) in vec2 inTexCoord;
 
 layout(location = 0) out vec4 outColor;
+
+
 
 void main()
 {
@@ -88,5 +92,5 @@ void main()
 
     color = pow(color, vec3(1.0 / 2.2));
 
-    outColor = vec4(color, 1.0);
+    outColor = vec4(1, 0, 1, 1.0);
 }

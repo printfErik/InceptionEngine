@@ -44,6 +44,7 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 
 	m_renderPasses.push_back(deferredCompositePass);
 
+	/*
 	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
 	editorUIInfo.device = m_pDevice;
 	editorUIInfo.passType = eRenderPass::EDITOR_UI_PASS;
@@ -53,7 +54,7 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	editorUIPass->InitializeRenderPass(editorUIInfo);
 
 	m_renderPasses.push_back(editorUIPass);
-
+	*/
 	return true;
 }
 
@@ -80,6 +81,7 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 		(float)m_pDevice->GetSwapChainExtent().width,
 		(float)m_pDevice->GetSwapChainExtent().height,
 		1,
+		1,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
@@ -90,8 +92,10 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 
 	m_gBufferAView = icpVulkanUtility::CreateGPUImageView(
 		m_gBufferA,
+		VK_IMAGE_VIEW_TYPE_2D,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		aspectMask,
+		1,
 		1,
 		m_pDevice->GetLogicalDevice()
 	);
@@ -99,6 +103,7 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 	icpVulkanUtility::CreateGPUImage(
 		(float)m_pDevice->GetSwapChainExtent().width,
 		(float)m_pDevice->GetSwapChainExtent().height,
+		1,
 		1,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		VK_IMAGE_TILING_OPTIMAL,
@@ -110,8 +115,10 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 
 	m_gBufferBView = icpVulkanUtility::CreateGPUImageView(
 		m_gBufferB,
+		VK_IMAGE_VIEW_TYPE_2D,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		aspectMask,
+		1,
 		1,
 		m_pDevice->GetLogicalDevice()
 	);
@@ -119,6 +126,7 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 	icpVulkanUtility::CreateGPUImage(
 		(float)m_pDevice->GetSwapChainExtent().width,
 		(float)m_pDevice->GetSwapChainExtent().height,
+		1,
 		1,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		VK_IMAGE_TILING_OPTIMAL,
@@ -130,8 +138,10 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 
 	m_gBufferCView = icpVulkanUtility::CreateGPUImageView(
 		m_gBufferC,
+		VK_IMAGE_VIEW_TYPE_2D,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		aspectMask,
+		1,
 		1,
 		m_pDevice->GetLogicalDevice()
 	);
@@ -195,15 +205,14 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	// First subpass: Fill G-Buffer components
 	// ----------------------------------------------------------------------------------------
 
-	VkAttachmentReference colorReferences[4];
-	colorReferences[0] = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-	colorReferences[1] = { 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-	colorReferences[2] = { 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-	colorReferences[3] = { 3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+	VkAttachmentReference colorReferences[3];
+	colorReferences[0] = { 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+	colorReferences[1] = { 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+	colorReferences[2] = { 3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 	VkAttachmentReference depthReference = { 4, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
 
 	subpassDescriptions[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpassDescriptions[0].colorAttachmentCount = 4;
+	subpassDescriptions[0].colorAttachmentCount = 3;
 	subpassDescriptions[0].pColorAttachments = colorReferences;
 	subpassDescriptions[0].pDepthStencilAttachment = &depthReference;
 
@@ -216,12 +225,12 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	inputReferences[0] = { 1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 	inputReferences[1] = { 2, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 	inputReferences[2] = { 3, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
-	inputReferences[3] = { 4, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL };
+	inputReferences[3] = { 4, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 
 	subpassDescriptions[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpassDescriptions[1].colorAttachmentCount = 1;
 	subpassDescriptions[1].pColorAttachments = &colorReference;
-	subpassDescriptions[1].pDepthStencilAttachment = &depthReference;
+	//subpassDescriptions[1].pDepthStencilAttachment = &depthReference;
 	// Use the color attachments filled in the first pass as input attachments
 	subpassDescriptions[1].inputAttachmentCount = 4;
 	subpassDescriptions[1].pInputAttachments = inputReferences;
@@ -259,7 +268,7 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	dependencies[0].srcAccessMask = 0;
-	dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 	// This dependency transitions the input attachment from color attachment to input attachment read
@@ -394,6 +403,8 @@ void icpDeferredRenderer::RecreateSwapChain()
 	m_pDevice->CreateSwapChain();
 	m_pDevice->CreateSwapChainImageViews();
 	m_pDevice->CreateDepthResources();
+
+	CreateGBufferAttachments();
 	CreateDeferredFrameBuffer();
 }
 
@@ -403,6 +414,14 @@ void icpDeferredRenderer::CleanupSwapChain()
 	{
 		vkDestroyFramebuffer(m_pDevice->GetLogicalDevice(), framebuffer, nullptr);
 	}
+
+	vmaDestroyImage(m_pDevice->GetVmaAllocator(), m_gBufferA, m_gBufferAAllocation);
+	vmaDestroyImage(m_pDevice->GetVmaAllocator(), m_gBufferB, m_gBufferBAllocation);
+	vmaDestroyImage(m_pDevice->GetVmaAllocator(), m_gBufferC, m_gBufferCAllocation);
+
+	vkDestroyImageView(m_pDevice->GetLogicalDevice(), m_gBufferAView, nullptr);
+	vkDestroyImageView(m_pDevice->GetLogicalDevice(), m_gBufferBView, nullptr);
+	vkDestroyImageView(m_pDevice->GetLogicalDevice(), m_gBufferCView, nullptr);
 }
 
 void icpDeferredRenderer::AllocateCommandBuffers()

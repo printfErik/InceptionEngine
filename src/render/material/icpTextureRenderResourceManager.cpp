@@ -39,6 +39,7 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 		static_cast<uint32_t>(info.m_texImageRes->m_width),
 		static_cast<uint32_t>(info.m_texImageRes->m_height),
 		static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel),
+		1,
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
@@ -55,7 +56,15 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 
 	icpVulkanUtility::generateMipmaps(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, static_cast<uint32_t>(info.m_texImageRes->m_width), static_cast<uint32_t>(info.m_texImageRes->m_height), static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue(), m_rhi->GetPhysicalDevice());
 
-	info.m_texImageView = icpVulkanUtility::CreateGPUImageView(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, info.m_texImageRes->m_mipmapLevel, m_rhi->GetLogicalDevice());
+	info.m_texImageView = icpVulkanUtility::CreateGPUImageView(
+		info.m_texImage,
+		VK_IMAGE_VIEW_TYPE_2D,
+		VK_FORMAT_R8G8B8A8_SRGB, 
+		VK_IMAGE_ASPECT_COLOR_BIT, 
+		info.m_texImageRes->m_mipmapLevel,
+		1,
+		m_rhi->GetLogicalDevice()
+	);
 
 	VkSamplerCreateInfo sampler{};
 	sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -146,6 +155,7 @@ void icpTextureRenderResourceManager::InitializeEmptyTexture()
 		1,
 		1,
 		1,
+		1,
 		VK_FORMAT_R8_SNORM,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
@@ -162,7 +172,14 @@ void icpTextureRenderResourceManager::InitializeEmptyTexture()
 
 	//icpVulkanUtility::generateMipmaps(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, static_cast<uint32_t>(info.m_texImageRes->m_width), static_cast<uint32_t>(info.m_texImageRes->m_height), static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue(), m_rhi->GetPhysicalDevice());
 
-	info.m_texImageView = icpVulkanUtility::CreateGPUImageView(info.m_texImage, VK_FORMAT_R8_SNORM, VK_IMAGE_ASPECT_COLOR_BIT, 1, m_rhi->GetLogicalDevice());
+	info.m_texImageView = icpVulkanUtility::CreateGPUImageView(
+		info.m_texImage, 
+		VK_IMAGE_VIEW_TYPE_2D,
+		VK_FORMAT_R8_SNORM, 
+		VK_IMAGE_ASPECT_COLOR_BIT, 
+		1, 1,
+		m_rhi->GetLogicalDevice()
+	);
 
 	VkSamplerCreateInfo sampler{};
 	sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

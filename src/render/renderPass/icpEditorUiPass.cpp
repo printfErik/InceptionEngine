@@ -46,12 +46,13 @@ void icpEditorUiPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, V
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow();
-	//m_editorUI->showEditorUI();
+	//ImGui::ShowDemoWindow();
+	m_editorUI->showEditorUI();
 
 	ImGui::Render();
 
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), mgr->GetMainForwardCommandBuffer(currentFrame));
+	auto commandBuffer = mgr->GetDeferredCommandBuffer(currentFrame) ? mgr->GetDeferredCommandBuffer(currentFrame) : mgr->GetMainForwardCommandBuffer(currentFrame);
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 }
 
 void icpEditorUiPass::SetupPipeline()
@@ -73,9 +74,15 @@ void icpEditorUiPass::SetupPipeline()
 	info.PhysicalDevice = m_rhi->GetPhysicalDevice();
 	info.Queue = m_rhi->GetGraphicsQueue();
 	info.QueueFamily = m_rhi->GetQueueFamilyIndices().m_graphicsFamily.value();
-	info.Subpass = 0;
+	info.Subpass = 1;
 
-	ImGui_ImplVulkan_Init(&info, m_pSceneRenderer.lock()->GetMainForwardRenderPass());
+	auto renderPass = m_pSceneRenderer.lock()->GetMainForwardRenderPass();
+	if (!renderPass)
+	{
+		renderPass = m_pSceneRenderer.lock()->GetGBufferRenderPass();
+	}
+
+	ImGui_ImplVulkan_Init(&info, renderPass);
 }
 
 

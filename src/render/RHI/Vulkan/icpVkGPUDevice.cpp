@@ -601,8 +601,16 @@ void icpVkGPUDevice::CreateSwapChainImageViews()
 {
 	m_swapChainImageViews.resize(m_swapChainImages.size());
 
-	for (size_t i = 0; i < m_swapChainImages.size(); i++) {
-		m_swapChainImageViews[i] = icpVulkanUtility::CreateGPUImageView(m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, m_device);
+	for (size_t i = 0; i < m_swapChainImages.size(); i++) 
+	{
+		m_swapChainImageViews[i] = icpVulkanUtility::CreateGPUImageView(
+			m_swapChainImages[i], 
+			VK_IMAGE_VIEW_TYPE_2D,
+			m_swapChainImageFormat, 
+			VK_IMAGE_ASPECT_COLOR_BIT, 
+			1, 1,
+			m_device
+		);
 	}
 }
 
@@ -645,6 +653,7 @@ void icpVkGPUDevice::CreateDepthResources() {
 		m_swapChainExtent.width, 
 		m_swapChainExtent.height,
 		1,
+		1,
 		depthFormat, 
 		VK_IMAGE_TILING_OPTIMAL, 
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
@@ -652,7 +661,7 @@ void icpVkGPUDevice::CreateDepthResources() {
 		m_depthImage, 
 		m_depthBufferAllocation
 	);
-	m_depthImageView = icpVulkanUtility::CreateGPUImageView(m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, m_device);
+	m_depthImageView = icpVulkanUtility::CreateGPUImageView(m_depthImage, VK_IMAGE_VIEW_TYPE_2D, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1, m_device);
 }
 
 bool hasStencilComponent(VkFormat format) {
@@ -781,6 +790,21 @@ void icpVkGPUDevice::CreateDescriptorSet(const icpDescriptorSetCreation& creatio
 					descriptorWrites[i].dstBinding = i;
 					descriptorWrites[i].dstArrayElement = 0;
 					descriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+					descriptorWrites[i].descriptorCount = 1;
+					descriptorWrites[i].pImageInfo = &imageInfos[i];
+				}
+				break;
+			case VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+				{
+					auto imageRes = std::get<icpTextureRenderResourceInfo>(creation.resources[i * 3 + frame]);
+					imageInfos[i].sampler = VK_NULL_HANDLE;
+					imageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					imageInfos[i].imageView = imageRes.m_texImageView;
+					descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					descriptorWrites[i].dstSet = DSs[frame];
+					descriptorWrites[i].dstBinding = i;
+					descriptorWrites[i].dstArrayElement = 0;
+					descriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
 					descriptorWrites[i].descriptorCount = 1;
 					descriptorWrites[i].pImageInfo = &imageInfos[i];
 				}

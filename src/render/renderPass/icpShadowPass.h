@@ -13,11 +13,12 @@ public:
 	void InitializeRenderPass(RenderPassInitInfo initInfo) override;
 	void SetupPipeline() override;
 	void Cleanup() override;
-	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override;
+	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override {}
 
-	void CreateDescriptorSetLayouts() override;
+	void CreateDescriptorSetLayouts() override {}
 	void AllocateDescriptorSets() override {}
-	void UpdateRenderPassCB(uint32_t curFrame) override;
+	void UpdateRenderPassCB(uint32_t curFrame) override{}
+
 
 private:
 

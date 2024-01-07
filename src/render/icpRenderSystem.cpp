@@ -1,5 +1,6 @@
 #include "icpRenderSystem.h"
 
+#include "icpDeferredRenderer.h"
 #include "icpForwardSceneRenderer.h"
 #include "RHI/Vulkan/icpVkGPUDevice.h"
 #include "../core/icpSystemContainer.h"
@@ -26,7 +27,7 @@ bool icpRenderSystem::initializeRenderSystem()
 	m_pGPUDevice = std::make_shared<icpVkGPUDevice>();
 	m_pGPUDevice->Initialize(g_system_container.m_windowSystem);
 
-	m_pSceneRenderer = std::make_shared<icpForwardSceneRenderer>();
+	m_pSceneRenderer = std::make_shared<icpDeferredRenderer>();
 	m_pSceneRenderer->Initialize(m_pGPUDevice);
 
 	m_textureRenderResourceManager = std::make_shared<icpTextureRenderResourceManager>(m_pGPUDevice);

@@ -87,6 +87,8 @@ protected:
 	icpDescriptorSetLayoutInfo m_sceneDSLayout{};
 	std::vector<VkDescriptorSet> m_vSceneDSs;
 
+	
+
 	uint32_t m_currentFrame = 0;
 private:
 };

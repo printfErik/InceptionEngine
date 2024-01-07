@@ -23,7 +23,7 @@ void icpDeferredCompositePass::Cleanup()
 void icpDeferredCompositePass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
 	auto mgr = m_pSceneRenderer.lock();
-	RecordCommandBuffer(mgr->GetMainForwardCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
+	RecordCommandBuffer(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
 }
 
 void icpDeferredCompositePass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
@@ -55,6 +55,7 @@ void icpDeferredCompositePass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	m_pSceneRenderer = initInfo.sceneRenderer;
 
 	CreateDescriptorSetLayouts();
+	AllocateDescriptorSets();
 	SetupPipeline();
 }
 
@@ -88,16 +89,7 @@ void icpDeferredCompositePass::SetupPipeline()
 
 	// Vertex Input
 	VkPipelineVertexInputStateCreateInfo vertexInput{};
-
-	auto bindingDescription = icpVertex::getBindingDescription();
-	auto attributeDescription = icpVertex::getAttributeDescription();
-
 	vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInput.vertexBindingDescriptionCount = 1;
-	vertexInput.pVertexBindingDescriptions = &bindingDescription;
-	vertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescription.size());
-	vertexInput.pVertexAttributeDescriptions = attributeDescription.data();
-
 	compositePipeline.pVertexInputState = &vertexInput;
 
 	// Input Assembly
@@ -181,8 +173,8 @@ void icpDeferredCompositePass::SetupPipeline()
 	VkPipelineDepthStencilStateCreateInfo depthStencilState{};
 	depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	depthStencilState.depthTestEnable = VK_TRUE;
-	depthStencilState.depthWriteEnable = VK_TRUE;
-	depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS;
+	depthStencilState.depthWriteEnable = VK_FALSE;
+	depthStencilState.depthCompareOp = VK_COMPARE_OP_ALWAYS;
 	depthStencilState.depthBoundsTestEnable = VK_FALSE;
 	depthStencilState.stencilTestEnable = VK_FALSE;
 
@@ -318,7 +310,7 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 	{
 		icpTextureRenderResourceInfo texInfo{};
 		texInfo.m_texSampler = VK_NULL_HANDLE;
-		texInfo.m_texImageView = m_pSceneRenderer.lock()->GetGBufferAView();
+		texInfo.m_texImageView = m_pSceneRenderer.lock()->GetGBufferBView();
 		gbufferBInfos.push_back(texInfo);
 	}
 	creation.SetInputAttachment(1, gbufferBInfos);
@@ -328,7 +320,7 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 	{
 		icpTextureRenderResourceInfo texInfo{};
 		texInfo.m_texSampler = VK_NULL_HANDLE;
-		texInfo.m_texImageView = m_pSceneRenderer.lock()->GetGBufferAView();
+		texInfo.m_texImageView = m_pSceneRenderer.lock()->GetGBufferCView();
 		gbufferCInfos.push_back(texInfo);
 	}
 	creation.SetInputAttachment(2, gbufferCInfos);
@@ -339,7 +331,7 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 		icpTextureRenderResourceInfo texInfo{};
 		texInfo.m_texSampler = VK_NULL_HANDLE;
 		texInfo.m_texImageView = m_rhi->GetDepthImageView();
-		gbufferCInfos.push_back(texInfo);
+		depthInfos.push_back(texInfo);
 	}
 	creation.SetInputAttachment(3, depthInfos);
 

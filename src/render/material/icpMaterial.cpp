@@ -248,8 +248,8 @@ void icpMaterialInstance::FillPBRDataCache()
 	//m_pbrDataCache.workflow = m_vScalarParameterValues.contains("baseColorFactor") ? m_vScalarParameterValues["baseColorFactor"].m_fValue : m_pbrDataCache.baseColorFactor;
 	m_pbrDataCache.colorTextureSet = m_vTextureParameterValues.contains("baseColorTexture") ? 1.f : m_pbrDataCache.colorTextureSet;
 	m_pbrDataCache.PhysicalDescriptorTextureSet = m_vTextureParameterValues.contains("metallicRoughnessTexture") ? 1.f : m_pbrDataCache.PhysicalDescriptorTextureSet;
-	m_pbrDataCache.metallicTextureSet = m_vTextureParameterValues.contains("metallicTextureSet") ? 1.f : m_pbrDataCache.metallicTextureSet;
-	m_pbrDataCache.roughnessTextureSet = m_vTextureParameterValues.contains("roughnessTextureSet") ? 1.f : m_pbrDataCache.roughnessTextureSet;
+	m_pbrDataCache.metallicTextureSet = m_vTextureParameterValues.contains("metallicTexture") ? 1.f : m_pbrDataCache.metallicTextureSet;
+	m_pbrDataCache.roughnessTextureSet = m_vTextureParameterValues.contains("roughnessTexture") ? 1.f : m_pbrDataCache.roughnessTextureSet;
 	m_pbrDataCache.normalTextureSet = m_vTextureParameterValues.contains("normalTexture") ? 1.f : m_pbrDataCache.normalTextureSet;
 	m_pbrDataCache.occlusionTextureSet = m_vTextureParameterValues.contains("occlusionTexture") ? 1.f : m_pbrDataCache.occlusionTextureSet;
 	m_pbrDataCache.emissiveTextureSet = m_vTextureParameterValues.contains("emissiveTexture") ? 1.f : m_pbrDataCache.emissiveTextureSet;
