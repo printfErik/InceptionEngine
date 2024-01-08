@@ -228,15 +228,15 @@ void icpGBufferPass::CreateDescriptorSetLayouts()
 	// per mesh
 	{
 		// set 0, binding 0 
-		VkDescriptorSetLayoutBinding perObjectSSBOBinding{};
-		perObjectSSBOBinding.binding = 0;
-		perObjectSSBOBinding.descriptorCount = 1;
-		perObjectSSBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		perObjectSSBOBinding.pImmutableSamplers = nullptr;
-		perObjectSSBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+		VkDescriptorSetLayoutBinding perObjectUBOBinding{};
+		perObjectUBOBinding.binding = 0;
+		perObjectUBOBinding.descriptorCount = 1;
+		perObjectUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		perObjectUBOBinding.pImmutableSamplers = nullptr;
+		perObjectUBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 		m_DSLayouts[eGBufferPassDSType::PER_MESH].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
 
-		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perObjectSSBOBinding };
+		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perObjectUBOBinding };
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());

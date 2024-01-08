@@ -7,6 +7,13 @@ INCEPTION_BEGIN_NAMESPACE
 class icpShadowPass : public icpRenderPassBase
 {
 public:
+
+	enum eShadowPassDSType : uint8_t
+	{
+		PER_MESH = 0,
+		LAYOUT_TYPE_COUNT
+	};
+
 	icpShadowPass();
 	virtual ~icpShadowPass() override;
 
@@ -15,7 +22,7 @@ public:
 	void Cleanup() override;
 	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override {}
 
-	void CreateDescriptorSetLayouts() override {}
+	void CreateDescriptorSetLayouts() override;
 	void AllocateDescriptorSets() override {}
 	void UpdateRenderPassCB(uint32_t curFrame) override{}
 

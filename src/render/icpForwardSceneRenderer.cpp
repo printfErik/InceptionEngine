@@ -182,6 +182,7 @@ void icpForwardSceneRenderer::Present(uint32_t imageIndex)
 
 void icpForwardSceneRenderer::CreateForwardRenderPass()
 {
+	// Color attachment
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = m_pDevice->GetSwapChainImageFormat();
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -192,6 +193,7 @@ void icpForwardSceneRenderer::CreateForwardRenderPass()
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+	// Depth attachment
 	VkAttachmentDescription depthAttachment{};
 	depthAttachment.format = icpVulkanUtility::findDepthFormat(m_pDevice->GetPhysicalDevice());
 	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;

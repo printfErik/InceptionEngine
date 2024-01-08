@@ -1,6 +1,7 @@
 #include "icpShadowPass.h"
 #include "../RHI/Vulkan/icpVulkanUtility.h"
 #include "../../core/icpConfigSystem.h"
+#include "../../core/icpLogSystem.h"
 #include "../../mesh/icpMeshData.h"
 #include "../icpSceneRenderer.h"
 #include "../light/icpLightSystem.h"
@@ -8,7 +9,7 @@
 INCEPTION_BEGIN_NAMESPACE
 
 icpShadowPass::icpShadowPass()
-	: m_nShadowMapDim(4096u),
+	: m_nShadowMapDim(1024u),
 	m_fDepthBiasConstantFactor(1.5f),
 	m_fDepthBiasClamp(0.f),
 	m_fDepthBiasSlopeFactor(1.75f)
@@ -42,6 +43,8 @@ void icpShadowPass::SetupPipeline()
 	shadowPipeline.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
 	VkPipelineShaderStageCreateInfo vertShader{};
+	VkPipelineShaderStageCreateInfo gemoShader{};
+	VkPipelineShaderStageCreateInfo fragShader{};
 
 	vertShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	auto vertShaderPath = g_system_container.m_configSystem->m_shaderFolderPath / "ShadowMapping.vert.spv";
@@ -49,11 +52,26 @@ void icpShadowPass::SetupPipeline()
 	vertShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 	vertShader.pName = "main";
 
-	std::array<VkPipelineShaderStageCreateInfo, 1> shaderCreateInfos{
-		vertShader
+	gemoShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	auto gemoShaderPath = g_system_container.m_configSystem->m_shaderFolderPath / "ShadowMapping.gemo.spv";
+	gemoShader.module = icpVulkanUtility::createShaderModule(gemoShaderPath.generic_string().c_str(), m_rhi->GetLogicalDevice());
+	gemoShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_GEOMETRY_BIT;
+	gemoShader.pName = "main";
+
+	fragShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	auto fragShaderPath = g_system_container.m_configSystem->m_shaderFolderPath / "ShadowMapping.frag.spv";
+	fragShader.module = icpVulkanUtility::createShaderModule(fragShaderPath.generic_string().c_str(), m_rhi->GetLogicalDevice());
+	fragShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_GEOMETRY_BIT;
+	fragShader.pName = "main";
+
+	std::array<VkPipelineShaderStageCreateInfo, 3> shaderCreateInfos
+	{
+		vertShader,
+		gemoShader,
+		fragShader
 	};
 
-	shadowPipeline.stageCount = 1;
+	shadowPipeline.stageCount = 3;
 	shadowPipeline.pStages = shaderCreateInfos.data();
 
 	// Vertex Input
@@ -179,7 +197,7 @@ void icpShadowPass::SetupPipeline()
 	shadowPipeline.pColorBlendState = &colorBlend;
 
 	// RenderPass
-	shadowPipeline.renderPass = sceneRenderer->GetGBufferRenderPass();
+	shadowPipeline.renderPass = m_shadowRenderPass;
 	shadowPipeline.subpass = 0;
 
 	shadowPipeline.basePipelineHandle = VK_NULL_HANDLE;
@@ -194,19 +212,60 @@ void icpShadowPass::SetupPipeline()
 
 void icpShadowPass::CreateShadowRenderPass()
 {
-	std::array<VkAttachmentDescription, 1> attachments{};
+	std::array<VkAttachmentDescription, 2> attachments{};
 
-	// Depth attachment
-	attachments[0].format = icpVulkanUtility::findDepthFormat(m_rhi->GetPhysicalDevice());
+	// Color attachment
+	attachments[0].format = VK_FORMAT_R32G32_SFLOAT;
 	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
 	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[0].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
+	// Depth attachment
+	attachments[1].format = icpVulkanUtility::findDepthFormat(m_rhi->GetPhysicalDevice());
+	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
+	VkAttachmentReference colorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+	VkAttachmentReference depthReference = { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+
+	VkSubpassDescription subpassDescription{};
+	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpassDescription.colorAttachmentCount = 1;
+	subpassDescription.pColorAttachments = &colorReference;
+	subpassDescription.pDepthStencilAttachment = &depthReference;
+
+	// todo: figure out
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = 0;
+	dependency.dstSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+	dependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	dependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	VkRenderPassCreateInfo shadowPassInfo{};
+	shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	shadowPassInfo.attachmentCount = attachments.size();
+	shadowPassInfo.pAttachments = attachments.data();
+	shadowPassInfo.dependencyCount = 1;
+	shadowPassInfo.pDependencies = &dependency;
+	shadowPassInfo.subpassCount = 1;
+	shadowPassInfo.pSubpasses = &subpassDescription;
+
+	if (vkCreateRenderPass(m_rhi->GetLogicalDevice(), &shadowPassInfo, nullptr, &m_shadowRenderPass) != VK_SUCCESS)
+	{
+		ICP_LOG_FATAL("failed to create shadow render pass!");
+	}
 }
 
 void icpShadowPass::CreateShadowAttachment()
@@ -214,11 +273,11 @@ void icpShadowPass::CreateShadowAttachment()
 	icpVulkanUtility::CreateGPUImage(
 		m_nShadowMapDim,
 		m_nShadowMapDim,
-		12, // log2(4096) = 12
+		10, // log2(1024) = 10
 		6 * MAX_POINT_LIGHT_NUMBER,
-		icpVulkanUtility::findDepthFormat(m_rhi->GetPhysicalDevice()),
+		VK_FORMAT_R32G32_SFLOAT,
 		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 		m_rhi->GetVmaAllocator(),
 		m_shadowCubeMapArray,
 		m_shadowCubeMapArrayAllocation
@@ -227,9 +286,9 @@ void icpShadowPass::CreateShadowAttachment()
 	m_shadowCubeMapArrayView = icpVulkanUtility::CreateGPUImageView(
 		m_shadowCubeMapArray,
 		VK_IMAGE_VIEW_TYPE_CUBE_ARRAY,
-		icpVulkanUtility::findDepthFormat(m_rhi->GetPhysicalDevice()),
-		VK_IMAGE_ASPECT_DEPTH_BIT,
-		12,
+		VK_FORMAT_R32G32_SFLOAT,
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		10,
 		6 * MAX_POINT_LIGHT_NUMBER,
 		m_rhi->GetLogicalDevice()
 	);
@@ -255,7 +314,7 @@ void icpShadowPass::CreateShadowFrameBuffer()
 		framebufferInfo.pAttachments = attachment.data();
 		framebufferInfo.width = m_nShadowMapDim;
 		framebufferInfo.height = m_nShadowMapDim;
-		framebufferInfo.layers = 1;
+		framebufferInfo.layers = 6 * MAX_POINT_LIGHT_NUMBER;
 
 		if (vkCreateFramebuffer(m_rhi->GetLogicalDevice(), &framebufferInfo, nullptr, &m_vShadowFrameBuffers[i]) != VK_SUCCESS)
 		{
@@ -264,7 +323,20 @@ void icpShadowPass::CreateShadowFrameBuffer()
 	}
 }
 
+void icpShadowPass::CreateDescriptorSetLayouts()
+{
+	m_DSLayouts.resize(eShadowPassDSType::LAYOUT_TYPE_COUNT);
 
+	// light UBOs
+	{
+		VkDescriptorSetLayoutBinding allLightUBOBinding{};
+		allLightUBOBinding.binding = 0;
+		allLightUBOBinding.descriptorCount = 1;
+		allLightUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		allLightUBOBinding.pImmutableSamplers = nullptr;
+		allLightUBOBinding.stageFlags = vk_shader_stage
+	}
+}
 
 
 INCEPTION_END_NAMESPACE

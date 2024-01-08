@@ -119,7 +119,4 @@ VkDescriptorSet icpSceneRenderer::GetSceneDescriptorSet(uint32_t curFrame)
 	return m_vSceneDSs[curFrame];
 }
 
-
-
-
 INCEPTION_END_NAMESPACE
