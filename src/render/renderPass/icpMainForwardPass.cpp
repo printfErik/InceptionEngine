@@ -297,6 +297,7 @@ void icpMainForwardPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint
 
 void icpMainForwardPass::UpdateRenderPassCB(uint32_t curFrame)
 {
+	// todo£º not suppose to be here, should be inside scene system to update all mesh translations
 	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
 
 	for (auto& entity: view)

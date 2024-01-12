@@ -3,8 +3,10 @@
 #include "../../core/icpConfigSystem.h"
 #include "../../core/icpLogSystem.h"
 #include "../../mesh/icpMeshData.h"
+#include "../../mesh/icpMeshResource.h"
 #include "../icpSceneRenderer.h"
 #include "../light/icpLightSystem.h"
+#include "../../mesh/icpMeshRendererComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -326,17 +328,107 @@ void icpShadowPass::CreateShadowFrameBuffer()
 void icpShadowPass::CreateDescriptorSetLayouts()
 {
 	m_DSLayouts.resize(eShadowPassDSType::LAYOUT_TYPE_COUNT);
-
+	auto logicDevice = m_rhi->GetLogicalDevice();
 	// light UBOs
 	{
+		// set 0, binding 0 
 		VkDescriptorSetLayoutBinding allLightUBOBinding{};
 		allLightUBOBinding.binding = 0;
 		allLightUBOBinding.descriptorCount = 1;
 		allLightUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		allLightUBOBinding.pImmutableSamplers = nullptr;
-		allLightUBOBinding.stageFlags = vk_shader_stage
+		allLightUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		m_DSLayouts[eShadowPassDSType::LIGHT_INFO].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+
+		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ allLightUBOBinding };
+
+		VkDescriptorSetLayoutCreateInfo createInfo{};
+		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		createInfo.pBindings = bindings.data();
+		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[eShadowPassDSType::LIGHT_INFO].layout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+
+	// per mesh
+	{
+		// set 1, binding 0 
+		VkDescriptorSetLayoutBinding perObjectSSBOBinding{};
+		perObjectSSBOBinding.binding = 0;
+		perObjectSSBOBinding.descriptorCount = 1;
+		perObjectSSBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		perObjectSSBOBinding.pImmutableSamplers = nullptr;
+		perObjectSSBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+		m_DSLayouts[eShadowPassDSType::PER_MESH].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+
+		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perObjectSSBOBinding };
+
+		VkDescriptorSetLayoutCreateInfo createInfo{};
+		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		createInfo.pBindings = bindings.data();
+		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[eShadowPassDSType::PER_MESH].layout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
 	}
 }
+
+void icpShadowPass::UpdateRenderPassCB(uint32_t curFrame)
+{
+	// 1. update mesh
+	// 2. update light
+
+	// but none of above should appear here, so leave blank;
+}
+
+void icpShadowPass::AllocateDescriptorSets()
+{
+	
+}
+
+void icpShadowPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
+{
+	auto mgr = m_pSceneRenderer.lock();
+	RecordCommandBuffer(mgr->GetMainForwardCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
+}
+
+void icpShadowPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
+{
+	auto mgr = m_pSceneRenderer.lock();
+
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
+
+	auto sceneDS = mgr->GetSceneDescriptorSet(curFrame);
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &sceneDS, 0, nullptr);
+
+	std::vector<VkDeviceSize> offsets{ 0 };
+	auto meshView = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent>();
+	for (auto& mesh : g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent>())
+	{
+		const auto& meshRender = meshView.get<icpMeshRendererComponent>(mesh);
+
+		auto& meshResId = meshRender.m_meshResId;
+		auto res = g_system_container.m_resourceSystem->GetResourceContainer()[icpResourceType::MESH][meshResId];
+		auto meshRes = std::dynamic_pointer_cast<icpMeshResource>(res);
+
+		auto vertBuf = meshRender.m_vertexBuffer;
+		std::vector<VkBuffer>vertexBuffers{ vertBuf };
+
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
+		vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+		vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
+		vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(meshRes->m_meshData.m_vertexIndices.size()), 1, 0, 0, 0);
+	}
+}
+
 
 
 INCEPTION_END_NAMESPACE

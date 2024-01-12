@@ -3,7 +3,9 @@
 #include "../../core/icpMacros.h"
 
 INCEPTION_BEGIN_NAMESPACE
-struct perFrameCB;
+	class icpPointLightComponent;
+	struct PointLightRenderResource;
+	struct perFrameCB;
 
 static constexpr uint32_t MAX_POINT_LIGHT_NUMBER = 8;
 
@@ -14,6 +16,8 @@ public:
 	virtual ~icpLightSystem();
 
 	void UpdateLightCB(perFrameCB& cb);
+
+	void GeneratePointViewMatrices(PointLightRenderResource& pointLight, const icpPointLightComponent& icpComp);
 private:
 
 };

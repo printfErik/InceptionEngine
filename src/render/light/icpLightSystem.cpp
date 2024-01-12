@@ -34,6 +34,9 @@ void icpLightSystem::UpdateLightCB(perFrameCB& CBPerFrame)
 		auto& lightComp = pointLightView.get<icpPointLightComponent>(point);
 		CBPerFrame.pointLight[pointLightIdx].color = glm::vec4(lightComp.m_color, 1.f);
 		CBPerFrame.pointLight[pointLightIdx].position = lightComp.m_position;
+
+		GeneratePointViewMatrices(CBPerFrame.pointLight[pointLightIdx], lightComp);
+
 		pointLightIdx++;
 	}
 
@@ -41,6 +44,15 @@ void icpLightSystem::UpdateLightCB(perFrameCB& CBPerFrame)
 
 }
 
+void icpLightSystem::GeneratePointViewMatrices(PointLightRenderResource& pointLight, const icpPointLightComponent& icpComp)
+{
+	pointLight.viewMatrices[0] = glm::lookAt(icpComp.m_position, glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+	pointLight.viewMatrices[1] = glm::lookAt(icpComp.m_position, glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+	pointLight.viewMatrices[2] = glm::lookAt(icpComp.m_position, glm::vec3(0.0, 1.0, 0.0), glm::vec3(1.0, .0, 0.0));
+	pointLight.viewMatrices[3] = glm::lookAt(icpComp.m_position, glm::vec3(0.0, -1.0, 0.0), glm::vec3(1.0, 0.0, 0.0));
+	pointLight.viewMatrices[4] = glm::lookAt(icpComp.m_position, glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 1.0, 0.0));
+	pointLight.viewMatrices[5] = glm::lookAt(icpComp.m_position, glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, 1.0, 0.0));
+}
 
 
 INCEPTION_END_NAMESPACE

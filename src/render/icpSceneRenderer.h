@@ -18,11 +18,9 @@ struct DirectionalLightRenderResource
 
 struct PointLightRenderResource
 {
-	glm::vec3 position;
+	glm::mat4 viewMatrices[6];
 	glm::vec4 color;
-	float constant = 0.f;
-	float linear = 0.f;
-	float quadratic = 0.f;
+	glm::vec3 position;
 };
 
 struct perFrameCB
