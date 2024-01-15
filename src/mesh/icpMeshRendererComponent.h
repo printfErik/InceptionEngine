@@ -42,6 +42,9 @@ public:
 	void AddMaterial(std::shared_ptr<icpMaterialTemplate> material);
 	std::shared_ptr<icpMaterialTemplate> addMaterial(eMaterialShadingModel shading_model);
 
+	void UploadMeshCB(const UBOMeshRenderResource& ubo);
+	void UploadMaterialCB();
+
 	std::vector<VkDescriptorSet> m_perMeshDSs;
 
 	std::vector<VkBuffer> m_perMeshUniformBuffers;

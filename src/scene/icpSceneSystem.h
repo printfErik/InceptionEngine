@@ -36,6 +36,7 @@ public:
 	std::shared_ptr<icpGameEntity> FindEntity(icpGuid guid);
 
 	void UpdateSceneSystem();
+	void UpdateMeshes();
 
 	entt::registry m_registry;
 

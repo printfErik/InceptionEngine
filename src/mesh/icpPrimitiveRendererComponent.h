@@ -8,6 +8,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vk_mem_alloc.h>
 #include "../render/material/icpMaterial.h"
+#include "icpMeshRendererComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -35,6 +36,9 @@ public:
 	void FillInPrimitiveData(const glm::vec3& color);
 
 	std::shared_ptr<icpMaterialTemplate> AddMaterial(eMaterialShadingModel shading_model);
+
+	void UploadMeshCB(const UBOMeshRenderResource& ubo);
+	void UploadMaterialCB();
 
 	std::vector<VkDescriptorSet> m_descriptorSets;
 

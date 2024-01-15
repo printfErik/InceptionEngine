@@ -290,69 +290,6 @@ void icpGBufferPass::CreateDescriptorSetLayouts()
 
 void icpGBufferPass::UpdateRenderPassCB(uint32_t curFrame)
 {
-	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
-
-	for (auto& entity : view)
-	{
-		auto& meshRenderer = view.get<icpMeshRendererComponent>(entity);
-
-		if (meshRenderer.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
-		{
-			continue;
-		}
-
-		auto& xformComp = view.get<icpXFormComponent>(entity);
-
-		UBOMeshRenderResource ubo{};
-		ubo.model = xformComp.m_mtxTransform;
-		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
-
-		void* data;
-		vmaMapMemory(m_rhi->GetVmaAllocator(), meshRenderer.m_perMeshUniformBufferAllocations[curFrame], &data);
-		memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
-		vmaUnmapMemory(m_rhi->GetVmaAllocator(), meshRenderer.m_perMeshUniformBufferAllocations[curFrame]);
-
-		auto material = meshRenderer.m_pMaterial;
-
-		void* materialData;
-		vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
-		memcpy(materialData, material->CheckMaterialDataCache(), sizeof(PBRShaderMaterial));
-		vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
-
-	}
-
-	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponent, icpXFormComponent>();
-	for (auto& primitive : primitiveView)
-	{
-		auto& primitiveRender = primitiveView.get<icpPrimitiveRendererComponent>(primitive);
-
-		if (primitiveRender.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
-		{
-			continue;
-		}
-
-		auto& xfom = primitiveRender.m_possessor->accessComponent<icpXFormComponent>();
-
-		UBOMeshRenderResource ubo{};
-		ubo.model = glm::mat4(1.f);
-
-		ubo.model = glm::translate(ubo.model, xfom.m_translation);
-		ubo.model = glm::scale(ubo.model, xfom.m_scale);
-		auto mat = glm::mat3(ubo.model);
-		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
-
-		void* data;
-		vmaMapMemory(m_rhi->GetVmaAllocator(), primitiveRender.m_uniformBufferAllocations[curFrame], &data);
-		memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
-		vmaUnmapMemory(m_rhi->GetVmaAllocator(), primitiveRender.m_uniformBufferAllocations[curFrame]);
-
-		auto material = primitiveRender.m_pMaterial;
-
-		void* materialData;
-		vmaMapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
-		memcpy(materialData, material->CheckMaterialDataCache(), sizeof(PBRShaderMaterial));
-		vmaUnmapMemory(m_rhi->GetVmaAllocator(), material->m_perMaterialUniformBufferAllocations[curFrame]);
-	}
 }
 
 void icpGBufferPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)

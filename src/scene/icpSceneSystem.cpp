@@ -436,7 +436,57 @@ void icpSceneSystem::LoadGLTFScene()
 void icpSceneSystem::UpdateSceneSystem()
 {
 	LoadGLTFScene();
+	UpdateMeshes();
 }
+
+void icpSceneSystem::UpdateMeshes()
+{
+	auto view = m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
+
+	for (auto& entity : view)
+	{
+		auto& meshRenderer = view.get<icpMeshRendererComponent>(entity);
+
+		if (meshRenderer.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
+		{
+			continue;
+		}
+
+		auto& xformComp = view.get<icpXFormComponent>(entity);
+
+		UBOMeshRenderResource ubo{};
+		ubo.model = xformComp.m_mtxTransform;
+		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
+
+		meshRenderer.UploadMeshCB(ubo);
+		meshRenderer.UploadMaterialCB();
+	}
+
+	auto primitiveView = m_registry.view<icpPrimitiveRendererComponent, icpXFormComponent>();
+	for (auto& primitive : primitiveView)
+	{
+		auto& primitiveRender = primitiveView.get<icpPrimitiveRendererComponent>(primitive);
+
+		if (primitiveRender.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
+		{
+			continue;
+		}
+
+		auto& xfom = primitiveRender.m_possessor->accessComponent<icpXFormComponent>();
+
+		UBOMeshRenderResource ubo{};
+		ubo.model = glm::mat4(1.f);
+
+		ubo.model = glm::translate(ubo.model, xfom.m_translation);
+		ubo.model = glm::scale(ubo.model, xfom.m_scale);
+		auto mat = glm::mat3(ubo.model);
+		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat3(ubo.model)));
+
+		primitiveRender.UploadMeshCB(ubo);
+		primitiveRender.UploadMaterialCB();
+	}
+}
+
 
 
 INCEPTION_END_NAMESPACE

@@ -75,6 +75,8 @@ public:
 	VkDescriptorSet GetSceneDescriptorSet(uint32_t curFrame);
 	icpDescriptorSetLayoutInfo& GetSceneDSLayout();
 
+	uint32_t GetCurrentFrame() const;
+
 protected:
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
 	std::vector<std::shared_ptr<icpRenderPassBase>> m_renderPasses;

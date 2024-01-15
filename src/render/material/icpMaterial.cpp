@@ -78,6 +78,7 @@ void icpMaterialInstance::AllocateDescriptorSets()
 {
 	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 
+	//todo: reconsider how to manage layout
 	icpDescriptorSetCreation creation{};
 	auto& layout = g_system_container.m_renderSystem->GetSceneRenderer()
 		->AccessRenderPass(eRenderPass::MAIN_FORWARD_PASS)

@@ -216,6 +216,7 @@ void icpPrimitiveRendererComponent::AllocateDescriptorSets()
 {
 	auto gpuDevice = g_system_container.m_renderSystem->GetGPUDevice();
 
+	//todo: reconsider how to manage layout
 	icpDescriptorSetCreation creation{};
 	auto layout = g_system_container.m_renderSystem->GetSceneRenderer()
 		->AccessRenderPass(eRenderPass::MAIN_FORWARD_PASS)
@@ -272,6 +273,29 @@ std::shared_ptr<icpMaterialTemplate> icpPrimitiveRendererComponent::AddMaterial(
 
 	return instance;
 }
+
+void icpPrimitiveRendererComponent::UploadMeshCB(const UBOMeshRenderResource& ubo)
+{
+	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
+	auto curFrame = g_system_container.m_renderSystem->GetSceneRenderer()->GetCurrentFrame();
+
+	void* data;
+	vmaMapMemory(vulkanRHI->GetVmaAllocator(), m_uniformBufferAllocations[curFrame], &data);
+	memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
+	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), m_uniformBufferAllocations[curFrame]);
+}
+
+void icpPrimitiveRendererComponent::UploadMaterialCB()
+{
+	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
+	auto curFrame = g_system_container.m_renderSystem->GetSceneRenderer()->GetCurrentFrame();
+
+	void* materialData;
+	vmaMapMemory(vulkanRHI->GetVmaAllocator(), m_pMaterial->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
+	memcpy(materialData, m_pMaterial->CheckMaterialDataCache(), sizeof(PBRShaderMaterial));
+	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), m_pMaterial->m_perMaterialUniformBufferAllocations[curFrame]);
+}
+
 
 
 INCEPTION_END_NAMESPACE
