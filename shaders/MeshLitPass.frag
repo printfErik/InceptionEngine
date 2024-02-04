@@ -1,23 +1,7 @@
 #version 450
 
 #include "Lighting.h"
-
-struct DirectionalLightRenderResource
-{
-    vec4 direction;
-    vec4 color;
-};
-
-struct PointLightRenderResource
-{
-    vec3 position;
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
-	float constant;
-	float linear;
-	float quadratic;
-};
+#include "PerFrameGlobalUBO.h"
 
 layout(std140, set = 1, binding = 0) uniform UBOPerMaterial
 {
@@ -48,10 +32,12 @@ layout(std140, set = 2, binding = 0) uniform PerFrameCB
 {
     mat4 viewMatrix;
     mat4 projMatrix;
-    vec3 camPos;
+    vec3 cameraPos;
     float pointLightNumber;
+    float spotLightNumber;
     DirectionalLightRenderResource directionalLit;
-    PointLightRenderResource pointLight[max_point_light_count];
+    PointLightRenderResource pointLightList[max_point_light_count];
+    SpotLightRenderResource spotLightList[max_spot_light_count];
 } uboPerFrame;
 
 layout(location = 0) in vec3 fragColor;

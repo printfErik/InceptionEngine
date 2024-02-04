@@ -42,6 +42,7 @@ bool icpVkGPUDevice::Initialize(std::shared_ptr<icpWindowSystem> window_system)
 	CreateSwapChainImageViews();
 
 	createCommandPools();
+	FindDepthFormat();
 	CreateDepthResources();
 
 	createDescriptorPools();
@@ -646,22 +647,27 @@ void icpVkGPUDevice::createCommandPools()
 	}
 }
 
+void icpVkGPUDevice::FindDepthFormat()
+{
+	VkFormat m_depthFormat = icpVulkanUtility::findDepthFormat(m_physicalDevice);
+}
+
 void icpVkGPUDevice::CreateDepthResources() {
-	VkFormat depthFormat = icpVulkanUtility::findDepthFormat(m_physicalDevice);
+	
 
 	icpVulkanUtility::CreateGPUImage(
 		m_swapChainExtent.width, 
 		m_swapChainExtent.height,
 		1,
 		1,
-		depthFormat, 
+		m_depthFormat,
 		VK_IMAGE_TILING_OPTIMAL, 
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
 		m_vmaAllocator,
 		m_depthImage, 
 		m_depthBufferAllocation
 	);
-	m_depthImageView = icpVulkanUtility::CreateGPUImageView(m_depthImage, VK_IMAGE_VIEW_TYPE_2D, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1, m_device);
+	m_depthImageView = icpVulkanUtility::CreateGPUImageView(m_depthImage, VK_IMAGE_VIEW_TYPE_2D, m_depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1, m_device);
 }
 
 bool hasStencilComponent(VkFormat format) {
@@ -913,6 +919,11 @@ std::vector<VkImage>& icpVkGPUDevice::GetSwapChainImages()
 GLFWwindow* icpVkGPUDevice::GetWindow()
 {
 	return m_window;
+}
+
+VkFormat icpVkGPUDevice::GetDepthFormat()
+{
+	return m_depthFormat;
 }
 
 VkImageView icpVkGPUDevice::GetDepthImageView()

@@ -7,7 +7,10 @@ INCEPTION_BEGIN_NAMESPACE
 	struct PointLightRenderResource;
 	struct perFrameCB;
 
-static constexpr uint32_t MAX_POINT_LIGHT_NUMBER = 8;
+static constexpr uint32_t MAX_POINT_LIGHT_NUMBER = 4;
+
+static constexpr uint32_t MAX_SPOT_LIGHT_NUMBER = 4;
+
 
 class icpLightSystem
 {
@@ -18,6 +21,7 @@ public:
 	void UpdateLightCB(perFrameCB& cb);
 
 	void GeneratePointViewMatrices(PointLightRenderResource& pointLight, const icpPointLightComponent& icpComp);
+	void GenerateSpotViewMatrices()
 private:
 
 };

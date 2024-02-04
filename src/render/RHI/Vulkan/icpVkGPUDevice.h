@@ -40,6 +40,7 @@ public:
 	void CreateSwapChain() override;
 	void CreateSwapChainImageViews() override;
 
+	void FindDepthFormat();
 	void CreateDepthResources() override;
 	void createDescriptorPools();
 
@@ -75,6 +76,7 @@ public:
 	
 	GLFWwindow* GetWindow() override;
 
+	VkFormat GetDepthFormat() override;
 	VkImageView GetDepthImageView() override;
 
 	std::vector<uint32_t>& GetQueueFamilyIndicesVector() override;
@@ -140,6 +142,7 @@ public:
 	VkCommandPool m_transferCommandPool{ VK_NULL_HANDLE };
 	VkCommandPool m_computeCommandPool{ VK_NULL_HANDLE };
 
+	VkFormat m_depthFormat;
 	VkImage m_depthImage;
 	VmaAllocation m_depthBufferAllocation;
 

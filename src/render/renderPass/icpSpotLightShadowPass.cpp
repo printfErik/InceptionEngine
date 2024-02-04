@@ -1,4 +1,4 @@
-#include "icpShadowPass.h"
+#include "icpSpotLightShadowPass.h"
 #include "../RHI/Vulkan/icpVulkanUtility.h"
 #include "../../core/icpConfigSystem.h"
 #include "../../core/icpLogSystem.h"
@@ -10,22 +10,26 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-icpShadowPass::icpShadowPass()
+icpSpotLightShadowPass::icpSpotLightShadowPass()
 	: m_nShadowMapDim(1024u),
 	m_fDepthBiasConstantFactor(1.5f),
 	m_fDepthBiasClamp(0.f),
-	m_fDepthBiasSlopeFactor(1.75f)
+	m_fDepthBiasSlopeFactor(1.75f),
+	m_shadowRenderPass(VK_NULL_HANDLE),
+	m_spotLightShadowArray(VK_NULL_HANDLE),
+	m_spotLightShadowArrayView(VK_NULL_HANDLE),
+	m_spotLightShadowArrayAllocation(VK_NULL_HANDLE)
 {
-	
+
 }
 
-icpShadowPass::~icpShadowPass()
+icpSpotLightShadowPass::~icpSpotLightShadowPass()
 {
-	
+
 }
 
 
-void icpShadowPass::InitializeRenderPass(RenderPassInitInfo initInfo)
+void icpSpotLightShadowPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.device;
 	m_pSceneRenderer = initInfo.sceneRenderer;
@@ -34,19 +38,18 @@ void icpShadowPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	SetupPipeline();
 }
 
-void icpShadowPass::Cleanup()
+void icpSpotLightShadowPass::Cleanup()
 {
-	
+
 }
 
-void icpShadowPass::SetupPipeline()
+void icpSpotLightShadowPass::SetupPipeline()
 {
 	VkGraphicsPipelineCreateInfo shadowPipeline{};
 	shadowPipeline.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
 	VkPipelineShaderStageCreateInfo vertShader{};
 	VkPipelineShaderStageCreateInfo gemoShader{};
-	VkPipelineShaderStageCreateInfo fragShader{};
 
 	vertShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	auto vertShaderPath = g_system_container.m_configSystem->m_shaderFolderPath / "ShadowMapping.vert.spv";
@@ -60,20 +63,13 @@ void icpShadowPass::SetupPipeline()
 	gemoShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_GEOMETRY_BIT;
 	gemoShader.pName = "main";
 
-	fragShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	auto fragShaderPath = g_system_container.m_configSystem->m_shaderFolderPath / "ShadowMapping.frag.spv";
-	fragShader.module = icpVulkanUtility::createShaderModule(fragShaderPath.generic_string().c_str(), m_rhi->GetLogicalDevice());
-	fragShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_GEOMETRY_BIT;
-	fragShader.pName = "main";
-
-	std::array<VkPipelineShaderStageCreateInfo, 3> shaderCreateInfos
+	std::array<VkPipelineShaderStageCreateInfo, 2> shaderCreateInfos
 	{
 		vertShader,
-		gemoShader,
-		fragShader
+		gemoShader
 	};
 
-	shadowPipeline.stageCount = 3;
+	shadowPipeline.stageCount = shaderCreateInfos.size();
 	shadowPipeline.pStages = shaderCreateInfos.data();
 
 	// Vertex Input
@@ -212,37 +208,26 @@ void icpShadowPass::SetupPipeline()
 	vkDestroyShaderModule(m_rhi->GetLogicalDevice(), vertShader.module, nullptr);
 }
 
-void icpShadowPass::CreateShadowRenderPass()
+void icpSpotLightShadowPass::CreateShadowRenderPass()
 {
-	std::array<VkAttachmentDescription, 2> attachments{};
+	std::array<VkAttachmentDescription, 1> attachments{};
 
-	// Color attachment
-	attachments[0].format = VK_FORMAT_R32G32_SFLOAT;
+	// Depth attachment
+	attachments[0].format = m_rhi->GetDepthFormat();
 	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
 	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	// Depth attachment
-	attachments[1].format = m_rhi->GetDepthFormat();
-	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentReference colorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-	VkAttachmentReference depthReference = { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+	VkAttachmentReference depthReference = { 0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
 
 	VkSubpassDescription subpassDescription{};
 	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpassDescription.colorAttachmentCount = 1;
-	subpassDescription.pColorAttachments = &colorReference;
+	subpassDescription.colorAttachmentCount = 0;
+	subpassDescription.pColorAttachments = nullptr;
 	subpassDescription.pDepthStencilAttachment = &depthReference;
 
 	// todo: figure out
@@ -270,34 +255,34 @@ void icpShadowPass::CreateShadowRenderPass()
 	}
 }
 
-void icpShadowPass::CreateShadowAttachment()
+void icpSpotLightShadowPass::CreateShadowAttachment()
 {
 	icpVulkanUtility::CreateGPUImage(
 		m_nShadowMapDim,
 		m_nShadowMapDim,
 		10, // log2(1024) = 10
-		6 * MAX_POINT_LIGHT_NUMBER,
-		VK_FORMAT_R32G32_SFLOAT,
+		MAX_SPOT_LIGHT_NUMBER,
+		m_rhi->GetDepthFormat(),
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 		m_rhi->GetVmaAllocator(),
-		m_shadowCubeMapArray,
-		m_shadowCubeMapArrayAllocation
+		m_spotLightShadowArray,
+		m_spotLightShadowArrayAllocation
 	);
 
-	m_shadowCubeMapArrayView = icpVulkanUtility::CreateGPUImageView(
-		m_shadowCubeMapArray,
-		VK_IMAGE_VIEW_TYPE_CUBE_ARRAY,
-		VK_FORMAT_R32G32_SFLOAT,
+	m_spotLightShadowArrayView = icpVulkanUtility::CreateGPUImageView(
+		m_spotLightShadowArray,
+		VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+		m_rhi->GetDepthFormat(),
 		VK_IMAGE_ASPECT_COLOR_BIT,
 		10,
-		6 * MAX_POINT_LIGHT_NUMBER,
+		MAX_SPOT_LIGHT_NUMBER,
 		m_rhi->GetLogicalDevice()
 	);
-	
+
 }
 
-void icpShadowPass::CreateShadowFrameBuffer()
+void icpSpotLightShadowPass::CreateShadowFrameBuffer()
 {
 	auto& imageViews = m_rhi->GetSwapChainImageViews();
 	m_vShadowFrameBuffers.resize(imageViews.size());
@@ -306,7 +291,7 @@ void icpShadowPass::CreateShadowFrameBuffer()
 	{
 		std::array<VkImageView, 1> attachment =
 		{
-			m_shadowCubeMapArrayView
+			m_spotLightShadowArrayView
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -316,7 +301,7 @@ void icpShadowPass::CreateShadowFrameBuffer()
 		framebufferInfo.pAttachments = attachment.data();
 		framebufferInfo.width = m_nShadowMapDim;
 		framebufferInfo.height = m_nShadowMapDim;
-		framebufferInfo.layers = 6 * MAX_POINT_LIGHT_NUMBER;
+		framebufferInfo.layers = MAX_SPOT_LIGHT_NUMBER;
 
 		if (vkCreateFramebuffer(m_rhi->GetLogicalDevice(), &framebufferInfo, nullptr, &m_vShadowFrameBuffers[i]) != VK_SUCCESS)
 		{
@@ -325,45 +310,20 @@ void icpShadowPass::CreateShadowFrameBuffer()
 	}
 }
 
-void icpShadowPass::CreateDescriptorSetLayouts()
+void icpSpotLightShadowPass::CreateDescriptorSetLayouts()
 {
-	m_DSLayouts.resize(eShadowPassDSType::LAYOUT_TYPE_COUNT);
+	m_DSLayouts.resize(eSpotLightShadowPassDSType::LAYOUT_TYPE_COUNT);
 	auto logicDevice = m_rhi->GetLogicalDevice();
-	// light UBOs
-	{
-		// set 0, binding 0 
-		VkDescriptorSetLayoutBinding allLightUBOBinding{};
-		allLightUBOBinding.binding = 0;
-		allLightUBOBinding.descriptorCount = 1;
-		allLightUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		allLightUBOBinding.pImmutableSamplers = nullptr;
-		allLightUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-		m_DSLayouts[eShadowPassDSType::LIGHT_INFO].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
-
-		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ allLightUBOBinding };
-
-		VkDescriptorSetLayoutCreateInfo createInfo{};
-		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-		createInfo.pBindings = bindings.data();
-		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-
-		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[eShadowPassDSType::LIGHT_INFO].layout) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create descriptor set layout!");
-		}
-	}
-
 	// per mesh
 	{
-		// set 1, binding 0 
+		// set 0, binding 0 
 		VkDescriptorSetLayoutBinding perObjectSSBOBinding{};
 		perObjectSSBOBinding.binding = 0;
 		perObjectSSBOBinding.descriptorCount = 1;
 		perObjectSSBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		perObjectSSBOBinding.pImmutableSamplers = nullptr;
 		perObjectSSBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
-		m_DSLayouts[eShadowPassDSType::PER_MESH].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+		m_DSLayouts[eSpotLightShadowPassDSType::PER_MESH].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
 
 		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perObjectSSBOBinding };
 
@@ -372,14 +332,14 @@ void icpShadowPass::CreateDescriptorSetLayouts()
 		createInfo.pBindings = bindings.data();
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 
-		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[eShadowPassDSType::PER_MESH].layout) != VK_SUCCESS)
+		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[eSpotLightShadowPassDSType::PER_MESH].layout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 	}
 }
 
-void icpShadowPass::UpdateRenderPassCB(uint32_t curFrame)
+void icpSpotLightShadowPass::UpdateRenderPassCB(uint32_t curFrame)
 {
 	// 1. update mesh
 	// 2. update light
@@ -387,25 +347,25 @@ void icpShadowPass::UpdateRenderPassCB(uint32_t curFrame)
 	// but none of above should appear here, so leave blank;
 }
 
-void icpShadowPass::AllocateDescriptorSets()
+void icpSpotLightShadowPass::AllocateDescriptorSets()
 {
-	
+
 }
 
-void icpShadowPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
+void icpSpotLightShadowPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
 	auto mgr = m_pSceneRenderer.lock();
 	RecordCommandBuffer(mgr->GetMainForwardCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
 }
 
-void icpShadowPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
+void icpSpotLightShadowPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
 	auto mgr = m_pSceneRenderer.lock();
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
 
 	auto sceneDS = mgr->GetSceneDescriptorSet(curFrame);
-	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &sceneDS, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &sceneDS, 0, nullptr);
 
 	std::vector<VkDeviceSize> offsets{ 0 };
 	auto meshView = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent>();

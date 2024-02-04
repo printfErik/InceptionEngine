@@ -47,4 +47,14 @@ public:
 	float quadratic = 0.f;
 };
 
+class icpSpotLightComponent : public icpLightComponent
+{
+public:
+	glm::vec3 m_position{};
+	glm::vec3 m_direction{};
+
+	float m_innerConeAngle = 0.f;
+	float m_outerConeAngle = 0.f;
+};
+
 INCEPTION_END_NAMESPACE

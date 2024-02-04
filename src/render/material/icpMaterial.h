@@ -12,7 +12,8 @@
 #include "glm/vec3.hpp"
 
 INCEPTION_BEGIN_NAMESPACE
-	class icpTextureRenderResourceManager;
+
+class icpTextureRenderResourceManager;
 class icpImageResource;
 
 

@@ -190,7 +190,7 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	attachments[3].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	// Depth attachment
-	attachments[4].format = icpVulkanUtility::findDepthFormat(m_pDevice->GetPhysicalDevice());
+	attachments[4].format = m_pDevice->GetDepthFormat();
 	attachments[4].samples = VK_SAMPLE_COUNT_1_BIT;
 	attachments[4].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachments[4].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;

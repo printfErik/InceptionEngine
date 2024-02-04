@@ -49,6 +49,7 @@ public:
 	virtual std::vector<VkSemaphore>& GetRenderFinishedForPresentationSemaphores() = 0;
 	virtual std::vector<VkFence>& GetInFlightFences() = 0;
 	virtual GLFWwindow* GetWindow() = 0;
+	virtual VkFormat GetDepthFormat() = 0;
 	virtual VmaAllocator& GetVmaAllocator() = 0;
 	virtual VkQueue& GetGraphicsQueue() = 0;
 	virtual VkQueue& GetPresentQueue() = 0;

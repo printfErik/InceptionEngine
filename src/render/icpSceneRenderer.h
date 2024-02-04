@@ -1,5 +1,6 @@
 #pragma once
 #include "../core/icpMacros.h"
+#include "light/icpLightSystem.h"
 #include "RHI/icpDescirptorSet.h"
 #include "RHI/icpGPUDevice.h"
 
@@ -8,7 +9,6 @@ INCEPTION_BEGIN_NAMESPACE
 
 class icpRenderPassBase;
 
-#define MAX_POINT_LIGHT_COUNT 4
 
 struct DirectionalLightRenderResource
 {
@@ -23,14 +23,26 @@ struct PointLightRenderResource
 	glm::vec3 position;
 };
 
+struct SpotLightRenderResource
+{
+	glm::mat4 viewMatrices;
+	glm::vec4 color;
+	glm::vec3 position;
+	float innerConeAngle;
+	glm::vec3 direction;
+	float outerConeAngle;
+};
+
 struct perFrameCB
 {
 	glm::mat4 view;
 	glm::mat4 projection;
 	glm::vec3 camPos;
 	float pointLightNumber = 0.f;
+	float spotLightNumber = 0.f;
 	DirectionalLightRenderResource dirLight;
-	PointLightRenderResource pointLight[MAX_POINT_LIGHT_COUNT];
+	PointLightRenderResource pointLight[MAX_POINT_LIGHT_NUMBER];
+	SpotLightRenderResource spotLight[MAX_SPOT_LIGHT_NUMBER];
 };
 
 
@@ -86,8 +98,6 @@ protected:
 
 	icpDescriptorSetLayoutInfo m_sceneDSLayout{};
 	std::vector<VkDescriptorSet> m_vSceneDSs;
-
-	
 
 	uint32_t m_currentFrame = 0;
 private:

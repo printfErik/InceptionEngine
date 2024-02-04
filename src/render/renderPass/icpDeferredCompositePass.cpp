@@ -276,7 +276,16 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 		depthBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 		m_DSLayouts[eDeferredCompositePassDSType::GBUFFER].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT });
 
-		std::array<VkDescriptorSetLayoutBinding, 4> bindings{ gbufferABinding, gbufferBBinding, gbufferCBinding, depthBinding };
+
+		// set 0, binding 4
+		VkDescriptorSetLayoutBinding spotLightShadowMap{};
+		spotLightShadowMap.binding = 4;
+		spotLightShadowMap.descriptorCount = 1;
+		spotLightShadowMap.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		spotLightShadowMap.pImmutableSamplers = nullptr;
+		spotLightShadowMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		std::array<VkDescriptorSetLayoutBinding, 5> bindings{ gbufferABinding, gbufferBBinding, gbufferCBinding, depthBinding, spotLightShadowMap };
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -334,6 +343,13 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 		depthInfos.push_back(texInfo);
 	}
 	creation.SetInputAttachment(3, depthInfos);
+
+	std::vector<icpTextureRenderResourceInfo> spotLightShadowMap;
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpTextureRenderResourceInfo spotSMInfo{};
+		spotSMInfo.m_texSampler = 
+	}
 
 	m_rhi->CreateDescriptorSet(creation, m_vGBufferDSs);
 }

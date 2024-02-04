@@ -3,6 +3,22 @@
 #define MAX_POINT_LIGHT_COUNT 4
 layout (triangles, invocations = MAX_POINT_LIGHT_COUNT * 6) in;
 
+struct DirectionalLightRenderResource
+{
+    vec4 direction;
+    vec4 color;
+};
+
+struct PointLightRenderResource
+{
+    vec3 position;
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
+	float constant;
+	float linear;
+	float quadratic;
+};
 
 layout(set = 2, binding = 0) uniform PerFrameCB
 {
