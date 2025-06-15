@@ -753,7 +753,7 @@ void icpVkGPUDevice::CreateDescriptorSet(const icpDescriptorSetCreation& creatio
 
 	if (vkAllocateDescriptorSets(m_device, &allocateInfo, DSs.data()) != VK_SUCCESS)
 	{
-		throw std::runtime_error("failed to allocate descriptor sets!");
+		return;
 	}
 
 	auto bindingSize = creation.resources.size() / MAX_FRAMES_IN_FLIGHT;

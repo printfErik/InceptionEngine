@@ -447,6 +447,11 @@ void icpSceneSystem::UpdateMeshes()
 	{
 		auto& meshRenderer = view.get<icpMeshRendererComponent>(entity);
 
+		if (!meshRenderer.m_pMaterial->m_bRenderResourcesReady)
+		{
+			continue;
+		}
+
 		if (meshRenderer.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
 		{
 			continue;
