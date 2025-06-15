@@ -30,7 +30,7 @@ public:
 	static void LoadGLTFTextureSamplers(tinygltf::Model& gltfModel, std::vector<icpSamplerResource>& samplers);
 
 	static void LoadGLTFTextures(tinygltf::Model& gltfModel, const std::vector<icpSamplerResource>& samplers,
-		std::vector<std::string>& imageIDs);
+		std::vector<std::string>& imageIDs, const std::filesystem::path& FolderPath);
 
 	static void LoadGLTFMaterials(tinygltf::Model& gltfModel, const std::vector<std::string>& images,
 		std::vector<std::shared_ptr<icpMaterialInstance>>& materials);

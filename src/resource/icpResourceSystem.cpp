@@ -56,7 +56,8 @@ bool icpResourceSystem::Initialize()
 }
 
 
-std::shared_ptr<icpResourceBase> icpResourceSystem::loadImageResource(const std::filesystem::path& imgPath)
+std::shared_ptr<icpResourceBase> icpResourceSystem::loadImageResource(const std::filesystem::path& imgPath,
+	icpSamplerResource SamplerRes)
 {
 	int width, height, channel;
 	stbi_uc* img = stbi_load(imgPath.string().data(),
@@ -72,11 +73,18 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::loadImageResource(const std:
 
 	imgRes->m_mipmapLevel = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 	imgRes->m_resType = icpResourceType::TEXTURE;
+	imgRes->m_sampler = SamplerRes;
 
 	const auto& resName = imgPath.stem().string();
 	m_resources[icpResourceType::TEXTURE][resName] = imgRes;
 
+	if (resName == "white")
+	{
+		int b = 1;
+	}
 
+	imgRes->m_id = resName;
+	
 	stbi_image_free(img);
 	return imgRes;
 }
@@ -168,7 +176,9 @@ std::shared_ptr<icpResourceBase> icpResourceSystem::loadObjModelResource(const s
 	if (ifLoadRelatedImgRes)
 	{
 		auto imgPath = g_system_container.m_configSystem->m_imageResourcePath / (objName + ".png");
-		auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->loadImageResource(imgPath));
+
+		auto defaultSampler = icpSamplerResource();
+		auto imgP = std::dynamic_pointer_cast<icpImageResource>(g_system_container.m_resourceSystem->loadImageResource(imgPath, defaultSampler));
 		meshP->m_meshData.m_imgRes = imgP;
 	}
 
@@ -199,11 +209,13 @@ bool icpResourceSystem::LoadGLTFResource(const std::filesystem::path& gltfPath)
 		return false;
 	}
 
+	std::filesystem::path FolderPath = gltfPath.parent_path();
+
 	std::vector<icpSamplerResource> samplers;
 	icpGLTFLoaderUtil::LoadGLTFTextureSamplers(gltfModel, samplers);
 
 	std::vector<std::string> images;
-	icpGLTFLoaderUtil::LoadGLTFTextures(gltfModel, samplers, images);
+	icpGLTFLoaderUtil::LoadGLTFTextures(gltfModel, samplers, images, FolderPath);
 
 	std::vector<std::shared_ptr<icpMaterialInstance>> materials;
 	icpGLTFLoaderUtil::LoadGLTFMaterials(gltfModel, images, materials);
@@ -220,7 +232,7 @@ bool icpResourceSystem::LoadGLTFResource(const std::filesystem::path& gltfPath)
 		m_resources[icpResourceType::GLTF]["Scene"] = gltfRes;
 	}
 
-	//icpGLTFLoaderUtil::LoadGLTFScene(gltfModel, meshResources);
+	//icpGLTFLoaderUtil::LoadGLTFScene(gltfModel, meshResources);g_system_container.m_renderSystem->GetTextureRenderResourceManager()->UpdateManager();
 
 	return true;
 }

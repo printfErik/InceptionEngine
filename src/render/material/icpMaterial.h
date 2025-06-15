@@ -136,9 +136,14 @@ public:
 	virtual ~icpMaterialSubSystem() = default;
 
 	void initializeMaterialSubSystem();
+
+	std::shared_ptr<icpMaterialTemplate> CreateMaterialInstance_LoadThread(eMaterialShadingModel shadingModel);
 	std::shared_ptr<icpMaterialTemplate> createMaterialInstance(eMaterialShadingModel shadingModel);
 
 	void PrepareMaterialRenderResources();
+
+	std::mutex m_materialLock;
+	std::vector<std::shared_ptr<icpMaterialTemplate>> m_NewAddedMaterials;
 
 	std::vector<std::shared_ptr<icpMaterialTemplate>> m_vMaterialContainer;
 

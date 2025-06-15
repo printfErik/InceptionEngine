@@ -111,6 +111,7 @@ void icpEditorUI::showEditorDockingSpaceUI()
 				}
 				else
 				{
+					auto defaultSampler = icpSamplerResource();
 					g_system_container.m_resourceSystem->loadImageResource(ImagePath);
 				}
 			}
@@ -290,7 +291,7 @@ void icpEditorUI::showEditorUI()
 				}
 				else
 				{
-					g_system_container.m_resourceSystem->RequestAsyncLoadResource(icpResourceType::GLTF, gltfPath);
+					g_system_container.m_resourceSystem->LoadGLTFResource(gltfPath);
 				}
 			}
 			ImGui::EndMenu();

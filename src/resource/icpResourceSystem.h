@@ -6,9 +6,15 @@
 #include <memory>
 #include <TaskScheduler.h>
 
-INCEPTION_BEGIN_NAMESPACE
+#include "icpSamplerResource.h"
 
-class icpMeshResource;
+namespace Inception
+{
+	class icpSamplerResource;
+}
+
+INCEPTION_BEGIN_NAMESPACE
+	class icpMeshResource;
 class icpImageResource;
 class icpResourceSystem;
 
@@ -37,7 +43,8 @@ public:
 
 	bool Initialize();
 
-	std::shared_ptr<icpResourceBase> loadImageResource(const std::filesystem::path& imgPath);
+	std::shared_ptr<icpResourceBase> loadImageResource(const std::filesystem::path& imgPath
+		, icpSamplerResource SamplerRes = icpSamplerResource());
 	std::shared_ptr<icpResourceBase> LoadImageResource(icpImageResource& res);
 	std::shared_ptr<icpResourceBase> LoadModelResource(icpMeshResource& res);
 	std::shared_ptr<icpResourceBase> loadObjModelResource(const std::filesystem::path& objPath, bool ifLoadRelatedImgRes = false);

@@ -201,6 +201,11 @@ void icpTextureRenderResourceManager::InitializeEmptyTexture()
 
 bool icpTextureRenderResourceManager::RegisterTextureResource(const std::string& texID)
 {
+	if (texID == "white")
+	{
+		int c = 1;
+	}
+
 	std::lock_guard<std::mutex> lock_guard(m_textureRenderResLock);
 	if (m_textureRenderResources.find(texID) != m_textureRenderResources.end())
 	{

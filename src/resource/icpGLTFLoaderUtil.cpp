@@ -298,7 +298,7 @@ void icpGLTFLoaderUtil::LoadGLTFTextureSamplers(tinygltf::Model& gltfModel, std:
 }
 
 void icpGLTFLoaderUtil::LoadGLTFTextures(tinygltf::Model& gltfModel, const std::vector<icpSamplerResource>& samplers,
-	std::vector<std::string>& imageIDs)
+	std::vector<std::string>& imageIDs, const std::filesystem::path& FolderPath)
 {
 	for (tinygltf::Texture& tex : gltfModel.textures) 
 	{
@@ -321,7 +321,8 @@ void icpGLTFLoaderUtil::LoadGLTFTextures(tinygltf::Model& gltfModel, const std::
 		std::shared_ptr<icpResourceBase> res = nullptr;
 		if (!image.uri.empty())
 		{
-			res = g_system_container.m_resourceSystem->loadImageResource(image.uri);
+			auto full_path = FolderPath / image.uri;
+			res = g_system_container.m_resourceSystem->loadImageResource(full_path, textureSampler);
 		}
 		else
 		{
@@ -347,6 +348,7 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, const std:
 		if (material.alphaMode != "OPAQUE")
 		{
 			// todo: handle transparent objects
+			materials.push_back(nullptr);
 			continue;
 		}
 
@@ -475,6 +477,11 @@ void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, ic
 
 		for (auto& primitive : primitives)
 		{
+			if (!primitive.m_pMaterial)
+			{
+				continue;
+			}
+
 			auto entity = g_system_container.m_sceneSystem->CreateEntity(primitive.m_id, nullptr);
 			auto& xform = entity->accessComponent<icpXFormComponent>();
 

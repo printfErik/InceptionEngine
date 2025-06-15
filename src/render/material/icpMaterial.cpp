@@ -66,6 +66,11 @@ void icpMaterialInstance::AddedTextureDescriptor(const std::string& textureType,
 		info = texRenderResMgr->GetTextureRenderResByID(texture.m_textureID);
 	}
 
+	if (info.m_texSampler == VK_NULL_HANDLE)
+	{
+		int a = 1;
+	}
+
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		imageInfos.push_back(info);
@@ -143,10 +148,26 @@ void icpMaterialSubSystem::initializeMaterialSubSystem()
 }
 
 
+
+std::shared_ptr<icpMaterialTemplate> icpMaterialSubSystem::CreateMaterialInstance_LoadThread(eMaterialShadingModel shadingModel)
+{
+	std::shared_ptr<icpMaterialTemplate> instance = std::make_shared<icpMaterialInstance>(shadingModel);
+
+	{
+		std::scoped_lock<std::mutex> lck(m_materialLock);
+		m_NewAddedMaterials.push_back(instance);
+	}
+
+	return instance;
+}
+
 std::shared_ptr<icpMaterialTemplate> icpMaterialSubSystem::createMaterialInstance(eMaterialShadingModel shadingModel)
 {
 	std::shared_ptr<icpMaterialTemplate> instance = std::make_shared<icpMaterialInstance>(shadingModel);
-	m_vMaterialContainer.push_back(instance);
+	{
+		std::scoped_lock<std::mutex> lck(m_materialLock);
+		m_vMaterialContainer.push_back(instance);
+	}
 	return instance;
 }
 
@@ -264,9 +285,13 @@ void icpMaterialInstance::FillPBRDataCache()
 
 void icpMaterialSubSystem::PrepareMaterialRenderResources()
 {
+	std::scoped_lock<std::mutex> lck(m_materialLock);
 	for (auto material : m_vMaterialContainer)
 	{
-		material->SetupMaterialRenderResources();
+		if (material)
+		{
+			material->SetupMaterialRenderResources();
+		}
 	}
 }
 
