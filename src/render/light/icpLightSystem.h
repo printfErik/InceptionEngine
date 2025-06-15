@@ -1,11 +1,14 @@
 #pragma once
 
+#include "icpLightComponent.h"
 #include "../../core/icpMacros.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	class icpPointLightComponent;
-	struct PointLightRenderResource;
-	struct perFrameCB;
+
+struct SpotLightRenderResource;
+class icpPointLightComponent;
+struct PointLightRenderResource;
+struct perFrameCB;
 
 static constexpr uint32_t MAX_POINT_LIGHT_NUMBER = 4;
 
@@ -21,7 +24,7 @@ public:
 	void UpdateLightCB(perFrameCB& cb);
 
 	void GeneratePointViewMatrices(PointLightRenderResource& pointLight, const icpPointLightComponent& icpComp);
-	void GenerateSpotViewMatrices()
+	void GenerateSpotViewMatrices(SpotLightRenderResource& SpotLight, const icpSpotLightComponent& icpSpotLightComp);
 private:
 
 };

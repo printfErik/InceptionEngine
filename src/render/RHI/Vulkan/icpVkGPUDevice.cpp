@@ -649,7 +649,7 @@ void icpVkGPUDevice::createCommandPools()
 
 void icpVkGPUDevice::FindDepthFormat()
 {
-	VkFormat m_depthFormat = icpVulkanUtility::findDepthFormat(m_physicalDevice);
+	m_depthFormat = icpVulkanUtility::findDepthFormat(m_physicalDevice);
 }
 
 void icpVkGPUDevice::CreateDepthResources() {

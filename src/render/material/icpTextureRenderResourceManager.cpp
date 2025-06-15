@@ -5,9 +5,10 @@
 #include "../icpImageResource.h"
 #include <vk_mem_alloc.h>
 
-INCEPTION_BEGIN_NAMESPACE
+#include "icpImageSampler.h"
 
-icpTextureRenderResourceManager::icpTextureRenderResourceManager(std::shared_ptr<icpGPUDevice> rhi)
+INCEPTION_BEGIN_NAMESPACE
+	icpTextureRenderResourceManager::icpTextureRenderResourceManager(std::shared_ptr<icpGPUDevice> rhi)
 	: m_rhi(rhi)
 {
 	
@@ -66,42 +67,21 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 		m_rhi->GetLogicalDevice()
 	);
 
-	VkSamplerCreateInfo sampler{};
-	sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	sampler.magFilter = VkFilter::VK_FILTER_LINEAR;
-	sampler.minFilter = VkFilter::VK_FILTER_LINEAR;
-
-	sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-	sampler.anisotropyEnable = VK_TRUE;
-
+	FSamplerBuilderInfo SamplerInfo;
+	SamplerInfo.FilterType = VK_FILTER_LINEAR;
+	SamplerInfo.AddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	SamplerInfo.ImageRes = info.m_texImageRes;
 	VkPhysicalDeviceProperties properties;
 	vkGetPhysicalDeviceProperties(m_rhi->GetPhysicalDevice(), &properties);
+	SamplerInfo.MaxSamplerAnisotropy = properties.limits.maxSamplerAnisotropy;
+	SamplerInfo.RHI = m_rhi;
 
-	sampler.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-	sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
-
-	sampler.unnormalizedCoordinates = VK_FALSE;
-	sampler.compareEnable = VK_FALSE;
-	sampler.compareOp = VK_COMPARE_OP_ALWAYS;
-
-	const auto imgP = info.m_texImageRes;
-	sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	sampler.mipLodBias = 0.0f;
-	sampler.minLod = 0.0f;
-	sampler.maxLod = static_cast<float>(imgP->m_mipmapLevel);
-
-	if (vkCreateSampler(m_rhi->GetLogicalDevice(), &sampler, nullptr, &info.m_texSampler) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create sampler!");
-	}
+	info.m_texSampler = icpSamplerBuilder::BuildSampler(SamplerInfo);
 
 	info.m_state = eTextureRenderResourceState::READY;
 }
 
-void icpTextureRenderResourceManager::checkAndcleanAllDiscardedRenderResources()
+void icpTextureRenderResourceManager::checkAndCleanAllDiscardedRenderResources()
 {
 	std::lock_guard<std::mutex> lock_guard(m_textureRenderResLock);
 	for (auto& renderRes : m_textureRenderResources)

@@ -43,7 +43,7 @@ public:
 	virtual ~icpTextureRenderResourceManager() = default;
 
 	void setupTextureRenderResources(const std::string& texId);
-	void checkAndcleanAllDiscardedRenderResources();
+	void checkAndCleanAllDiscardedRenderResources();
 
 	void deleteTexture(const std::string& texId);
 

@@ -42,10 +42,11 @@ void icpLightSystem::UpdateLightCB(perFrameCB& CBPerFrame)
 
 	auto spotLightView = g_system_container.m_sceneSystem->m_registry.view<icpSpotLightComponent>();
 
+	
 	uint32_t spotLightIdx = 0;
 	for (auto& spot : spotLightView)
 	{
-		auto& lightComp = spotLightView.get<icpPointLightComponent>(spot);
+		auto& lightComp = spotLightView.get<icpSpotLightComponent>(spot);
 		CBPerFrame.spotLight[spotLightIdx].color = glm::vec4(lightComp.m_color, 1.f);
 		CBPerFrame.spotLight[spotLightIdx].position = lightComp.m_position;
 		CBPerFrame.spotLight[spotLightIdx].direction = lightComp.m_direction;
@@ -71,6 +72,12 @@ void icpLightSystem::GeneratePointViewMatrices(PointLightRenderResource& pointLi
 	pointLight.viewMatrices[4] = glm::lookAt(icpComp.m_position, icpComp.m_position + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 1.0, 0.0));
 	pointLight.viewMatrices[5] = glm::lookAt(icpComp.m_position, icpComp.m_position + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, 1.0, 0.0));
 }
+
+void icpLightSystem::GenerateSpotViewMatrices(SpotLightRenderResource& SpotLight, const icpSpotLightComponent& icpSpotLightComp)
+{
+	
+}
+
 
 
 INCEPTION_END_NAMESPACE

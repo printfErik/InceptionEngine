@@ -348,7 +348,7 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		icpTextureRenderResourceInfo spotSMInfo{};
-		spotSMInfo.m_texSampler = 
+		spotSMInfo.m_texSampler = VK_NULL_HANDLE;
 	}
 
 	m_rhi->CreateDescriptorSet(creation, m_vGBufferDSs);

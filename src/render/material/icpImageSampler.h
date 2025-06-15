@@ -2,15 +2,26 @@
 
 #include "../../core/icpMacros.h"
 #include <vulkan/vulkan.hpp>
+
 INCEPTION_BEGIN_NAMESPACE
+class icpGPUDevice;
+class icpImageResource;
+
+
+struct FSamplerBuilderInfo
+{
+	VkFilter FilterType = VkFilter::VK_FILTER_LINEAR;
+	VkSamplerAddressMode AddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	float MaxSamplerAnisotropy = 1.f;
+	std::shared_ptr<icpImageResource> ImageRes;
+	std::shared_ptr<icpGPUDevice> RHI = nullptr;
+};
 
 class icpSamplerBuilder
 {
 public:
-	icpSamplerBuilder();
-	virtual ~icpSamplerBuilder();
 
-	VkSampler BuildSampler();
+	static VkSampler BuildSampler(const FSamplerBuilderInfo& builder_info);
 
 private:
 };

@@ -60,7 +60,7 @@ void icpRenderSystem::drawFrame()
 	m_textureRenderResourceManager->UpdateManager();
 	m_materialSystem->PrepareMaterialRenderResources();
 	m_pSceneRenderer->Render();
-	m_textureRenderResourceManager->checkAndcleanAllDiscardedRenderResources();
+	m_textureRenderResourceManager->checkAndCleanAllDiscardedRenderResources();
 }
 
 void icpRenderSystem::setFrameBufferResized(bool _isResized)
