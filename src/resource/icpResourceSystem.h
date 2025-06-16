@@ -4,17 +4,14 @@
 #include <map>
 #include <queue>
 #include <memory>
+#include <mutex>
 #include <TaskScheduler.h>
 
 #include "icpSamplerResource.h"
 
-namespace Inception
-{
-	class icpSamplerResource;
-}
-
 INCEPTION_BEGIN_NAMESPACE
-	class icpMeshResource;
+class icpSamplerResource;
+class icpMeshResource;
 class icpImageResource;
 class icpResourceSystem;
 

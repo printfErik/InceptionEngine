@@ -8,16 +8,21 @@
 #include "light/icpLightSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	std::shared_ptr<icpRenderPassBase> icpSceneRenderer::AccessRenderPass(eRenderPass passType)
+std::shared_ptr<icpRenderPassBase> icpSceneRenderer::AccessRenderPass(eRenderPass passType)
 {
-	return m_renderPasses[static_cast<int>(passType)];
+	if (m_renderPasses.contains(passType))
+	{
+		return m_renderPasses[passType];
+	}
+
+	return nullptr;
 }
 
 void icpSceneRenderer::Cleanup()
 {
 	for (const auto renderPass : m_renderPasses)
 	{
-		renderPass->Cleanup();
+		renderPass.second->Cleanup();
 	}
 }
 

@@ -415,7 +415,7 @@ void icpSceneSystem::LoadDefaultScene()
 
 std::shared_ptr<icpGameEntity> icpSceneSystem::FindEntity(icpGuid guid)
 {
-	
+	return nullptr;
 }
 
 void icpSceneSystem::LoadGLTFScene()

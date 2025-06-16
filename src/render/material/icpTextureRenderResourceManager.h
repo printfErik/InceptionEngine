@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+
 #include "../../core/icpMacros.h"
 #include "../../resource/icpResourceSystem.h"
 #include "../../core/icpSystemContainer.h"

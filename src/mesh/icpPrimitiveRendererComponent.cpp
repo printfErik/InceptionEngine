@@ -219,7 +219,7 @@ void icpPrimitiveRendererComponent::AllocateDescriptorSets()
 	//todo: reconsider how to manage layout
 	icpDescriptorSetCreation creation{};
 	auto layout = g_system_container.m_renderSystem->GetSceneRenderer()
-		->AccessRenderPass(eRenderPass::MAIN_FORWARD_PASS)
+		->AccessRenderPass(eRenderPass::GBUFFER_PASS)
 		->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
 
 	creation.layoutInfo = layout;

@@ -678,18 +678,18 @@ void icpVkGPUDevice::createDescriptorPools()
 {
 	std::array<VkDescriptorPoolSize, 3> poolSize{};
 	poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize[0].descriptorCount = 100;
+	poolSize[0].descriptorCount = 500;
 	poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSize[1].descriptorCount = 100;
+	poolSize[1].descriptorCount = 500;
 	poolSize[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	poolSize[2].descriptorCount = 100;
+	poolSize[2].descriptorCount = 500;
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 	poolInfo.poolSizeCount = sizeof(poolSize) / sizeof(poolSize[0]);
 	poolInfo.pPoolSizes = poolSize.data();
-	poolInfo.maxSets = 200;
+	poolInfo.maxSets = 1000;
 
 	if (vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS)
 	{
@@ -753,7 +753,7 @@ void icpVkGPUDevice::CreateDescriptorSet(const icpDescriptorSetCreation& creatio
 
 	if (vkAllocateDescriptorSets(m_device, &allocateInfo, DSs.data()) != VK_SUCCESS)
 	{
-		return;
+		ICP_LOG_FATAL("vkAllocateDescriptorSets failed!");
 	}
 
 	auto bindingSize = creation.resources.size() / MAX_FRAMES_IN_FLIGHT;

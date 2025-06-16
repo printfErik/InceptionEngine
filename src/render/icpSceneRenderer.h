@@ -91,7 +91,7 @@ public:
 
 protected:
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
-	std::vector<std::shared_ptr<icpRenderPassBase>> m_renderPasses;
+	std::map<eRenderPass, std::shared_ptr<icpRenderPassBase>> m_renderPasses;
 
 	std::vector<VkBuffer> m_vSceneCBs;
 	std::vector<VmaAllocation> m_vSceneCBAllocations;

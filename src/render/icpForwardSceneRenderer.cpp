@@ -42,7 +42,7 @@ bool icpForwardSceneRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI
 	std::shared_ptr<icpRenderPassBase> mainForwordPass = std::make_shared<icpMainForwardPass>();
 	mainForwordPass->InitializeRenderPass(mainPassCreateInfo);
 
-	m_renderPasses.push_back(mainForwordPass);
+	m_renderPasses[eRenderPass::MAIN_FORWARD_PASS] = mainForwordPass;
 
 	icpRenderPassBase::RenderPassInitInfo unlitPassInfo;
 	unlitPassInfo.device = m_pDevice;
@@ -51,7 +51,7 @@ bool icpForwardSceneRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI
 	std::shared_ptr<icpRenderPassBase> unlitPass = std::make_shared<icpUnlitForwardPass>();
 	unlitPass->InitializeRenderPass(unlitPassInfo);
 
-	m_renderPasses.push_back(unlitPass);
+	m_renderPasses[eRenderPass::UNLIT_PASS] = unlitPass;
 	
 
 	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
@@ -62,7 +62,7 @@ bool icpForwardSceneRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI
 	std::shared_ptr<icpRenderPassBase> editorUIPass = std::make_shared<icpEditorUiPass>();
 	editorUIPass->InitializeRenderPass(editorUIInfo);
 
-	m_renderPasses.push_back(editorUIPass);
+	m_renderPasses[eRenderPass::EDITOR_UI_PASS] = editorUIPass;
 
 	return true;
 }
@@ -104,7 +104,7 @@ void icpForwardSceneRenderer::Render()
 
 	for (const auto renderPass : m_renderPasses)
 	{
-		renderPass->UpdateRenderPassCB(m_currentFrame);
+		renderPass.second->UpdateRenderPassCB(m_currentFrame);
 	}
 
 	ResetThenBeginCommandBuffer();
@@ -114,7 +114,7 @@ void icpForwardSceneRenderer::Render()
 
 	for(const auto renderPass : m_renderPasses)
 	{
-		renderPass->Render(index, m_currentFrame, result);
+		renderPass.second->Render(index, m_currentFrame, result);
 	}
 
 	EndForwardRenderPass();

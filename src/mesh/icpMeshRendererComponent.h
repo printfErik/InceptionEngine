@@ -58,8 +58,10 @@ public:
 
 	std::string m_meshResId;
 
+	uint32_t meshVertexIndicesNum = 0;
+
 	// only one material
-	std::shared_ptr<icpMaterialTemplate> m_pMaterial;
+	std::shared_ptr<icpMaterialTemplate> m_pMaterial = nullptr;
 };
 
 

@@ -496,6 +496,7 @@ void icpGLTFLoaderUtil::LoadGLTFNode(tinygltf::Model& gltfModel, int nodeIdx, ic
 
 			auto& meshComp = entity->installComponent<icpMeshRendererComponent>();
 			meshComp.m_meshResId = primitive.m_id;
+			meshComp.m_meshVertexIndicesNum = primitive.m_meshData.m_vertexIndices.size();
 			meshComp.prepareRenderResourceForMesh();
 			meshComp.AddMaterial(primitive.m_pMaterial);
 

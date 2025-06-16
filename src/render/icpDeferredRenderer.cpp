@@ -33,7 +33,7 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	std::shared_ptr<icpRenderPassBase> gbufferPass = std::make_shared<icpGBufferPass>();
 	gbufferPass->InitializeRenderPass(gbufferPassCreateInfo);
 
-	m_renderPasses.push_back(gbufferPass);
+	m_renderPasses[eRenderPass::GBUFFER_PASS] = gbufferPass;
 
 	icpRenderPassBase::RenderPassInitInfo deferredCompositePassCreateInfo;
 	deferredCompositePassCreateInfo.device = m_pDevice;
@@ -42,9 +42,8 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	std::shared_ptr<icpRenderPassBase> deferredCompositePass = std::make_shared<icpDeferredCompositePass>();
 	deferredCompositePass->InitializeRenderPass(deferredCompositePassCreateInfo);
 
-	m_renderPasses.push_back(deferredCompositePass);
+	m_renderPasses[eRenderPass::DEFERRED_COMPOSITION_PASS] = deferredCompositePass;
 
-	
 	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
 	editorUIInfo.device = m_pDevice;
 	editorUIInfo.passType = eRenderPass::EDITOR_UI_PASS;
@@ -53,7 +52,7 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	std::shared_ptr<icpRenderPassBase> editorUIPass = std::make_shared<icpEditorUiPass>();
 	editorUIPass->InitializeRenderPass(editorUIInfo);
 
-	m_renderPasses.push_back(editorUIPass);
+	m_renderPasses[eRenderPass::EDITOR_UI_PASS] = editorUIPass;
 	
 	return true;
 }
@@ -363,7 +362,7 @@ void icpDeferredRenderer::Render()
 
 	for (const auto renderPass : m_renderPasses)
 	{
-		renderPass->UpdateRenderPassCB(m_currentFrame);
+		renderPass.second->UpdateRenderPassCB(m_currentFrame);
 	}
 
 	ResetThenBeginCommandBuffer();
@@ -371,7 +370,7 @@ void icpDeferredRenderer::Render()
 
 	for (const auto renderPass : m_renderPasses)
 	{
-		renderPass->Render(index, m_currentFrame, result);
+		renderPass.second->Render(index, m_currentFrame, result);
 	}
 
 	EndForwardRenderPass();
