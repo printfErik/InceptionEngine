@@ -40,6 +40,7 @@ void icpLightSystem::UpdateLightCB(perFrameCB& CBPerFrame)
 		pointLightIdx++;
 	}
 
+	/*
 	auto spotLightView = g_system_container.m_sceneSystem->m_registry.view<icpSpotLightComponent>();
 
 	
@@ -60,7 +61,7 @@ void icpLightSystem::UpdateLightCB(perFrameCB& CBPerFrame)
 	}
 
 	CBPerFrame.spotLightNumber = spotLightView.empty() ? 0.f : (float)spotLightIdx + 1.f;
-
+	*/
 }
 
 void icpLightSystem::GeneratePointViewMatrices(PointLightRenderResource& pointLight, const icpPointLightComponent& icpComp)

@@ -357,7 +357,7 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, const std:
 		pbr.baseColorTexture.index = pbr.baseColorTexture.index < 0 ? 0 : pbr.baseColorTexture.index;
 		auto instance = materialSystem->createMaterialInstance(eMaterialShadingModel::PBR_LIT);
 
-		auto& baseImage = images[gltfModel.textures[pbr.baseColorTexture.index].source];
+		auto& baseImage = images[pbr.baseColorTexture.index];
 		instance->AddTexture("baseColorTexture", { baseImage });
 
 		glm::vec4 baseColorFactor = glm::make_vec4(pbr.baseColorFactor.data());
@@ -365,7 +365,7 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, const std:
 
 		if (pbr.metallicRoughnessTexture.index >= 0)
 		{
-			auto& image = images[gltfModel.textures[pbr.metallicRoughnessTexture.index].source];
+			auto& image = images[pbr.metallicRoughnessTexture.index];
 			instance->AddTexture( "metallicRoughnessTexture", { image });
 		}
 
@@ -377,19 +377,19 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, const std:
 
 		if (material.normalTexture.index >= 0)
 		{
-			auto& image = images[gltfModel.textures[material.normalTexture.index].source];
+			auto& image = images[material.normalTexture.index];
 			instance->AddTexture( "normalTexture", { image });
 		}
 
 		if (material.occlusionTexture.index >= 0)
 		{
-			auto& image = images[gltfModel.textures[material.occlusionTexture.index].source];
+			auto& image = images[material.occlusionTexture.index];
 			instance->AddTexture( "occlusionTexture", { image });
 		}
 
 		if (material.emissiveTexture.index >= 0)
 		{
-			auto& image = images[gltfModel.textures[material.emissiveTexture.index].source];
+			auto& image = images[material.emissiveTexture.index];
 			instance->AddTexture( "emissiveTexture", { image });
 		}
 

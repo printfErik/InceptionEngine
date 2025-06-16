@@ -44,8 +44,8 @@ vec3 getNormalFromMap()
     vec2 st2 = dFdy(fragTexCoord);
 
     vec3 N   = normalize(fragNormal);
-    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
-    vec3 B  = -normalize(cross(N, T));
+    vec3 T  = normalize(Q1 * st2.y - Q2 * st1.y);
+    vec3 B  = normalize(Q2 * st1.x - Q1 * st2.x);
     mat3 TBN = mat3(T, B, N);
 
     return normalize(TBN * tangentNormal);
