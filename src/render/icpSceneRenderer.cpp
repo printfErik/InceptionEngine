@@ -6,9 +6,10 @@
 
 #include "icpCameraSystem.h"
 #include "light/icpLightSystem.h"
+#include "shadow/icpShadowManager.h"
 
 INCEPTION_BEGIN_NAMESPACE
-std::shared_ptr<icpRenderPassBase> icpSceneRenderer::AccessRenderPass(eRenderPass passType)
+	std::shared_ptr<icpRenderPassBase> icpSceneRenderer::AccessRenderPass(eRenderPass passType)
 {
 	if (m_renderPasses.contains(passType))
 	{
@@ -68,6 +69,13 @@ void icpSceneRenderer::UpdateGlobalSceneCB(uint32_t curFrame)
 	memcpy(data, &CBPerFrame, sizeof(perFrameCB));
 	vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_vSceneCBAllocations[curFrame]);
 }
+
+void icpSceneRenderer::UpdateCSMCB()
+{
+	auto shadowSys = g_system_container.m_shadowSystem;
+	shadowSys->UpdateCSMCB();
+}
+
 
 void icpSceneRenderer::CreateGlobalSceneDescriptorSetLayout()
 {

@@ -79,6 +79,8 @@ public:
 
 	void CreateSceneCB();
 	void UpdateGlobalSceneCB(uint32_t curFrame);
+	void UpdateCSMCB();
+
 	void CreateGlobalSceneDescriptorSetLayout();
 	void AllocateGlobalSceneDescriptorSets();
 

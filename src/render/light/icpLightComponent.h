@@ -36,6 +36,9 @@ class icpDirectionalLightComponent : public icpLightComponent
 {
 public:
 	glm::vec3 m_direction{};
+
+	// Shadow
+
 };
 
 class icpPointLightComponent : public icpLightComponent

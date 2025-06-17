@@ -12,7 +12,7 @@ class icpRenderSystem
 {
 public:
 	icpRenderSystem();
-	~icpRenderSystem();
+	virtual ~icpRenderSystem();
 
 	bool initializeRenderSystem();
 	void BuildRendererCompRenderResources();

@@ -8,7 +8,7 @@ class icpCSMPass : public icpRenderPassBase
 {
 public:
 
-	enum eSpotLightShadowPassDSType : uint8_t
+	enum eCSMPassDSType : uint8_t
 	{
 		PER_MESH = 0,
 		LAYOUT_TYPE_COUNT
@@ -30,21 +30,20 @@ public:
 
 private:
 
-	void CreateShadowRenderPass();
-	void CreateShadowFrameBuffer();
-	void CreateShadowAttachment();
+	void CreateCSMRenderPass();
+	void CreateCSMFrameBuffer();
+	void CreateCSMImageRenderResource();
 
-	uint32_t m_nShadowMapDim;
 	float m_fDepthBiasConstantFactor;
 	float m_fDepthBiasClamp;
 	float m_fDepthBiasSlopeFactor;
 
 	VkRenderPass m_shadowRenderPass;
-	std::vector<VkFramebuffer> m_vShadowFrameBuffers;
+	std::vector<VkFramebuffer> m_csmFrameBuffers;
 
-	VkImage m_spotLightShadowArray;
-	VkImageView m_spotLightShadowArrayView;
-	VmaAllocation m_spotLightShadowArrayAllocation;
+	VkImage m_csmArray;
+	VkImageView m_csmArrayView;
+	VmaAllocation m_csmArrayAllocation;
 };
 
 

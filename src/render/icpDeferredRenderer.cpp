@@ -365,6 +365,8 @@ void icpDeferredRenderer::Render()
 		renderPass.second->UpdateRenderPassCB(m_currentFrame);
 	}
 
+	UpdateCSMCB();
+
 	ResetThenBeginCommandBuffer();
 	BeginForwardRenderPass(index);
 
