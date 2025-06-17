@@ -72,8 +72,18 @@ void icpSceneRenderer::UpdateGlobalSceneCB(uint32_t curFrame)
 
 void icpSceneRenderer::UpdateCSMCB()
 {
+	auto aspectRatio = (float)m_pDevice->GetSwapChainExtent().width / (float)m_pDevice->GetSwapChainExtent().height;
+
+	auto directionalLightView = g_system_container.m_sceneSystem->m_registry.view<icpDirectionalLightComponent>();
+	glm::vec3 directionalLightDir;
+	for (auto& light : directionalLightView)
+	{
+		auto& lightComp = directionalLightView.get<icpDirectionalLightComponent>(light);
+		directionalLightDir = lightComp.m_direction;
+	}
+
 	auto shadowSys = g_system_container.m_shadowSystem;
-	shadowSys->UpdateCSMCB();
+	shadowSys->UpdateCSMCB(aspectRatio, directionalLightDir);
 }
 
 

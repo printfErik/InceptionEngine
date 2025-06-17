@@ -25,7 +25,10 @@ public:
 
 	void GeneratePointViewMatrices(PointLightRenderResource& pointLight, const icpPointLightComponent& icpComp);
 	void GenerateSpotViewMatrices(SpotLightRenderResource& SpotLight, const icpSpotLightComponent& icpSpotLightComp);
+
+	glm::vec3 m_directionLightDir;
 private:
+
 
 };
 

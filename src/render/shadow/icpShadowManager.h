@@ -16,8 +16,13 @@ public:
 	icpShadowManager() = default;
 	virtual ~icpShadowManager() = default;
 
-	void UpdateCSMCB();
-	
+	void InitCascadeDistance();
+	void UpdateCSMCB(float aspectRatio, const glm::vec3& direction);
+
+private:
+	std::vector<float> m_cascadeSplits;
+	std::vector<glm::mat4> m_lightProjViews;
+
 };
 
 
