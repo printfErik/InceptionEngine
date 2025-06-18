@@ -136,6 +136,7 @@ VkImageView icpVulkanUtility::CreateGPUImageView(
 	VkFormat format,
 	VkImageAspectFlags aspectFlags,
 	uint32_t mipmapLevel,
+	uint32_t baseArrayLayer,
 	uint32_t layerCount,
 	VkDevice& device)
 {
@@ -151,7 +152,7 @@ VkImageView icpVulkanUtility::CreateGPUImageView(
 	createInfo.subresourceRange.aspectMask = aspectFlags;
 	createInfo.subresourceRange.baseMipLevel = 0;
 	createInfo.subresourceRange.levelCount = mipmapLevel;
-	createInfo.subresourceRange.baseArrayLayer = 0;
+	createInfo.subresourceRange.baseArrayLayer = baseArrayLayer;
 	createInfo.subresourceRange.layerCount = layerCount;
 
 	VkImageView view;

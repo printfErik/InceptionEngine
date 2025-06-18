@@ -1,8 +1,13 @@
 #include "icpDeferredCompositePass.h"
+
+#include "icpCSMPass.h"
 #include "../RHI/Vulkan/icpVulkanUtility.h"
 #include "../../core/icpConfigSystem.h"
 #include "../../mesh/icpMeshData.h"
 #include "../icpSceneRenderer.h"
+#include "../material/icpImageSampler.h"
+#include "../shadow/icpShadowManager.h"
+
 INCEPTION_BEGIN_NAMESPACE
 
 icpDeferredCompositePass::icpDeferredCompositePass()
@@ -276,16 +281,7 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 		depthBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 		m_DSLayouts[eDeferredCompositePassDSType::GBUFFER].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT });
 
-
-		// set 0, binding 4
-		VkDescriptorSetLayoutBinding spotLightShadowMap{};
-		spotLightShadowMap.binding = 4;
-		spotLightShadowMap.descriptorCount = 1;
-		spotLightShadowMap.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		spotLightShadowMap.pImmutableSamplers = nullptr;
-		spotLightShadowMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-		std::array<VkDescriptorSetLayoutBinding, 5> bindings{ gbufferABinding, gbufferBBinding, gbufferCBinding, depthBinding, spotLightShadowMap };
+		std::array<VkDescriptorSetLayoutBinding, 5> bindings{ gbufferABinding, gbufferBBinding, gbufferCBinding, depthBinding };
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -297,12 +293,45 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 	}
+
+	// CSM 
+	{
+		// set 1, binding 0
+		VkDescriptorSetLayoutBinding CascadeSplitUBO{};
+		CascadeSplitUBO.binding = 0;
+		CascadeSplitUBO.descriptorCount = 1;
+		CascadeSplitUBO.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		CascadeSplitUBO.pImmutableSamplers = nullptr;
+		CascadeSplitUBO.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		m_DSLayouts[eDeferredCompositePassDSType::CSM].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+
+		// set 1, binding 1
+		VkDescriptorSetLayoutBinding CascadeShadowMap{};
+		CascadeShadowMap.binding = 1;
+		CascadeShadowMap.descriptorCount = 1;
+		CascadeShadowMap.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		CascadeShadowMap.pImmutableSamplers = nullptr;
+		CascadeShadowMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		m_DSLayouts[eDeferredCompositePassDSType::CSM].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT });
+
+		std::array<VkDescriptorSetLayoutBinding, 2> bindings{ CascadeSplitUBO, CascadeShadowMap };
+
+		VkDescriptorSetLayoutCreateInfo createInfo{};
+		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		createInfo.pBindings = bindings.data();
+		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[eDeferredCompositePassDSType::CSM].layout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
 }
 
 void icpDeferredCompositePass::AllocateDescriptorSets()
 {
 	icpDescriptorSetCreation creation{};
-	creation.layoutInfo = m_DSLayouts[0];
+	creation.layoutInfo = m_DSLayouts[eDeferredCompositePassDSType::GBUFFER];
 
 	std::vector<icpTextureRenderResourceInfo> gbufferAInfos;
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -344,14 +373,41 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 	}
 	creation.SetInputAttachment(3, depthInfos);
 
-	std::vector<icpTextureRenderResourceInfo> spotLightShadowMap;
+	m_rhi->CreateDescriptorSet(creation, m_vGBufferDSs);
+
+	icpDescriptorSetCreation csmCreation{};
+	csmCreation.layoutInfo = m_DSLayouts[eDeferredCompositePassDSType::CSM];
+
+	std::vector<icpBufferRenderResourceInfo> bufferInfos;
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		icpTextureRenderResourceInfo spotSMInfo{};
-		spotSMInfo.m_texSampler = VK_NULL_HANDLE;
+		icpBufferRenderResourceInfo bufferInfo{};
+		bufferInfo.buffer = g_system_container.m_shadowSystem->m_csmCBs[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(FCascadeSMCB);
+		bufferInfos.push_back(bufferInfo);
 	}
+	csmCreation.SetUniformBuffer(0, bufferInfos);
 
-	m_rhi->CreateDescriptorSet(creation, m_vGBufferDSs);
+	FSamplerBuilderInfo buildInfo;
+	buildInfo.BorderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+	buildInfo.AddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	buildInfo.RHI = m_rhi;
+	auto csmSampler = icpSamplerBuilder::BuildSampler(buildInfo);
+
+	auto csmPass = std::dynamic_pointer_cast<icpCSMPass>(m_pSceneRenderer.lock()->AccessRenderPass(eRenderPass::CSM_PASS));
+
+	std::vector<icpTextureRenderResourceInfo> csmInfos;
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		icpTextureRenderResourceInfo texInfo{};
+		texInfo.m_texSampler = csmSampler;
+		texInfo.m_texImageView = csmPass->m_csmArrayViews[s_csmCascadeCount];
+		depthInfos.push_back(texInfo);
+	}
+	csmCreation.SetCombinedImageSampler(1, depthInfos);
+
+	m_rhi->CreateDescriptorSet(csmCreation, m_csmDSs);
 }
 
 

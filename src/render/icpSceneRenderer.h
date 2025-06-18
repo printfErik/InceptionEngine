@@ -48,6 +48,7 @@ enum class eRenderPass
 {
 	MAIN_FORWARD_PASS = 0,
 	UNLIT_PASS,
+	CSM_PASS,
 	GBUFFER_PASS,
 	DEFERRED_COMPOSITION_PASS,
 	EDITOR_UI_PASS,
@@ -79,7 +80,7 @@ public:
 
 	void CreateSceneCB();
 	void UpdateGlobalSceneCB(uint32_t curFrame);
-	void UpdateCSMCB();
+	void UpdateCSMCB(uint32_t curFrame);
 
 	void CreateGlobalSceneDescriptorSetLayout();
 	void AllocateGlobalSceneDescriptorSets();

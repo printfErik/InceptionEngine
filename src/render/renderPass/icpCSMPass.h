@@ -19,14 +19,20 @@ public:
 
 	void InitializeRenderPass(RenderPassInitInfo initInfo) override;
 	void SetupPipeline() override;
-	//void Cleanup() override;
-	//void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override;
-	//void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
+	void Cleanup() override;
+	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override;
+	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
 
 	void CreateDescriptorSetLayouts() override;
-	//void AllocateDescriptorSets() override;
-	//void UpdateRenderPassCB(uint32_t curFrame) override;
+	void AllocateDescriptorSets() override{}
+	void UpdateRenderPassCB(uint32_t curFrame) override{}
 
+	void BeginCSMRenderPass(uint32_t imageIndex, uint32_t cascade, VkCommandBuffer& commandBuffer);
+	void EndCSMRenderPass(VkCommandBuffer& commandBuffer);
+
+	VkImage m_csmArray;
+	VmaAllocation m_csmArrayAllocation;
+	std::vector<VkImageView> m_csmArrayViews;
 
 private:
 
@@ -41,9 +47,7 @@ private:
 	VkRenderPass m_shadowRenderPass;
 	std::vector<VkFramebuffer> m_csmFrameBuffers;
 
-	VkImage m_csmArray;
-	VkImageView m_csmArrayView;
-	VmaAllocation m_csmArrayAllocation;
+
 };
 
 

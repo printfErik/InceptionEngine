@@ -55,6 +55,7 @@ public:
 		VkFormat format,
 		VkImageAspectFlags aspectFlags,
 		uint32_t mipmapLevel,
+		uint32_t baseArrayLayer,
 		uint32_t layerCount,
 		VkDevice& device
 	);

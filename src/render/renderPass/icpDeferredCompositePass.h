@@ -11,6 +11,7 @@ public:
 	enum eDeferredCompositePassDSType : uint8_t
 	{
 		GBUFFER = 0,
+		CSM,
 		LAYOUT_TYPE_COUNT
 	};
 
@@ -31,6 +32,7 @@ public:
 private:
 
 	std::vector<VkDescriptorSet> m_vGBufferDSs;
+	std::vector<VkDescriptorSet> m_csmDSs;
 };
 
 INCEPTION_END_NAMESPACE

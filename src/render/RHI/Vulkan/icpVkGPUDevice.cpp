@@ -609,7 +609,7 @@ void icpVkGPUDevice::CreateSwapChainImageViews()
 			VK_IMAGE_VIEW_TYPE_2D,
 			m_swapChainImageFormat, 
 			VK_IMAGE_ASPECT_COLOR_BIT, 
-			1, 1,
+			1,0, 1,
 			m_device
 		);
 	}
@@ -667,7 +667,13 @@ void icpVkGPUDevice::CreateDepthResources() {
 		m_depthImage, 
 		m_depthBufferAllocation
 	);
-	m_depthImageView = icpVulkanUtility::CreateGPUImageView(m_depthImage, VK_IMAGE_VIEW_TYPE_2D, m_depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1, m_device);
+	m_depthImageView = icpVulkanUtility::CreateGPUImageView(
+		m_depthImage, 
+		VK_IMAGE_VIEW_TYPE_2D, 
+		m_depthFormat, 
+		VK_IMAGE_ASPECT_DEPTH_BIT, 
+		1,0, 1, m_device
+	);
 }
 
 bool hasStencilComponent(VkFormat format) {

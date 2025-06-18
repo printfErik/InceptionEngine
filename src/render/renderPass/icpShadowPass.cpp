@@ -291,6 +291,7 @@ void icpShadowPass::CreateShadowAttachment()
 		VK_FORMAT_R32G32_SFLOAT,
 		VK_IMAGE_ASPECT_COLOR_BIT,
 		10,
+		0,
 		6 * MAX_POINT_LIGHT_NUMBER,
 		m_rhi->GetLogicalDevice()
 	);

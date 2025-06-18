@@ -66,11 +66,6 @@ void icpMaterialInstance::AddedTextureDescriptor(const std::string& textureType,
 		info = texRenderResMgr->GetTextureRenderResByID(texture.m_textureID);
 	}
 
-	if (info.m_texSampler == VK_NULL_HANDLE)
-	{
-		int a = 1;
-	}
-
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		imageInfos.push_back(info);

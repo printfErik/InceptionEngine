@@ -1,7 +1,9 @@
 #include "icpShadowManager.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "../icpCameraSystem.h"
+#include "../../core/icpConfigSystem.h"
 #include "../../core/icpSystemContainer.h"
+#include "../RHI/Vulkan/icpVulkanUtility.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -10,8 +12,8 @@ void icpShadowManager::InitCascadeDistance()
     // Split View Frustum
     m_cascadeSplits.resize(s_csmCascadeCount + 1);
 
-    float nearPlane = g_system_container.m_cameraSystem->getCurrentCamera()->m_near;
-    float farPlane = g_system_container.m_cameraSystem->getCurrentCamera()->m_far;
+    float nearPlane = g_system_container.m_configSystem->NearPlane;
+    float farPlane = g_system_container.m_configSystem->FarPlane;
 
     m_cascadeSplits[0] = nearPlane;
     m_cascadeSplits[s_csmCascadeCount] = farPlane;
@@ -27,22 +29,27 @@ void icpShadowManager::InitCascadeDistance()
     m_lightProjViews.resize(s_csmCascadeCount);
 }
 
-glm::vec3 computeAABBMin(const std::vector<glm::vec3>& pts) {
+
+glm::vec3 computeAABBMin(const std::vector<glm::vec3>& pts)
+{
     glm::vec3 mn = pts[0];
-    for (size_t i = 1; i < pts.size(); ++i) {
+    for (size_t i = 1; i < pts.size(); ++i) 
+    {
         mn = glm::min(mn, pts[i]);
     }
     return mn;
 }
-glm::vec3 computeAABBMax(const std::vector<glm::vec3>& pts) {
+glm::vec3 computeAABBMax(const std::vector<glm::vec3>& pts)
+{
     glm::vec3 mx = pts[0];
-    for (size_t i = 1; i < pts.size(); ++i) {
+    for (size_t i = 1; i < pts.size(); ++i) 
+    {
         mx = glm::max(mx, pts[i]);
     }
     return mx;
 }
 
-void icpShadowManager::UpdateCSMCB(float aspectRatio, const glm::vec3& direction)
+void icpShadowManager::UpdateCSMCB(float aspectRatio, const glm::vec3& direction, uint32_t curFrame)
 {
     auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
     auto viewMat = camera->m_viewMatrix;
@@ -57,7 +64,6 @@ void icpShadowManager::UpdateCSMCB(float aspectRatio, const glm::vec3& direction
         auto far = 0.f - m_cascadeSplits[i + 1];
         auto halfHeight = glm::tan(camera->m_fov / 2.f);
         auto halfWidth = halfHeight * aspectRatio;
-
 
         // To world space
         std::vector<glm::vec3> pointsCS{
@@ -95,7 +101,87 @@ void icpShadowManager::UpdateCSMCB(float aspectRatio, const glm::vec3& direction
         m_lightProjViews[i] = projMatrix * viewMatrix;
     }
 
+    FCascadeSMCB cb{};
 
+    for (uint32_t i = 0; i < s_csmCascadeCount; i++)
+    {
+        cb.cascadeSplit[i] = m_cascadeSplits[i];
+        cb.lightProjView[i] = m_lightProjViews[i];
+    }
+
+    void* data;
+    vmaMapMemory(m_pDevice->GetVmaAllocator(), m_csmCBAllocations[curFrame], &data);
+    memcpy(data, &cb, sizeof(FCascadeSMCB));
+    vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_csmCBAllocations[curFrame]);
+}
+
+void icpShadowManager::CreateCSMCB()
+{
+    auto cbSize = sizeof(FCascadeSMCB);
+    VkSharingMode mode = m_pDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == m_pDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
+    m_csmCBs.resize(MAX_FRAMES_IN_FLIGHT);
+    m_csmCBAllocations.resize(MAX_FRAMES_IN_FLIGHT);
+
+    auto allocator = m_pDevice->GetVmaAllocator();
+    auto& queueIndices = m_pDevice->GetQueueFamilyIndicesVector();
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        icpVulkanUtility::CreateGPUBuffer(
+            cbSize,
+            mode,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            allocator,
+            m_csmCBAllocations[i],
+            m_csmCBs[i],
+            queueIndices.size(),
+            queueIndices.data()
+        );
+    }
+
+}
+
+void icpShadowManager::CreateCSMDSLayout()
+{
+    VkDescriptorSetLayoutBinding CSMUBOBinding{};
+    CSMUBOBinding.binding = 0;
+    CSMUBOBinding.descriptorCount = 1;
+    CSMUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    CSMUBOBinding.pImmutableSamplers = nullptr;
+    CSMUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    m_csmDSLayout.bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+
+    std::array<VkDescriptorSetLayoutBinding, 1> bindings{ CSMUBOBinding };
+
+    VkDescriptorSetLayoutCreateInfo createInfo{};
+    createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    createInfo.pBindings = bindings.data();
+    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+    if (vkCreateDescriptorSetLayout(m_pDevice->GetLogicalDevice(), &createInfo, nullptr, &m_csmDSLayout.layout) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+}
+
+void icpShadowManager::AllocateCSMDS()
+{
+    icpDescriptorSetCreation creation{};
+    creation.layoutInfo = m_csmDSLayout;
+
+    std::vector<icpBufferRenderResourceInfo> bufferInfos;
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        icpBufferRenderResourceInfo bufferInfo{};
+        bufferInfo.buffer = m_csmCBs[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(FCascadeSMCB);
+        bufferInfos.push_back(bufferInfo);
+    }
+
+    creation.SetUniformBuffer(0, bufferInfos);
+    m_pDevice->CreateDescriptorSet(creation, m_csmDSs);
 }
 
 INCEPTION_END_NAMESPACE

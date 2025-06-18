@@ -70,7 +70,7 @@ void icpSceneRenderer::UpdateGlobalSceneCB(uint32_t curFrame)
 	vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_vSceneCBAllocations[curFrame]);
 }
 
-void icpSceneRenderer::UpdateCSMCB()
+void icpSceneRenderer::UpdateCSMCB(uint32_t curFrame)
 {
 	auto aspectRatio = (float)m_pDevice->GetSwapChainExtent().width / (float)m_pDevice->GetSwapChainExtent().height;
 
@@ -83,7 +83,7 @@ void icpSceneRenderer::UpdateCSMCB()
 	}
 
 	auto shadowSys = g_system_container.m_shadowSystem;
-	shadowSys->UpdateCSMCB(aspectRatio, directionalLightDir);
+	shadowSys->UpdateCSMCB(aspectRatio, directionalLightDir, curFrame);
 }
 
 

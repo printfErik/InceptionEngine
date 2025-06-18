@@ -63,13 +63,12 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 		VK_FORMAT_R8G8B8A8_SRGB, 
 		VK_IMAGE_ASPECT_COLOR_BIT, 
 		info.m_texImageRes->m_mipmapLevel,
+		0,
 		1,
 		m_rhi->GetLogicalDevice()
 	);
 
 	FSamplerBuilderInfo SamplerInfo;
-	SamplerInfo.FilterType = VK_FILTER_LINEAR;
-	SamplerInfo.AddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	SamplerInfo.ImageRes = info.m_texImageRes;
 	VkPhysicalDeviceProperties properties;
 	vkGetPhysicalDeviceProperties(m_rhi->GetPhysicalDevice(), &properties);
@@ -157,7 +156,7 @@ void icpTextureRenderResourceManager::InitializeEmptyTexture()
 		VK_IMAGE_VIEW_TYPE_2D,
 		VK_FORMAT_R8_SNORM, 
 		VK_IMAGE_ASPECT_COLOR_BIT, 
-		1, 1,
+		1, 0, 1,
 		m_rhi->GetLogicalDevice()
 	);
 

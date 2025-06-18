@@ -18,7 +18,7 @@ VkSampler icpSamplerBuilder::BuildSampler(const FSamplerBuilderInfo& builder_inf
 	sampler.anisotropyEnable = VK_TRUE;
 
 	sampler.maxAnisotropy = builder_info.MaxSamplerAnisotropy;
-	sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+	sampler.borderColor = builder_info.BorderColor;
 
 	sampler.unnormalizedCoordinates = VK_FALSE;
 	sampler.compareEnable = VK_FALSE;
@@ -28,7 +28,7 @@ VkSampler icpSamplerBuilder::BuildSampler(const FSamplerBuilderInfo& builder_inf
 	sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	sampler.mipLodBias = 0.0f;
 	sampler.minLod = 0.0f;
-	sampler.maxLod = static_cast<float>(imgP->m_mipmapLevel);
+	sampler.maxLod = imgP ? static_cast<float>(imgP->m_mipmapLevel) : 1.f;
 
 	VkSampler retSampler{ VK_NULL_HANDLE };
 	if (vkCreateSampler(builder_info.RHI->GetLogicalDevice(), &sampler, nullptr, &retSampler) != VK_SUCCESS)

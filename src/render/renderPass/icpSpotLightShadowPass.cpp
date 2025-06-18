@@ -276,6 +276,7 @@ void icpSpotLightShadowPass::CreateShadowAttachment()
 		m_rhi->GetDepthFormat(),
 		VK_IMAGE_ASPECT_COLOR_BIT,
 		10,
+		0,
 		MAX_SPOT_LIGHT_NUMBER,
 		m_rhi->GetLogicalDevice()
 	);

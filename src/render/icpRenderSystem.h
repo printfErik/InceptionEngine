@@ -33,6 +33,7 @@ private:
 	std::shared_ptr<icpSceneRenderer> m_pSceneRenderer = nullptr;
 	std::shared_ptr<icpTextureRenderResourceManager> m_textureRenderResourceManager = nullptr;
 	std::shared_ptr<icpMaterialSubSystem> m_materialSystem = nullptr;
+	std::shared_ptr<icpShadowManager> m_shadowManager = nullptr;
 
 private:
 };

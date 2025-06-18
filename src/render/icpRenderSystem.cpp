@@ -9,10 +9,10 @@
 #include "../mesh/icpPrimitiveRendererComponent.h"
 #include "light/icpLightComponent.h"
 #include "material/icpTextureRenderResourceManager.h"
+#include "shadow/icpShadowManager.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-icpRenderSystem::icpRenderSystem()
+	icpRenderSystem::icpRenderSystem()
 {
 }
 
@@ -27,6 +27,13 @@ bool icpRenderSystem::initializeRenderSystem()
 	m_pGPUDevice = std::make_shared<icpVkGPUDevice>();
 	m_pGPUDevice->Initialize(g_system_container.m_windowSystem);
 
+	m_shadowManager = std::make_shared<icpShadowManager>();
+	m_shadowManager->m_pDevice = m_pGPUDevice;
+	m_shadowManager->InitCascadeDistance();
+	m_shadowManager->CreateCSMCB();
+	m_shadowManager->CreateCSMDSLayout();
+	m_shadowManager->AllocateCSMDS();
+
 	m_pSceneRenderer = std::make_shared<icpDeferredRenderer>();
 	m_pSceneRenderer->Initialize(m_pGPUDevice);
 
@@ -35,6 +42,8 @@ bool icpRenderSystem::initializeRenderSystem()
 
 	m_materialSystem = std::make_shared<icpMaterialSubSystem>();
 	m_materialSystem->initializeMaterialSubSystem();
+
+
 
 	return true;
 }

@@ -16,6 +16,9 @@ public:
 	std::filesystem::path m_modelResourcePath;
 
 	bool isDeferredRender = true;
+
+	float NearPlane = 0.1f;
+	float FarPlane = 100.f;
 };
 
 

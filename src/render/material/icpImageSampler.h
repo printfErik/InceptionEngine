@@ -13,6 +13,7 @@ struct FSamplerBuilderInfo
 	VkFilter FilterType = VkFilter::VK_FILTER_LINEAR;
 	VkSamplerAddressMode AddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	float MaxSamplerAnisotropy = 1.f;
+	VkBorderColor BorderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 	std::shared_ptr<icpImageResource> ImageRes;
 	std::shared_ptr<icpGPUDevice> RHI = nullptr;
 };

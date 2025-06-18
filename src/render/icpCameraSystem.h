@@ -11,7 +11,7 @@
 #include <glm/gtx/euler_angles.hpp>
 
 INCEPTION_BEGIN_NAMESPACE
-	struct perFrameCB;
+struct perFrameCB;
 
 class icpCameraComponent : public icpComponentBase
 {

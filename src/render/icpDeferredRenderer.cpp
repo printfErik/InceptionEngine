@@ -2,9 +2,11 @@
 
 #include "RHI/Vulkan/icpVulkanUtility.h"
 #include "../ui/editorUI/icpEditorUI.h"
+#include "renderPass/icpCSMPass.h"
 #include "renderPass/icpDeferredCompositePass.h"
 #include "renderPass/icpEditorUiPass.h"
 #include "renderPass/icpGBufferPass.h"
+#include "shadow/icpShadowManager.h"
 
 INCEPTION_BEGIN_NAMESPACE
 icpDeferredRenderer::~icpDeferredRenderer()
@@ -25,6 +27,15 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	CreateGBufferAttachments();
 	CreateDeferredRenderPass();
 	CreateDeferredFrameBuffer();
+
+	icpRenderPassBase::RenderPassInitInfo csmPassCreateInfo;
+	csmPassCreateInfo.device = m_pDevice;
+	csmPassCreateInfo.passType = eRenderPass::CSM_PASS;
+	csmPassCreateInfo.sceneRenderer = shared_from_this();
+	std::shared_ptr<icpRenderPassBase> cmsPass = std::make_shared<icpCSMPass>();
+	cmsPass->InitializeRenderPass(csmPassCreateInfo);
+
+	m_renderPasses[eRenderPass::CSM_PASS] = cmsPass;
 
 	icpRenderPassBase::RenderPassInitInfo gbufferPassCreateInfo;
 	gbufferPassCreateInfo.device = m_pDevice;
@@ -95,6 +106,7 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		aspectMask,
 		1,
+		0,
 		1,
 		m_pDevice->GetLogicalDevice()
 	);
@@ -118,6 +130,7 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		aspectMask,
 		1,
+		0,
 		1,
 		m_pDevice->GetLogicalDevice()
 	);
@@ -141,6 +154,7 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		aspectMask,
 		1,
+		0,
 		1,
 		m_pDevice->GetLogicalDevice()
 	);
@@ -359,21 +373,24 @@ void icpDeferredRenderer::Render()
 	}
 
 	UpdateGlobalSceneCB(m_currentFrame);
-
-	for (const auto renderPass : m_renderPasses)
-	{
-		renderPass.second->UpdateRenderPassCB(m_currentFrame);
-	}
-
-	UpdateCSMCB();
+	UpdateCSMCB(m_currentFrame);
 
 	ResetThenBeginCommandBuffer();
+
+	auto CSMPass = std::dynamic_pointer_cast<icpCSMPass>(m_renderPasses[eRenderPass::CSM_PASS]);
+
+	for (uint32_t i = 0; i < s_csmCascadeCount; i++)
+	{
+		CSMPass->BeginCSMRenderPass(m_currentFrame, i, m_vDeferredCommandBuffers[m_currentFrame]);
+		CSMPass->Render(index, m_currentFrame, result);
+		CSMPass->EndCSMRenderPass(m_vDeferredCommandBuffers[m_currentFrame]);
+	}
+
 	BeginForwardRenderPass(index);
 
-	for (const auto renderPass : m_renderPasses)
-	{
-		renderPass.second->Render(index, m_currentFrame, result);
-	}
+	m_renderPasses[eRenderPass::GBUFFER_PASS]->Render(index, m_currentFrame, result);
+	m_renderPasses[eRenderPass::DEFERRED_COMPOSITION_PASS]->Render(index, m_currentFrame, result);
+	m_renderPasses[eRenderPass::EDITOR_UI_PASS]->Render(index, m_currentFrame, result);
 
 	EndForwardRenderPass();
 	EndRecordingCommandBuffer();

@@ -19,6 +19,26 @@ icpCSMPass::~icpCSMPass()
 	
 }
 
+void icpCSMPass::Cleanup()
+{
+	vkDestroyPipelineLayout(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipelineLayout, nullptr);
+	vkDestroyPipeline(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipeline, nullptr);
+}
+
+
+void icpCSMPass::InitializeRenderPass(RenderPassInitInfo initInfo)
+{
+	m_rhi = initInfo.device;
+	m_pSceneRenderer = initInfo.sceneRenderer;
+
+	CreateCSMImageRenderResource();
+	CreateCSMRenderPass();
+	CreateCSMFrameBuffer();
+
+	CreateDescriptorSetLayouts();
+	SetupPipeline();
+}
+
 void icpCSMPass::CreateCSMRenderPass()
 {
 	std::array<VkAttachmentDescription, 1> attachments{};
@@ -87,55 +107,65 @@ void icpCSMPass::CreateCSMImageRenderResource()
 		m_csmArray, m_csmArrayAllocation
 	);
 
-	m_csmArrayView = icpVulkanUtility::CreateGPUImageView(
+	m_csmArrayViews.resize(s_csmCascadeCount + 1);
+
+	for (uint32_t i = 0; i < s_csmCascadeCount; i++)
+	{
+		m_csmArrayViews[i] = icpVulkanUtility::CreateGPUImageView(
+			m_csmArray,
+			VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+			m_rhi->GetDepthFormat(),
+			VK_IMAGE_ASPECT_DEPTH_BIT,
+			1,
+			i,
+			1,
+			m_rhi->GetLogicalDevice()
+		);
+	}
+
+	m_csmArrayViews[s_csmCascadeCount] = icpVulkanUtility::CreateGPUImageView(
 		m_csmArray,
 		VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 		m_rhi->GetDepthFormat(),
 		VK_IMAGE_ASPECT_DEPTH_BIT,
 		1,
+		0,
 		s_csmCascadeCount,
 		m_rhi->GetLogicalDevice()
 	);
+	
 }
 
 void icpCSMPass::CreateCSMFrameBuffer()
 {
-	m_csmFrameBuffers.resize(m_rhi->GetSwapChainImageViews().size());
+	size_t swapChainImageViewSize = m_rhi->GetSwapChainImageViews().size();
+	m_csmFrameBuffers.resize(swapChainImageViewSize * s_csmCascadeCount);
 
-	for (size_t i = 0; i < m_csmFrameBuffers.size(); i++)
+	for (size_t i = 0; i < swapChainImageViewSize; i++)
 	{
-		std::array<VkImageView, 1> attachment =
+		for (uint32_t cascade = 0; cascade < s_csmCascadeCount; cascade++)
 		{
-			m_csmArrayView
-		};
+			std::array<VkImageView, 1> attachment =
+			{
+				m_csmArrayViews[cascade]
+			};
 
-		VkFramebufferCreateInfo framebufferInfo{};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = m_shadowRenderPass;
-		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachment.size());
-		framebufferInfo.pAttachments = attachment.data();
-		framebufferInfo.width = s_cascadeShadowMapResolution;
-		framebufferInfo.height = s_cascadeShadowMapResolution;
-		framebufferInfo.layers = s_csmCascadeCount;
+			VkFramebufferCreateInfo framebufferInfo{};
+			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = m_shadowRenderPass;
+			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachment.size());
+			framebufferInfo.pAttachments = attachment.data();
+			framebufferInfo.width = s_cascadeShadowMapResolution;
+			framebufferInfo.height = s_cascadeShadowMapResolution;
+			framebufferInfo.layers = s_csmCascadeCount;
 
-		if (vkCreateFramebuffer(m_rhi->GetLogicalDevice(), &framebufferInfo, nullptr, &m_csmFrameBuffers[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create csm frame buffer!");
+			if (vkCreateFramebuffer(m_rhi->GetLogicalDevice(), &framebufferInfo, nullptr, &m_csmFrameBuffers[i * swapChainImageViewSize + cascade]) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to create csm frame buffer!");
+			}
 		}
 	}
-
 }
-
-
-void icpCSMPass::InitializeRenderPass(RenderPassInitInfo initInfo)
-{
-	m_rhi = initInfo.device;
-	m_pSceneRenderer = initInfo.sceneRenderer;
-
-	CreateDescriptorSetLayouts();
-	SetupPipeline();
-}
-
 
 void icpCSMPass::CreateDescriptorSetLayouts()
 {
@@ -324,6 +354,54 @@ void icpCSMPass::SetupPipeline()
 	}
 
 	vkDestroyShaderModule(m_rhi->GetLogicalDevice(), vertShader.module, nullptr);
+}
+
+
+void icpCSMPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
+{
+	auto mgr = m_pSceneRenderer.lock();
+	RecordCommandBuffer(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
+}
+
+void icpCSMPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
+{
+	auto sceneRenderer = m_pSceneRenderer.lock();
+
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
+
+	auto shadowMgr = g_system_container.m_shadowSystem;
+
+	vkCmdBindDescriptorSets(commandBuffer, 
+		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, 
+		m_pipelineInfo.m_pipelineLayout, 
+		1, 1, &shadowMgr->m_csmDSs[curFrame], 0, nullptr
+	);
+
+	std::vector<std::shared_ptr<icpGameEntity>> rootList;
+	g_system_container.m_sceneSystem->getRootEntityList(rootList);
+}
+
+void icpCSMPass::BeginCSMRenderPass(uint32_t imageIndex, uint32_t cascade, VkCommandBuffer& commandBuffer)
+{
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = m_shadowRenderPass;
+	renderPassInfo.framebuffer = m_csmFrameBuffers[imageIndex * MAX_FRAMES_IN_FLIGHT + cascade];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = {s_cascadeShadowMapResolution, s_cascadeShadowMapResolution};
+
+	VkClearValue clearVal{};
+	clearVal.depthStencil = { 1.0f, 0 };
+
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearVal;
+
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void icpCSMPass::EndCSMRenderPass(VkCommandBuffer& commandBuffer)
+{
+	vkCmdEndRenderPass(commandBuffer);
 }
 
 INCEPTION_END_NAMESPACE
