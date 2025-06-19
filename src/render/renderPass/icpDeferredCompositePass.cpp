@@ -382,9 +382,9 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		icpBufferRenderResourceInfo bufferInfo{};
-		bufferInfo.buffer = g_system_container.m_shadowSystem->m_csmCBs[i];
+		bufferInfo.buffer = g_system_container.m_shadowSystem->m_csmSplitsCBs[i];
 		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(FCascadeSMCB);
+		bufferInfo.range = sizeof(float) * s_csmCascadeCount;
 		bufferInfos.push_back(bufferInfo);
 	}
 	csmCreation.SetUniformBuffer(0, bufferInfos);

@@ -80,7 +80,7 @@ public:
 
 	void CreateSceneCB();
 	void UpdateGlobalSceneCB(uint32_t curFrame);
-	void UpdateCSMCB(uint32_t curFrame);
+	void UpdateCSMProjViewMat(uint32_t curFrame);
 
 	void CreateGlobalSceneDescriptorSetLayout();
 	void AllocateGlobalSceneDescriptorSets();

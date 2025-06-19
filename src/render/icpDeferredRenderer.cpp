@@ -373,7 +373,8 @@ void icpDeferredRenderer::Render()
 	}
 
 	UpdateGlobalSceneCB(m_currentFrame);
-	UpdateCSMCB(m_currentFrame);
+	UpdateCSMProjViewMat(m_currentFrame);
+	g_system_container.m_shadowSystem->UpdateCSMSplitsCB(m_currentFrame);
 
 	ResetThenBeginCommandBuffer();
 
@@ -382,6 +383,7 @@ void icpDeferredRenderer::Render()
 	for (uint32_t i = 0; i < s_csmCascadeCount; i++)
 	{
 		CSMPass->BeginCSMRenderPass(m_currentFrame, i, m_vDeferredCommandBuffers[m_currentFrame]);
+		g_system_container.m_shadowSystem->UpdateCSMCB(i, m_currentFrame);
 		CSMPass->Render(index, m_currentFrame, result);
 		CSMPass->EndCSMRenderPass(m_vDeferredCommandBuffers[m_currentFrame]);
 	}

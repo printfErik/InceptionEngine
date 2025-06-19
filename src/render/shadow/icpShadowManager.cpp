@@ -49,7 +49,7 @@ glm::vec3 computeAABBMax(const std::vector<glm::vec3>& pts)
     return mx;
 }
 
-void icpShadowManager::UpdateCSMCB(float aspectRatio, const glm::vec3& direction, uint32_t curFrame)
+void icpShadowManager::UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& direction, uint32_t curFrame)
 {
     auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
     auto viewMat = camera->m_viewMatrix;
@@ -100,24 +100,26 @@ void icpShadowManager::UpdateCSMCB(float aspectRatio, const glm::vec3& direction
 
         m_lightProjViews[i] = projMatrix * viewMatrix;
     }
+}
 
-    FCascadeSMCB cb{};
-
-    for (uint32_t i = 0; i < s_csmCascadeCount; i++)
-    {
-        cb.cascadeSplit[i] = m_cascadeSplits[i];
-        cb.lightProjView[i] = m_lightProjViews[i];
-    }
-
+void icpShadowManager::UpdateCSMCB(uint32_t cascadeIndex, uint32_t curFrame)
+{
     void* data;
     vmaMapMemory(m_pDevice->GetVmaAllocator(), m_csmCBAllocations[curFrame], &data);
-    memcpy(data, &cb, sizeof(FCascadeSMCB));
+    memcpy(data, &m_lightProjViews[cascadeIndex], sizeof(glm::mat4));
+    vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_csmCBAllocations[curFrame]);
+}
+
+void icpShadowManager::UpdateCSMSplitsCB(uint32_t curFrame)
+{
+    void* data;
+    vmaMapMemory(m_pDevice->GetVmaAllocator(), m_csmCBAllocations[curFrame], &data);
+    memcpy(data, m_cascadeSplits.data(), sizeof(float) * s_csmCascadeCount);
     vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_csmCBAllocations[curFrame]);
 }
 
 void icpShadowManager::CreateCSMCB()
 {
-    auto cbSize = sizeof(FCascadeSMCB);
     VkSharingMode mode = m_pDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == m_pDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
     m_csmCBs.resize(MAX_FRAMES_IN_FLIGHT);
@@ -129,12 +131,29 @@ void icpShadowManager::CreateCSMCB()
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         icpVulkanUtility::CreateGPUBuffer(
-            cbSize,
+            sizeof(glm::mat4),
             mode,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             allocator,
             m_csmCBAllocations[i],
             m_csmCBs[i],
+            queueIndices.size(),
+            queueIndices.data()
+        );
+    }
+
+    m_csmSplitsCBs.resize(MAX_FRAMES_IN_FLIGHT);
+    m_csmSplitsCBAllocations.resize(MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        icpVulkanUtility::CreateGPUBuffer(
+            sizeof(m_cascadeSplits[0]) * m_cascadeSplits.size(),
+            mode,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            allocator,
+            m_csmSplitsCBAllocations[i],
+            m_csmSplitsCBs[i],
             queueIndices.size(),
             queueIndices.data()
         );
@@ -163,6 +182,7 @@ void icpShadowManager::CreateCSMDSLayout()
     {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
+
 }
 
 void icpShadowManager::AllocateCSMDS()
@@ -176,7 +196,7 @@ void icpShadowManager::AllocateCSMDS()
         icpBufferRenderResourceInfo bufferInfo{};
         bufferInfo.buffer = m_csmCBs[i];
         bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(FCascadeSMCB);
+        bufferInfo.range = sizeof(glm::mat4);
         bufferInfos.push_back(bufferInfo);
     }
 

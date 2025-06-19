@@ -11,12 +11,6 @@ INCEPTION_BEGIN_NAMESPACE
 static constexpr uint32_t s_csmCascadeCount(4u);
 static constexpr uint32_t s_cascadeShadowMapResolution(1024u);
 
-struct FCascadeSMCB
-{
-	glm::mat4 lightProjView[s_csmCascadeCount];
-	float cascadeSplit[s_csmCascadeCount];
-};
-
 class icpShadowManager
 {
 public:
@@ -24,7 +18,10 @@ public:
 	virtual ~icpShadowManager() = default;
 
 	void InitCascadeDistance();
-	void UpdateCSMCB(float aspectRatio, const glm::vec3& direction, uint32_t curFrame);
+	void UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& direction, uint32_t curFrame);
+
+	void UpdateCSMCB(uint32_t cascadeIndex, uint32_t curFrame);
+	void UpdateCSMSplitsCB(uint32_t curFrame);
 
 	void CreateCSMCB();
 	void CreateCSMDSLayout();
@@ -36,6 +33,12 @@ public:
 	icpDescriptorSetLayoutInfo m_csmDSLayout{};
 	std::vector<VkDescriptorSet> m_csmDSs;
 
+	std::vector<VkBuffer> m_csmSplitsCBs;
+	std::vector<VmaAllocation> m_csmSplitsCBAllocations;
+
+	icpDescriptorSetLayoutInfo m_csmSplitsDSLayout{};
+	std::vector<VkDescriptorSet> m_csmSplitsDSs;
+	
 	std::vector<float> m_cascadeSplits;
 	std::vector<glm::mat4> m_lightProjViews;
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
