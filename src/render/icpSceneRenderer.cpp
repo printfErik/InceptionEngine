@@ -7,6 +7,7 @@
 #include "icpCameraSystem.h"
 #include "light/icpLightSystem.h"
 #include "shadow/icpShadowManager.h"
+#include "../render/icpRenderSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
 	std::shared_ptr<icpRenderPassBase> icpSceneRenderer::AccessRenderPass(eRenderPass passType)
@@ -82,7 +83,7 @@ void icpSceneRenderer::UpdateCSMProjViewMat(uint32_t curFrame)
 		directionalLightDir = lightComp.m_direction;
 	}
 
-	auto shadowSys = g_system_container.m_shadowSystem;
+	auto shadowSys = g_system_container.m_renderSystem->m_shadowManager;
 	shadowSys->UpdateCSMProjViewMat(aspectRatio, directionalLightDir, curFrame);
 }
 

@@ -1,9 +1,13 @@
 #include "icpCSMPass.h"
+
+#include "../icpRenderSystem.h"
 #include "../../core/icpConfigSystem.h"
 #include "../RHI/Vulkan/icpVulkanUtility.h"
 #include "../../mesh/icpMeshData.h"
 #include "../icpSceneRenderer.h"
 #include "../shadow/icpShadowManager.h"
+#include "../../mesh/icpMeshRendererComponent.h"
+#include "../../mesh/icpPrimitiveRendererComponent.h"
 #include "../../core/icpLogSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -53,7 +57,7 @@ void icpCSMPass::CreateCSMRenderPass()
 	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-	VkAttachmentReference depthReference = { 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+	VkAttachmentReference depthReference = { 0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
 
 	VkSubpassDescription subpassDescription{};
 	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -73,7 +77,7 @@ void icpCSMPass::CreateCSMRenderPass()
 	dependency[1].srcSubpass = 0;
 	dependency[1].dstSubpass = VK_SUBPASS_EXTERNAL;
 	dependency[1].srcStageMask =  VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-	dependency[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+	dependency[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	dependency[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	dependency[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 	dependency[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
@@ -157,7 +161,7 @@ void icpCSMPass::CreateCSMFrameBuffer()
 			framebufferInfo.pAttachments = attachment.data();
 			framebufferInfo.width = s_cascadeShadowMapResolution;
 			framebufferInfo.height = s_cascadeShadowMapResolution;
-			framebufferInfo.layers = s_csmCascadeCount;
+			framebufferInfo.layers = 1;
 
 			if (vkCreateFramebuffer(m_rhi->GetLogicalDevice(), &framebufferInfo, nullptr, &m_csmFrameBuffers[i * swapChainImageViewSize + cascade]) != VK_SUCCESS)
 			{
@@ -342,6 +346,22 @@ void icpCSMPass::SetupPipeline()
 
 	csmPipeline.pColorBlendState = &colorBlend;
 
+	// Dynamic State
+	std::vector<VkDynamicState> dynamicStates =
+	{
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_SCISSOR,
+		VK_DYNAMIC_STATE_LINE_WIDTH,
+		VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY
+	};
+
+	VkPipelineDynamicStateCreateInfo dynamicState{};
+	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+	dynamicState.pDynamicStates = dynamicStates.data();
+
+	csmPipeline.pDynamicState = &dynamicState;
+
 	// RenderPass
 	csmPipeline.renderPass = m_shadowRenderPass;
 	csmPipeline.subpass = 0;
@@ -369,7 +389,22 @@ void icpCSMPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t ima
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
 
-	auto shadowMgr = g_system_container.m_shadowSystem;
+	
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = s_cascadeShadowMapResolution;
+	viewport.height = s_cascadeShadowMapResolution;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = { s_cascadeShadowMapResolution, s_cascadeShadowMapResolution };
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+	
+	auto shadowMgr = g_system_container.m_renderSystem->m_shadowManager;
 
 	vkCmdBindDescriptorSets(commandBuffer, 
 		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, 
@@ -379,6 +414,41 @@ void icpCSMPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t ima
 
 	std::vector<std::shared_ptr<icpGameEntity>> rootList;
 	g_system_container.m_sceneSystem->getRootEntityList(rootList);
+	std::vector<VkDeviceSize> offsets{ 0 };
+	for (auto entity : rootList)
+	{
+		if (entity->hasComponent<icpMeshRendererComponent>())
+		{
+			const auto& meshRender = entity->accessComponent<icpMeshRendererComponent>();
+
+			auto vertBuf = meshRender.m_vertexBuffer;
+			std::vector<VkBuffer>vertexBuffers{ vertBuf };
+
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
+			vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
+			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+			vkCmdDrawIndexed(commandBuffer, meshRender.m_meshVertexIndicesNum, 1, 0, 0, 0);
+		}
+		else if (entity->hasComponent<icpPrimitiveRendererComponent>())
+		{
+			auto& primitive = entity->accessComponent<icpPrimitiveRendererComponent>();
+
+			auto vertBuf = primitive.m_vertexBuffer;
+			std::vector<VkBuffer>vertexBuffers{ vertBuf };
+
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
+			vkCmdBindIndexBuffer(commandBuffer, primitive.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+			auto& descriptorSets = primitive.m_descriptorSets;
+			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
+
+			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(primitive.m_vertexIndices.size()), 1, 0, 0, 0);
+		}
+	}
 }
 
 void icpCSMPass::BeginCSMRenderPass(uint32_t imageIndex, uint32_t cascade, VkCommandBuffer& commandBuffer)

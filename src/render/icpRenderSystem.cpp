@@ -12,7 +12,7 @@
 #include "shadow/icpShadowManager.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	icpRenderSystem::icpRenderSystem()
+icpRenderSystem::icpRenderSystem()
 {
 }
 

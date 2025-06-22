@@ -110,12 +110,20 @@ void icpShadowManager::UpdateCSMCB(uint32_t cascadeIndex, uint32_t curFrame)
     vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_csmCBAllocations[curFrame]);
 }
 
-void icpShadowManager::UpdateCSMSplitsCB(uint32_t curFrame)
+void icpShadowManager::UpdateCascadeShadowMapCB(uint32_t curFrame)
 {
+    UBOCSM ubo{};
+
+    for (uint32_t index = 0; index < s_csmCascadeCount; index++)
+    {
+        ubo.CSMSplits[index] = m_cascadeSplits[index];
+        ubo.CSMLightProjViewMat[index] = m_lightProjViews[index];
+    }
+
     void* data;
-    vmaMapMemory(m_pDevice->GetVmaAllocator(), m_csmCBAllocations[curFrame], &data);
-    memcpy(data, m_cascadeSplits.data(), sizeof(float) * s_csmCascadeCount);
-    vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_csmCBAllocations[curFrame]);
+    vmaMapMemory(m_pDevice->GetVmaAllocator(), m_cascadeShadowMapCBAllocations[curFrame], &data);
+    memcpy(data, &ubo, sizeof(UBOCSM));
+    vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_cascadeShadowMapCBAllocations[curFrame]);
 }
 
 void icpShadowManager::CreateCSMCB()
@@ -142,18 +150,18 @@ void icpShadowManager::CreateCSMCB()
         );
     }
 
-    m_csmSplitsCBs.resize(MAX_FRAMES_IN_FLIGHT);
-    m_csmSplitsCBAllocations.resize(MAX_FRAMES_IN_FLIGHT);
+    m_cascadeShadowMapCBs.resize(MAX_FRAMES_IN_FLIGHT);
+    m_cascadeShadowMapCBAllocations.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         icpVulkanUtility::CreateGPUBuffer(
-            sizeof(m_cascadeSplits[0]) * m_cascadeSplits.size(),
+            sizeof(UBOCSM),
             mode,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             allocator,
-            m_csmSplitsCBAllocations[i],
-            m_csmSplitsCBs[i],
+            m_cascadeShadowMapCBAllocations[i],
+            m_cascadeShadowMapCBs[i],
             queueIndices.size(),
             queueIndices.data()
         );

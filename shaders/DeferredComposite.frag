@@ -24,12 +24,13 @@ layout (input_attachment_index = 1, set = 0, binding = 1) uniform subpassInput g
 layout (input_attachment_index = 2, set = 0, binding = 2) uniform subpassInput gBufferC;
 layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput depthTex;
 
-layout(std140, set = 2, binding = 0) uniform UBOCSMSplits
+layout(std140, set = 1, binding = 0) uniform UBOCSMSplits
 {
     float csmSplits[4];
+    mat4 lightViewProj[4];
 } uboCSM;
 
-layout(set = 2, binding = 1) uniform sampler2DArray cascadeShadowMaps;
+layout(set = 1, binding = 1) uniform sampler2DArray cascadeShadowMaps;
 
 layout(std140, set = 2, binding = 0) uniform PerFrameCB
 {
@@ -41,10 +42,7 @@ layout(std140, set = 2, binding = 0) uniform PerFrameCB
     PointLightRenderResource pointLight[max_point_light_count];
 } uboPerFrame;
 
-
-
 layout(location = 0) in vec2 inTexCoord;
-
 layout(location = 0) out vec4 outColor;
 
 float LinearizeDepth(float depth)
@@ -62,18 +60,18 @@ float ComputeShadow(vec3 worldPos, float viewDepth)
     int cascadeIndex = 0;
 
     // determine which cascade
-    if (viewDepth > uboCSM.cascadeSplits[1]) cascadeIndex = 1;
-    if (viewDepth > uboCSM.cascadeSplits[2]) cascadeIndex = 2;
-    if (viewDepth > uboCSM.cascadeSplits[3]) cascadeIndex = 3;
+    if (viewDepth > uboCSM.csmSplits[1]) cascadeIndex = 1;
+    if (viewDepth > uboCSM.csmSplits[2]) cascadeIndex = 2;
+    if (viewDepth > uboCSM.csmSplits[3]) cascadeIndex = 3;
 
-    mat4 lightVP = light.lightViewProj[cascadeIndex];
+    mat4 lightVP = uboCSM.lightViewProj[cascadeIndex];
     vec4 lightSpacePos = lightVP * vec4(worldPos, 1.0);
     lightSpacePos /= lightSpacePos.w;
     // NDC [-1,1] to [0,1] UV
     vec3 shadowCoord = lightSpacePos.xyz * 0.5 + 0.5;
 
     // perform hardware PCF sampling
-    shadow = texture(shadowMapArray, vec4(shadowCoord.xy, float(cascadeIndex), shadowCoord.z));
+    shadow = texture(cascadeShadowMaps, vec3(shadowCoord.xy, float(cascadeIndex))).r;
     return shadow;
 }
 
@@ -122,7 +120,7 @@ void main()
     float shadow = ComputeShadow(worldPos, ViewDepth);
 
     vec3 radiance = uboPerFrame.directionalLit.color.xyz;
-    vec3 Lo = (DiffuseContrib + SpecularContrib) * radiance * NdotL;
+    vec3 Lo = (DiffuseContrib + SpecularContrib) * radiance * NdotL * shadow;
 
     vec3 ambient = vec3(0.03) * BaseColor * vec3(AO);
     vec3 color = Lo * vec3(AO) + ambient;

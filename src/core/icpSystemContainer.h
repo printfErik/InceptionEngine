@@ -2,14 +2,8 @@
 
 #include "icpMacros.h"
 
-
-namespace Inception
-{
-	class icpShadowManager;
-}
-
 INCEPTION_BEGIN_NAMESPACE
-	class icpConfigSystem;
+class icpConfigSystem;
 class icpWindowSystem;
 class icpRenderSystem;
 class icpResourceSystem;
@@ -32,7 +26,6 @@ public:
 	std::shared_ptr<icpWindowSystem> m_windowSystem = nullptr;
 	std::shared_ptr<icpCameraSystem> m_cameraSystem = nullptr;
 	std::shared_ptr<icpLightSystem> m_lightSystem = nullptr;
-	std::shared_ptr<icpShadowManager> m_shadowSystem = nullptr;
 	std::shared_ptr<icpRenderSystem> m_renderSystem = nullptr;
 	std::shared_ptr<icpResourceSystem> m_resourceSystem = nullptr;
 	std::shared_ptr<icpUiSystem> m_uiSystem = nullptr;

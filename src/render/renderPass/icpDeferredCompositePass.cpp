@@ -7,6 +7,7 @@
 #include "../icpSceneRenderer.h"
 #include "../material/icpImageSampler.h"
 #include "../shadow/icpShadowManager.h"
+#include "../../render/icpRenderSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -44,7 +45,10 @@ void icpDeferredCompositePass::RecordCommandBuffer(VkCommandBuffer commandBuffer
 
 	auto sceneDs = renderer->GetSceneDescriptorSet(curFrame);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		m_pipelineInfo.m_pipelineLayout, 1, 1, &sceneDs, 0, nullptr);
+		m_pipelineInfo.m_pipelineLayout, 2, 1, &sceneDs, 0, nullptr);
+
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_pipelineInfo.m_pipelineLayout, 1, 1, &m_csmDSs[curFrame], 0, nullptr);
 
 	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 }
@@ -281,7 +285,7 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 		depthBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
 		m_DSLayouts[eDeferredCompositePassDSType::GBUFFER].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT });
 
-		std::array<VkDescriptorSetLayoutBinding, 5> bindings{ gbufferABinding, gbufferBBinding, gbufferCBinding, depthBinding };
+		std::array<VkDescriptorSetLayoutBinding, 4> bindings{ gbufferABinding, gbufferBBinding, gbufferCBinding, depthBinding };
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -312,7 +316,7 @@ void icpDeferredCompositePass::CreateDescriptorSetLayouts()
 		CascadeShadowMap.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		CascadeShadowMap.pImmutableSamplers = nullptr;
 		CascadeShadowMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		m_DSLayouts[eDeferredCompositePassDSType::CSM].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT });
+		m_DSLayouts[eDeferredCompositePassDSType::CSM].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER });
 
 		std::array<VkDescriptorSetLayoutBinding, 2> bindings{ CascadeSplitUBO, CascadeShadowMap };
 
@@ -382,9 +386,9 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		icpBufferRenderResourceInfo bufferInfo{};
-		bufferInfo.buffer = g_system_container.m_shadowSystem->m_csmSplitsCBs[i];
+		bufferInfo.buffer = g_system_container.m_renderSystem->m_shadowManager->m_cascadeShadowMapCBs[i];
 		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(float) * s_csmCascadeCount;
+		bufferInfo.range = sizeof(UBOCSM);
 		bufferInfos.push_back(bufferInfo);
 	}
 	csmCreation.SetUniformBuffer(0, bufferInfos);
@@ -403,9 +407,9 @@ void icpDeferredCompositePass::AllocateDescriptorSets()
 		icpTextureRenderResourceInfo texInfo{};
 		texInfo.m_texSampler = csmSampler;
 		texInfo.m_texImageView = csmPass->m_csmArrayViews[s_csmCascadeCount];
-		depthInfos.push_back(texInfo);
+		csmInfos.push_back(texInfo);
 	}
-	csmCreation.SetCombinedImageSampler(1, depthInfos);
+	csmCreation.SetCombinedImageSampler(1, csmInfos);
 
 	m_rhi->CreateDescriptorSet(csmCreation, m_csmDSs);
 }

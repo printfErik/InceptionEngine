@@ -11,6 +11,13 @@ INCEPTION_BEGIN_NAMESPACE
 static constexpr uint32_t s_csmCascadeCount(4u);
 static constexpr uint32_t s_cascadeShadowMapResolution(1024u);
 
+
+struct UBOCSM
+{
+	float CSMSplits[4];
+	glm::mat4 CSMLightProjViewMat[4];
+};
+
 class icpShadowManager
 {
 public:
@@ -21,7 +28,7 @@ public:
 	void UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& direction, uint32_t curFrame);
 
 	void UpdateCSMCB(uint32_t cascadeIndex, uint32_t curFrame);
-	void UpdateCSMSplitsCB(uint32_t curFrame);
+	void UpdateCascadeShadowMapCB(uint32_t curFrame);
 
 	void CreateCSMCB();
 	void CreateCSMDSLayout();
@@ -33,11 +40,11 @@ public:
 	icpDescriptorSetLayoutInfo m_csmDSLayout{};
 	std::vector<VkDescriptorSet> m_csmDSs;
 
-	std::vector<VkBuffer> m_csmSplitsCBs;
-	std::vector<VmaAllocation> m_csmSplitsCBAllocations;
+	std::vector<VkBuffer> m_cascadeShadowMapCBs;
+	std::vector<VmaAllocation> m_cascadeShadowMapCBAllocations;
 
-	icpDescriptorSetLayoutInfo m_csmSplitsDSLayout{};
-	std::vector<VkDescriptorSet> m_csmSplitsDSs;
+	icpDescriptorSetLayoutInfo m_cascadeShadowMapDSLayout{};
+	std::vector<VkDescriptorSet> m_cascadeShadowMapDSs;
 	
 	std::vector<float> m_cascadeSplits;
 	std::vector<glm::mat4> m_lightProjViews;
