@@ -23,6 +23,9 @@ public:
 	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override;
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
 
+	void RenderPushConstant(uint32_t frameBufferIndex, uint32_t currentFrame, uint32_t cascadeIndex, VkResult acquireImageResult);
+	void RecordCommandBufferPushConstant(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t cascadeIndex, uint32_t curFrame);
+
 	void CreateDescriptorSetLayouts() override;
 	void AllocateDescriptorSets() override{}
 	void UpdateRenderPassCB(uint32_t curFrame) override{}

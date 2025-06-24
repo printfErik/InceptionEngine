@@ -259,7 +259,14 @@ void icpCSMPass::SetupPipeline()
 
 	pipelineLayoutInfo.setLayoutCount = layouts.size(); 
 	pipelineLayoutInfo.pSetLayouts = layouts.data();
-	pipelineLayoutInfo.pushConstantRangeCount = 0;
+
+	VkPushConstantRange pushRange{};
+	pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushRange.offset = 0;                       
+	pushRange.size = sizeof(glm::mat4);
+
+	pipelineLayoutInfo.pushConstantRangeCount = 1;
+	pipelineLayoutInfo.pPushConstantRanges = &pushRange;
 
 	if (vkCreatePipelineLayout(m_rhi->GetLogicalDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineInfo.m_pipelineLayout) != VK_SUCCESS)
 	{
@@ -376,14 +383,25 @@ void icpCSMPass::SetupPipeline()
 	vkDestroyShaderModule(m_rhi->GetLogicalDevice(), vertShader.module, nullptr);
 }
 
-
 void icpCSMPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
-	auto mgr = m_pSceneRenderer.lock();
-	RecordCommandBuffer(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
+	
 }
 
 void icpCSMPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
+{
+	
+}
+
+
+
+void icpCSMPass::RenderPushConstant(uint32_t frameBufferIndex, uint32_t currentFrame, uint32_t cascadeIndex, VkResult acquireImageResult)
+{
+	auto mgr = m_pSceneRenderer.lock();
+	RecordCommandBufferPushConstant(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex, cascadeIndex, currentFrame);
+}
+
+void icpCSMPass::RecordCommandBufferPushConstant(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t cascadeIndex, uint32_t curFrame)
 {
 	auto sceneRenderer = m_pSceneRenderer.lock();
 
@@ -412,9 +430,19 @@ void icpCSMPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t ima
 		1, 1, &shadowMgr->m_csmDSs[curFrame], 0, nullptr
 	);
 
+	vkCmdPushConstants(
+		commandBuffer,
+		m_pipelineInfo.m_pipelineLayout,
+		VK_SHADER_STAGE_VERTEX_BIT,
+		0,
+		sizeof(glm::mat4),
+		&shadowMgr->m_lightProjViews[cascadeIndex]
+	);
+
 	std::vector<std::shared_ptr<icpGameEntity>> rootList;
 	g_system_container.m_sceneSystem->getRootEntityList(rootList);
 	std::vector<VkDeviceSize> offsets{ 0 };
+
 	for (auto entity : rootList)
 	{
 		if (entity->hasComponent<icpMeshRendererComponent>())
