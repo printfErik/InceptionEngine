@@ -254,8 +254,8 @@ void icpCSMPass::SetupPipeline()
 		layouts.push_back(layoutInfo.layout);
 	}
 
-	auto sceneRenderer = m_pSceneRenderer.lock();
-	layouts.push_back(sceneRenderer->GetSceneDSLayout().layout);// global scene ds
+	// csm projview matrix DS layout 
+	layouts.push_back(g_system_container.m_renderSystem->m_shadowManager->m_csmDSLayout.layout);
 
 	pipelineLayoutInfo.setLayoutCount = layouts.size(); 
 	pipelineLayoutInfo.pSetLayouts = layouts.data();

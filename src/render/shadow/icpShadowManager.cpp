@@ -57,40 +57,43 @@ void icpShadowManager::UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& 
     auto invViewMat = glm::inverse(viewMat);
 
 	// Camera space 8 points
-    std::vector<std::vector<glm::vec3>> cascadePointsCS;
+    std::vector<std::vector<glm::vec3>> cascadePointsWS;
 	for (uint32_t i = 0; i < s_csmCascadeCount; i++)
 	{
         auto near = 0.f - m_cascadeSplits[i];
         auto far = 0.f - m_cascadeSplits[i + 1];
-        auto halfHeight = glm::tan(camera->m_fov / 2.f);
-        auto halfWidth = halfHeight * aspectRatio;
+        auto halfNearHeight = glm::tan(camera->m_fov / 2.f) * (- near);
+        auto halfNearWidth = halfNearHeight * aspectRatio;
+
+        auto halfFarHeight = glm::tan(camera->m_fov / 2.f) * (- far);
+        auto halfFarWidth = halfFarHeight * aspectRatio;
 
         // To world space
-        std::vector<glm::vec3> pointsCS{
-            invViewMat * glm::vec4(halfWidth, halfHeight, near, 1.f),
-            invViewMat * glm::vec4(-halfWidth, halfHeight, near, 1.f),
-            invViewMat * glm::vec4(-halfWidth, -halfHeight, near, 1.f),
-            invViewMat * glm::vec4(halfWidth,  -halfHeight, near, 1.f),
-            invViewMat * glm::vec4(halfWidth, halfHeight, far, 1.f),
-        	invViewMat * glm::vec4(-halfWidth, halfHeight, far, 1.f),
-        	invViewMat * glm::vec4(-halfWidth, -halfHeight, far, 1.f),
-        	invViewMat * glm::vec4(halfWidth, -halfHeight, far, 1.f)
+        std::vector<glm::vec3> pointsWS{
+            invViewMat * glm::vec4(halfNearWidth, halfNearHeight, near, 1.f),
+            invViewMat * glm::vec4(-halfNearWidth, halfNearHeight, near, 1.f),
+            invViewMat * glm::vec4(-halfNearWidth, -halfNearHeight, near, 1.f),
+            invViewMat * glm::vec4(halfNearWidth,  -halfNearHeight, near, 1.f),
+            invViewMat * glm::vec4(halfFarWidth, halfFarHeight, far, 1.f),
+        	invViewMat * glm::vec4(-halfFarWidth, halfFarHeight, far, 1.f),
+        	invViewMat * glm::vec4(-halfFarWidth, -halfFarHeight, far, 1.f),
+        	invViewMat * glm::vec4(halfFarWidth, -halfFarHeight, far, 1.f)
         };
 
-        cascadePointsCS.push_back(pointsCS);
+        cascadePointsWS.push_back(pointsWS);
 	}
 
 
     for (uint32_t i = 0; i < s_csmCascadeCount; i++)
     {
-        glm::vec3 aabbMin = computeAABBMin(cascadePointsCS[i]);
-        glm::vec3 aabbMax = computeAABBMax(cascadePointsCS[i]);
+        glm::vec3 aabbMin = computeAABBMin(cascadePointsWS[i]);
+        glm::vec3 aabbMax = computeAABBMax(cascadePointsWS[i]);
 
         glm::vec3 center = (aabbMin + aabbMax) / 2.f;
 
-        glm::vec3 lightSpaceCamera = center - direction * 1000.f; // todo: large value;
+        glm::vec3 lightCameraWS = center - direction * 200.f; // todo: large value;
 
-        glm::mat4 viewMatrix = glm::lookAt(lightSpaceCamera, direction, glm::vec3(0.f, 0.f, 1.f));
+        glm::mat4 viewMatrix = glm::lookAt(lightCameraWS, center, glm::vec3(0.f, 0.f, 1.f));
 
         glm::vec3 aabbminLS = viewMatrix * glm::vec4(aabbMin, 1.f);
         glm::vec3 aabbmaxLS = viewMatrix * glm::vec4(aabbMax, 1.f);
@@ -176,7 +179,7 @@ void icpShadowManager::CreateCSMDSLayout()
     CSMUBOBinding.descriptorCount = 1;
     CSMUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     CSMUBOBinding.pImmutableSamplers = nullptr;
-    CSMUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    CSMUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     m_csmDSLayout.bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
 
     std::array<VkDescriptorSetLayoutBinding, 1> bindings{ CSMUBOBinding };
