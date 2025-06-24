@@ -385,7 +385,7 @@ void icpDeferredRenderer::Render()
 	{
 		CSMPass->BeginCSMRenderPass(m_currentFrame, i, m_vDeferredCommandBuffers[m_currentFrame]);
 		g_system_container.m_renderSystem->m_shadowManager->UpdateCSMCB(i, m_currentFrame);
-		CSMPass->Render(index, m_currentFrame, result);
+		CSMPass->RenderPushConstant(index, m_currentFrame, i, result);
 		CSMPass->EndCSMRenderPass(m_vDeferredCommandBuffers[m_currentFrame]);
 	}
 
