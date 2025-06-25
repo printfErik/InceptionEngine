@@ -163,7 +163,7 @@ void icpCSMPass::CreateCSMFrameBuffer()
 			framebufferInfo.height = s_cascadeShadowMapResolution;
 			framebufferInfo.layers = 1;
 
-			if (vkCreateFramebuffer(m_rhi->GetLogicalDevice(), &framebufferInfo, nullptr, &m_csmFrameBuffers[i * swapChainImageViewSize + cascade]) != VK_SUCCESS)
+			if (vkCreateFramebuffer(m_rhi->GetLogicalDevice(), &framebufferInfo, nullptr, &m_csmFrameBuffers[i * s_csmCascadeCount + cascade]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create csm frame buffer!");
 			}
@@ -484,7 +484,7 @@ void icpCSMPass::BeginCSMRenderPass(uint32_t imageIndex, uint32_t cascade, VkCom
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = m_shadowRenderPass;
-	renderPassInfo.framebuffer = m_csmFrameBuffers[imageIndex * MAX_FRAMES_IN_FLIGHT + cascade];
+	renderPassInfo.framebuffer = m_csmFrameBuffers[imageIndex * s_csmCascadeCount + cascade];
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = {s_cascadeShadowMapResolution, s_cascadeShadowMapResolution};
 

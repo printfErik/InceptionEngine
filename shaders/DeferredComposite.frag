@@ -26,7 +26,7 @@ layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput d
 
 layout(std140, set = 1, binding = 0) uniform UBOCSMSplits
 {
-    float csmSplits[4];
+    vec4 csmSplits;
     mat4 lightViewProj[4];
 } uboCSM;
 
@@ -69,10 +69,9 @@ float ComputeShadow(vec3 worldPos, float viewDepth)
     lightSpacePos /= lightSpacePos.w;
     // NDC [-1,1] to [0,1] UV
     vec3 shadowCoord = lightSpacePos.xyz * 0.5 + 0.5;
-
-    // perform hardware PCF sampling
     shadow = texture(cascadeShadowMaps, vec3(shadowCoord.xy, float(cascadeIndex))).r;
-    return shadow;
+    float shadowFactor = shadow > lightSpacePos.z ? 1.0 : 0.0;
+    return shadowFactor;
 }
 
 void main()

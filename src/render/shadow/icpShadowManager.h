@@ -14,7 +14,7 @@ static constexpr uint32_t s_cascadeShadowMapResolution(1024u);
 
 struct UBOCSM
 {
-	float CSMSplits[4];
+	glm::vec4 CSMSplits;
 	glm::mat4 CSMLightProjViewMat[4];
 };
 
