@@ -69,6 +69,12 @@ float ComputeShadow(vec3 worldPos, float viewDepth)
     lightSpacePos /= lightSpacePos.w;
     // NDC [-1,1] to [0,1] UV
     vec3 shadowCoord = lightSpacePos.xyz * 0.5 + 0.5;
+
+    if (shadowCoord.x < 0.0 || shadowCoord.x > 1.0 ||
+        shadowCoord.y < 0.0 || shadowCoord.y > 1.0) {
+        return 1.0;
+    }
+
     shadow = texture(cascadeShadowMaps, vec3(shadowCoord.xy, float(cascadeIndex))).r;
     float shadowFactor = shadow > lightSpacePos.z ? 1.0 : 0.0;
     return shadowFactor;

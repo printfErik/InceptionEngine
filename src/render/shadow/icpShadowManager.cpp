@@ -95,8 +95,14 @@ void icpShadowManager::UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& 
 
         glm::mat4 viewMatrix = glm::lookAt(lightCameraWS, center, glm::vec3(0.f, 0.f, 1.f));
 
-        glm::vec3 aabbminLS = viewMatrix * glm::vec4(aabbMin, 1.f);
-        glm::vec3 aabbmaxLS = viewMatrix * glm::vec4(aabbMax, 1.f);
+        std::vector<glm::vec3> cascadePointsLS;
+        for (auto& pointWS : cascadePointsWS[i])
+        {
+            cascadePointsLS.emplace_back(viewMatrix * glm::vec4(pointWS, 1.f));
+        }
+
+        glm::vec3 aabbminLS = computeAABBMin(cascadePointsLS);
+        glm::vec3 aabbmaxLS = computeAABBMax(cascadePointsLS);
 
         glm::mat4 projMatrix = glm::ortho(aabbminLS.x, aabbmaxLS.x, aabbminLS.y, aabbmaxLS.y,
             -aabbmaxLS.z, - aabbminLS.z);

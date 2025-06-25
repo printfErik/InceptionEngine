@@ -15,7 +15,7 @@ void icpCameraComponent::initializeCamera()
 	m_fov = glm::radians(45.f);
 	m_near = 0.1f;
 	m_far = 100.f;
-	m_cameraSpeed = 0.001f;
+	m_cameraSpeed = 0.01f;
 	m_cameraRotationSpeed = glm::radians(0.1f);
 	m_rotation = glm::qua<float>(1.f, 0.f, 0.f, 0.f);
 }
