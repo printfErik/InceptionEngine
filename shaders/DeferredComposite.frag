@@ -64,6 +64,8 @@ float ComputeShadow(vec3 worldPos, float viewDepth)
     if (viewDepth > uboCSM.csmSplits[2]) cascadeIndex = 2;
     if (viewDepth > uboCSM.csmSplits[3]) cascadeIndex = 3;
 
+    return float(cascadeIndex) / 3.0;
+/*
     mat4 lightVP = uboCSM.lightViewProj[cascadeIndex];
     vec4 lightSpacePos = lightVP * vec4(worldPos, 1.0);
     lightSpacePos /= lightSpacePos.w;
@@ -75,9 +77,12 @@ float ComputeShadow(vec3 worldPos, float viewDepth)
         return 1.0;
     }
 
+    float currentNDCz = lightSpacePos.z;
+    float currentDepth = lightSpacePos.z * 0.5 + 0.5;
     shadow = texture(cascadeShadowMaps, vec3(shadowCoord.xy, float(cascadeIndex))).r;
-    float shadowFactor = shadow > lightSpacePos.z ? 1.0 : 0.0;
+    float shadowFactor = currentDepth - 0.005 > shadow ? 0.0 : 1.0;
     return shadowFactor;
+*/
 }
 
 void main()
@@ -134,5 +139,5 @@ void main()
 
     color = pow(color, vec3(1.0 / 2.2));
 
-    outColor = vec4(color, 1.0);
+    outColor = vec4(shadow, shadow, shadow, 1.0);
 }
