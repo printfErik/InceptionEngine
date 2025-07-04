@@ -107,6 +107,8 @@ void icpShadowManager::UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& 
         glm::mat4 projMatrix = glm::ortho(aabbminLS.x, aabbmaxLS.x, aabbminLS.y, aabbmaxLS.y,
             -aabbmaxLS.z, - aabbminLS.z);
 
+        projMatrix[1][1] *= -1.f;
+
         m_lightProjViews[i] = projMatrix * viewMatrix;
     }
 }
