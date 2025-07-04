@@ -27,7 +27,7 @@ layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput d
 layout(std140, set = 1, binding = 0) uniform UBOCSMSplits
 {
     vec4 csmSplits;
-    mat4 lightViewProj[4];
+    mat4 lightProjView[4];
 } uboCSM;
 
 layout(set = 1, binding = 1) uniform sampler2DArray cascadeShadowMaps;
@@ -66,20 +66,19 @@ float ComputeShadow(vec3 worldPos, float viewDepth)
 
     //return float(cascadeIndex) / 3.0;
     
-    mat4 lightVP = uboCSM.lightViewProj[cascadeIndex];
-    vec4 lightSpacePos = lightVP * vec4(worldPos, 1.0);
+    mat4 lightPV = uboCSM.lightProjView[cascadeIndex];
+    vec4 lightSpacePos = lightPV * vec4(worldPos, 1.0);
     lightSpacePos /= lightSpacePos.w;
     // NDC [-1,1] to [0,1] UV
-    vec3 shadowCoord = lightSpacePos.xyz * 0.5 + 0.5;
+    vec2 shadowCoord = lightSpacePos.xy * 0.5 + 0.5;
 
     if (shadowCoord.x < 0.0 || shadowCoord.x > 1.0 ||
         shadowCoord.y < 0.0 || shadowCoord.y > 1.0) {
         return 1.0;
     }
 
-    float currentNDCz = lightSpacePos.z;
-    float currentDepth = lightSpacePos.z * 0.5 + 0.5;
-    shadow = texture(cascadeShadowMaps, vec3(shadowCoord.xy, float(cascadeIndex))).r;
+    float currentDepth = lightSpacePos.z;
+    shadow = texture(cascadeShadowMaps, vec3(shadowCoord, float(cascadeIndex))).r;
     float shadowFactor = currentDepth - 0.005 > shadow ? 0.0 : 1.0;
     return shadowFactor;
     
