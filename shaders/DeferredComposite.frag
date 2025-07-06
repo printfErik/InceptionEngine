@@ -106,7 +106,7 @@ void main()
     vec3 SpecularColor = mix(F0, BaseColor, Metallic);
 
     vec3 V = normalize(uboPerFrame.camPos - worldPos);
-    vec3 L = normalize(uboPerFrame.directionalLit.direction.xyz);
+    vec3 L = -normalize(uboPerFrame.directionalLit.direction.xyz);
     vec3 H = normalize(V + L);
 
     float NdotL = max(dot(N, L), 0.0);

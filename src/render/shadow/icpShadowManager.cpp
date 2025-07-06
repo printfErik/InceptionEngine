@@ -93,7 +93,7 @@ void icpShadowManager::UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& 
 
         glm::vec3 lightCameraWS = center - direction * 200.f; // todo: large value;
 
-        glm::mat4 viewMatrix = glm::lookAt(lightCameraWS, center, glm::vec3(0.f, 0.f, 1.f));
+        glm::mat4 viewMatrix = glm::lookAt(lightCameraWS, center, glm::vec3(0.f, 1.f, 0.f));
 
         std::vector<glm::vec3> cascadePointsLS;
         for (auto& pointWS : cascadePointsWS[i])

@@ -408,7 +408,7 @@ void icpSceneSystem::LoadDefaultScene()
 		xform.m_translation = glm::vec3(0.f);
 
 		auto&& lightComp = lightEntity->installComponent<icpDirectionalLightComponent>();
-		lightComp.m_direction = glm::vec3(1.f, 1.f, 1.f);
+		lightComp.m_direction = glm::vec3(-1.f, -1.f,-1.f);
 		lightComp.m_color = glm::vec3(10.f, 10.f, 10.f);
 	}
 }
