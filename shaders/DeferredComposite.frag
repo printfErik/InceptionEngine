@@ -42,6 +42,13 @@ layout(std140, set = 2, binding = 0) uniform PerFrameCB
     PointLightRenderResource pointLight[max_point_light_count];
 } uboPerFrame;
 
+const mat4 biasMat = mat4( 
+	0.5, 0.0, 0.0, 0.0,
+	0.0, 0.5, 0.0, 0.0,
+	0.0, 0.0, 1.0, 0.0,
+	0.5, 0.5, 0.0, 1.0 
+);
+
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outColor;
 
@@ -63,24 +70,21 @@ float ComputeShadow(vec3 worldPos, float viewDepth)
     if (viewDepth > uboCSM.csmSplits[1]) cascadeIndex = 1;
     if (viewDepth > uboCSM.csmSplits[2]) cascadeIndex = 2;
     if (viewDepth > uboCSM.csmSplits[3]) cascadeIndex = 3;
-
-    //return float(cascadeIndex) / 3.0;
     
     mat4 lightPV = uboCSM.lightProjView[cascadeIndex];
-    vec4 lightSpacePos = lightPV * vec4(worldPos, 1.0);
-    lightSpacePos /= lightSpacePos.w;
-    // NDC [-1,1] to [0,1] UV
-    vec2 shadowCoord = lightSpacePos.xy * 0.5 + 0.5;
 
-    if (shadowCoord.x < 0.0 || shadowCoord.x > 1.0 ||
-        shadowCoord.y < 0.0 || shadowCoord.y > 1.0) {
-        return 1.0;
-    }
+    vec4 shadowCoord = (biasMat * lightPV) * vec4(worldPos, 1.0);
+    shadowCoord /= shadowCoord.w;
 
-    float currentDepth = lightSpacePos.z;
-    shadow = texture(cascadeShadowMaps, vec3(shadowCoord, float(cascadeIndex))).r;
-    float shadowFactor = currentDepth - 0.005 > shadow ? 0.0 : 1.0;
-    return shadowFactor;
+    if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 ) 
+    {
+		float dist = texture(cascadeShadowMaps, vec3(shadowCoord.st, cascadeIndex)).r;
+		if (shadowCoord.w > 0 && dist < shadowCoord.z - 0.005) 
+        {
+			shadow = 0.f;
+		}
+	}
+    return shadow;
     
 
 }

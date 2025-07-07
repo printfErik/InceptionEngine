@@ -29,26 +29,6 @@ void icpShadowManager::InitCascadeDistance()
     m_lightProjViews.resize(s_csmCascadeCount);
 }
 
-
-glm::vec3 computeAABBMin(const std::vector<glm::vec3>& pts)
-{
-    glm::vec3 mn = pts[0];
-    for (size_t i = 1; i < pts.size(); ++i) 
-    {
-        mn = glm::min(mn, pts[i]);
-    }
-    return mn;
-}
-glm::vec3 computeAABBMax(const std::vector<glm::vec3>& pts)
-{
-    glm::vec3 mx = pts[0];
-    for (size_t i = 1; i < pts.size(); ++i) 
-    {
-        mx = glm::max(mx, pts[i]);
-    }
-    return mx;
-}
-
 void icpShadowManager::UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& direction, uint32_t curFrame)
 {
     auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
@@ -57,7 +37,6 @@ void icpShadowManager::UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& 
     auto invViewMat = glm::inverse(viewMat);
 
 	// Camera space 8 points
-    std::vector<std::vector<glm::vec3>> cascadePointsWS;
 	for (uint32_t i = 0; i < s_csmCascadeCount; i++)
 	{
         auto near = 0.f - m_cascadeSplits[i];
@@ -69,7 +48,7 @@ void icpShadowManager::UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& 
         auto halfFarWidth = halfFarHeight * aspectRatio;
 
         // To world space
-        std::vector<glm::vec3> pointsWS{
+        std::vector<glm::vec3> frustumCornersWS{
             invViewMat * glm::vec4(halfNearWidth, halfNearHeight, near, 1.f),
             invViewMat * glm::vec4(-halfNearWidth, halfNearHeight, near, 1.f),
             invViewMat * glm::vec4(-halfNearWidth, -halfNearHeight, near, 1.f),
@@ -80,32 +59,29 @@ void icpShadowManager::UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& 
         	invViewMat * glm::vec4(halfFarWidth, -halfFarHeight, far, 1.f)
         };
 
-        cascadePointsWS.push_back(pointsWS);
-	}
-
-
-    for (uint32_t i = 0; i < s_csmCascadeCount; i++)
-    {
-        glm::vec3 aabbMin = computeAABBMin(cascadePointsWS[i]);
-        glm::vec3 aabbMax = computeAABBMax(cascadePointsWS[i]);
-
-        glm::vec3 center = (aabbMin + aabbMax) / 2.f;
-
-        glm::vec3 lightCameraWS = center - direction * 200.f; // todo: large value;
-
-        glm::mat4 viewMatrix = glm::lookAt(lightCameraWS, center, glm::vec3(0.f, 1.f, 0.f));
-
-        std::vector<glm::vec3> cascadePointsLS;
-        for (auto& pointWS : cascadePointsWS[i])
+        glm::vec3 frustumCenter = glm::vec3(0.0f);
+        for (uint32_t j = 0; j < 8; j++) 
         {
-            cascadePointsLS.emplace_back(viewMatrix * glm::vec4(pointWS, 1.f));
+            frustumCenter += frustumCornersWS[j];
+        }
+        frustumCenter /= 8.0f;
+
+        // Extent Sphere
+        float radius = 0.0f;
+        for (uint32_t j = 0; j < 8; j++) 
+        {
+            float distance = glm::length(frustumCornersWS[j] - frustumCenter);
+            radius = glm::max(radius, distance);
         }
 
-        glm::vec3 aabbminLS = computeAABBMin(cascadePointsLS);
-        glm::vec3 aabbmaxLS = computeAABBMax(cascadePointsLS);
+        radius = std::ceil(radius * 16.0f) / 16.0f;
 
-        glm::mat4 projMatrix = glm::ortho(aabbminLS.x, aabbmaxLS.x, aabbminLS.y, aabbmaxLS.y,
-            -aabbmaxLS.z, - aabbminLS.z);
+        glm::vec3 maxExtents = glm::vec3(radius);
+        glm::vec3 minExtents = -maxExtents;
+
+        glm::mat4 viewMatrix = glm::lookAt(frustumCenter - direction * -minExtents.z, frustumCenter, glm::vec3(0.f, 1.f, 0.f));
+
+        glm::mat4 projMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, maxExtents.z - minExtents.z);
 
         projMatrix[1][1] *= -1.f;
 
