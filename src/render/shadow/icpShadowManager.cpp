@@ -1,9 +1,13 @@
 #include "icpShadowManager.h"
-#include <glm/gtc/matrix_transform.hpp>
+
 #include "../icpCameraSystem.h"
 #include "../../core/icpConfigSystem.h"
 #include "../../core/icpSystemContainer.h"
 #include "../RHI/Vulkan/icpVulkanUtility.h"
+
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 INCEPTION_BEGIN_NAMESPACE
 
