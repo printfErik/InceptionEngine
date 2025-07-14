@@ -73,20 +73,20 @@ float ComputeShadow(vec3 worldPos, float viewDepth)
     
     mat4 lightPV = uboCSM.lightProjView[cascadeIndex];
 
-    vec4 shadowCoord = (biasMat * lightPV) * vec4(worldPos, 1.0);
-    shadowCoord /= shadowCoord.w;
+    vec4 lightSpacePos = lightPV * vec4(worldPos, 1.0);
+    lightSpacePos /= lightSpacePos.w;
+    // NDC [-1,1] to [0,1] UV
+    vec2 shadowCoord = lightSpacePos.xy * 0.5 + 0.5;
 
-    if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 ) 
-    {
-		float dist = texture(cascadeShadowMaps, vec3(shadowCoord.st, cascadeIndex)).r;
-		if (shadowCoord.w > 0 && dist < shadowCoord.z - 0.005) 
-        {
-			shadow = 0.f;
-		}
-	}
-    return shadow;
-    
+    if (shadowCoord.x < 0.0 || shadowCoord.x > 1.0 ||
+        shadowCoord.y < 0.0 || shadowCoord.y > 1.0) {
+        return 1.0;
+    }
 
+    float currentDepth = lightSpacePos.z;
+    shadow = texture(cascadeShadowMaps, vec3(shadowCoord, float(cascadeIndex))).r;
+    float shadowFactor = currentDepth - 0.005 > shadow ? 0.0 : 1.0;
+    return shadowFactor;
 }
 
 void main()
