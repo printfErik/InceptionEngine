@@ -12,8 +12,8 @@ class GraphicsPipelineBuilder
 {
 public:
 	
-    GraphicsPipelineBuilder(std::shared_ptr<icpGPUDevice> device)
-        : device(device)
+    GraphicsPipelineBuilder(std::shared_ptr<icpGPUDevice> device, VkRenderPass render_pass, uint32_t sub_pass)
+        : device(device), renderPass(render_pass), subpass(sub_pass)
     {
     }
 
@@ -57,7 +57,7 @@ public:
 
     GraphicsPipelineBuilder& SetRenderPass(VkRenderPass render_pass, uint32_t sub_pass);
 
-    VkPipeline Build();
+    VkPipeline Build(VkPipelineLayout& pipelineLayout);
     
 private:
    
@@ -83,7 +83,6 @@ private:
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     VkPipelineDynamicStateCreateInfo dynamicState{};
 
-    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass renderPass = VK_NULL_HANDLE;
     uint32_t subpass = 0;
 };

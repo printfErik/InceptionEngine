@@ -120,7 +120,7 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetRenderPass(VkRenderPass ren
 }
 
 
-VkPipeline GraphicsPipelineBuilder::Build()
+VkPipeline GraphicsPipelineBuilder::Build(VkPipelineLayout& pipelineLayout)
 {
     if (vkCreatePipelineLayout(device->GetLogicalDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
     {
@@ -162,7 +162,7 @@ VkPipeline GraphicsPipelineBuilder::Build()
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.renderPass = renderPass;
-    pipelineInfo.subpass = 0;
+    pipelineInfo.subpass = subpass;
 
     VkPipeline pipeline;
     if (vkCreateGraphicsPipelines(device->GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
