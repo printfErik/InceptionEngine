@@ -7,6 +7,7 @@
 #include "../../scene/icpXFormComponent.h"
 #include "../../mesh/icpPrimitiveRendererComponent.h"
 #include "../../mesh/icpMeshResource.h"
+
 INCEPTION_BEGIN_NAMESPACE
 
 static constexpr uint32_t GBUFFER_RT_COUNT = 3;

@@ -23,7 +23,7 @@ file(GLOB_RECURSE ENGINE_SOURCE_SOURCES CONFIGURE_DEPENDS ${ENGINE_SOURCE_CODE_D
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${ENGINE_SOURCE_HEADERS} ${ENGINE_SOURCE_SOURCES})
 
-add_executable(${PROJECT_NAME} ${ENGINE_SOURCE_HEADERS} ${ENGINE_SOURCE_SOURCES} "render/shadow/icpShadowManager.cpp" "render/shadow/icpShadowManager.h")
+add_executable(${PROJECT_NAME} ${ENGINE_SOURCE_HEADERS} ${ENGINE_SOURCE_SOURCES})
 
 find_package(Vulkan REQUIRED)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS}/vulkan/)
