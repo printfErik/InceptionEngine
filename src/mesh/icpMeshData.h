@@ -33,7 +33,7 @@ struct icpVertex
 
 	static VkVertexInputBindingDescription getBindingDescription();
 
-	static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescription();
+	static std::vector<VkVertexInputAttributeDescription> getAttributeDescription();
 
 	bool operator==(const icpVertex& v1) const
 	{
