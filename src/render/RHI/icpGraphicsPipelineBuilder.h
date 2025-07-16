@@ -18,7 +18,9 @@ public:
     }
 
     
-    GraphicsPipelineBuilder& SetPipelineLayout(const std::vector<VkDescriptorSetLayout>& DSLayouts);
+    GraphicsPipelineBuilder& SetPipelineLayout(const std::vector<VkDescriptorSetLayout>& DSLayouts,
+        uint32_t PushConstantRangeCount,
+        const VkPushConstantRange& PushConstRange);
     
 
     GraphicsPipelineBuilder& SetVertexShader(const std::string& path);
@@ -41,7 +43,12 @@ public:
     GraphicsPipelineBuilder& SetScissor(const VkRect2D& sc);
     
 
-    GraphicsPipelineBuilder& SetRasterizer(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace);
+    GraphicsPipelineBuilder& SetRasterizer(
+        VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace,
+        VkBool32 depthBiasEnable,
+        float depthBiasConstantFactor = 0.f,
+        float depthBiasSlopeFactor = 0.f,
+        float depthBiasClam = 0.f);
     
 
     GraphicsPipelineBuilder& SetMultisampling(VkSampleCountFlagBits samples);

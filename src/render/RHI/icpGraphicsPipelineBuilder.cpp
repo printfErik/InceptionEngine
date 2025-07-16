@@ -2,12 +2,16 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetPipelineLayout(const std::vector<VkDescriptorSetLayout>& DSLayouts)
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetPipelineLayout(
+    const std::vector<VkDescriptorSetLayout>& DSLayouts,
+    uint32_t PushConstantRangeCount,
+    const VkPushConstantRange& PushConstRange)
 {
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = DSLayouts.size();
     pipelineLayoutInfo.pSetLayouts = DSLayouts.data();
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
+    pipelineLayoutInfo.pushConstantRangeCount = PushConstantRangeCount;
+    pipelineLayoutInfo.pPushConstantRanges = &PushConstRange;
     return *this;
 }
 
@@ -65,12 +69,21 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetScissor(const VkRect2D& sc)
     return *this;
 }
 
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetRasterizer(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace)
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetRasterizer(
+    VkPolygonMode polygonMode, 
+    VkCullModeFlags cullMode, 
+    VkFrontFace frontFace, VkBool32 depthBiasEnable,
+    float depthBiasConstantFactor,
+    float depthBiasSlopeFactor,
+    float depthBiasClamp)
 {
     rasterization.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterization.depthClampEnable = VK_FALSE;
     rasterization.rasterizerDiscardEnable = VK_FALSE;
-    rasterization.depthBiasEnable = VK_FALSE;
+    rasterization.depthBiasEnable = depthBiasEnable;
+    rasterization.depthBiasConstantFactor = depthBiasConstantFactor;
+    rasterization.depthBiasSlopeFactor = depthBiasSlopeFactor;
+    rasterization.depthBiasClamp = depthBiasClamp;
     rasterization.lineWidth = 1.0f;
     rasterization.cullMode = cullMode;
     rasterization.frontFace = frontFace;
@@ -109,7 +122,7 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetColorBlendState(
     colorBlendState.blendConstants[2] = 0.0f;
     colorBlendState.blendConstants[3] = 0.0f;
     colorBlendState.attachmentCount = static_cast<uint32_t>(attachments.size());
-    colorBlendState.pAttachments = attachments.data();
+    colorBlendState.pAttachments = attachments.empty() ? VK_NULL_HANDLE : attachments.data();
     return *this;
 }
 
@@ -117,6 +130,7 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetRenderPass(VkRenderPass ren
 {
     renderPass = render_pass;
     subpass = sub_pass;
+    return *this;
 }
 
 

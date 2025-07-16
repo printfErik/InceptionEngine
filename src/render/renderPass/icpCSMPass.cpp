@@ -9,6 +9,7 @@
 #include "../../mesh/icpMeshRendererComponent.h"
 #include "../../mesh/icpPrimitiveRendererComponent.h"
 #include "../../core/icpLogSystem.h"
+#include "../RHI/icpGraphicsPipelineBuilder.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -203,51 +204,6 @@ void icpCSMPass::CreateDescriptorSetLayouts()
 
 void icpCSMPass::SetupPipeline()
 {
-	VkGraphicsPipelineCreateInfo csmPipeline{};
-	csmPipeline.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-
-	// Shader Configuration
-	VkPipelineShaderStageCreateInfo vertShader{};
-
-	vertShader.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	auto vertShaderPath = g_system_container.m_configSystem->m_shaderFolderPath / "CSM.vert.spv";
-	vertShader.module = icpVulkanUtility::createShaderModule(vertShaderPath.generic_string().c_str(), m_rhi->GetLogicalDevice());
-	vertShader.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
-	vertShader.pName = "main";
-
-	std::array<VkPipelineShaderStageCreateInfo, 1> shaderCreateInfos{
-		vertShader
-	};
-
-	csmPipeline.stageCount = 1;
-	csmPipeline.pStages = shaderCreateInfos.data();
-
-	// Vertex Input
-	VkPipelineVertexInputStateCreateInfo vertexInput{};
-
-	auto bindingDescription = icpVertex::getBindingDescription();
-	auto attributeDescription = icpVertex::getAttributeDescription();
-
-	vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInput.vertexBindingDescriptionCount = 1;
-	vertexInput.pVertexBindingDescriptions = &bindingDescription;
-	vertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescription.size());
-	vertexInput.pVertexAttributeDescriptions = attributeDescription.data();
-
-	csmPipeline.pVertexInputState = &vertexInput;
-
-	// Input Assembly
-	VkPipelineInputAssemblyStateCreateInfo inputAsm{};
-	inputAsm.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAsm.primitiveRestartEnable = VK_FALSE;
-	inputAsm.topology = VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-	csmPipeline.pInputAssemblyState = &inputAsm;
-
-	// Layout
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-
 	std::vector<VkDescriptorSetLayout> layouts{};
 	for (auto& layoutInfo : m_DSLayouts)
 	{
@@ -257,130 +213,23 @@ void icpCSMPass::SetupPipeline()
 	// csm projview matrix DS layout 
 	layouts.push_back(g_system_container.m_renderSystem->m_shadowManager->m_csmDSLayout.layout);
 
-	pipelineLayoutInfo.setLayoutCount = layouts.size(); 
-	pipelineLayoutInfo.pSetLayouts = layouts.data();
-
 	VkPushConstantRange pushRange{};
 	pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	pushRange.offset = 0;                       
+	pushRange.offset = 0;
 	pushRange.size = sizeof(glm::mat4);
 
-	pipelineLayoutInfo.pushConstantRangeCount = 1;
-	pipelineLayoutInfo.pPushConstantRanges = &pushRange;
-
-	if (vkCreatePipelineLayout(m_rhi->GetLogicalDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineInfo.m_pipelineLayout) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create pipeline layout!");
-	}
-
-	csmPipeline.layout = m_pipelineInfo.m_pipelineLayout;
-
-	// Viewport and Scissor
-	VkPipelineViewportStateCreateInfo viewportState{};
-	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-
-	VkViewport viewport;
-	viewport.x = 0.f;
-	viewport.y = 0.f;
-	viewport.width = s_cascadeShadowMapResolution;
-	viewport.height = s_cascadeShadowMapResolution;
-	viewport.minDepth = 0.f;
-	viewport.maxDepth = 1.f;
-
-	viewportState.pViewports = &viewport;
-	viewportState.viewportCount = 1;
-
-	VkRect2D scissor;
-	VkExtent2D csmExtent = { s_cascadeShadowMapResolution, s_cascadeShadowMapResolution };
-	scissor.extent = csmExtent;
-	scissor.offset = { 0,0 };
-
-	viewportState.pScissors = &scissor;
-	viewportState.scissorCount = 1;
-
-	csmPipeline.pViewportState = &viewportState;
-
-	// Rasterization State
-	VkPipelineRasterizationStateCreateInfo rastInfo{};
-	rastInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rastInfo.rasterizerDiscardEnable = VK_FALSE;
-	rastInfo.depthClampEnable = VK_FALSE;
-	rastInfo.depthBiasEnable = VK_TRUE;
-
-	// todo:
-	rastInfo.depthBiasConstantFactor = 1.25f;	
-	rastInfo.depthBiasSlopeFactor = 1.75f;     
-	rastInfo.depthBiasClamp = 0.0f;
-
-	rastInfo.lineWidth = 1.f;
-	rastInfo.cullMode = VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT;
-	rastInfo.frontFace = VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE;
-	rastInfo.polygonMode = VkPolygonMode::VK_POLYGON_MODE_FILL;
-
-	csmPipeline.pRasterizationState = &rastInfo;
-
-	// MultiSample
-	VkPipelineMultisampleStateCreateInfo multiSampleState{};
-	multiSampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multiSampleState.sampleShadingEnable = VK_FALSE;
-	multiSampleState.rasterizationSamples = VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT;
-
-	csmPipeline.pMultisampleState = &multiSampleState;
-
-	// Depth and Stencil
-	VkPipelineDepthStencilStateCreateInfo depthStencilState{};
-	depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	depthStencilState.depthTestEnable = VK_TRUE;
-	depthStencilState.depthWriteEnable = VK_TRUE;
-	depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-	depthStencilState.depthBoundsTestEnable = VK_FALSE;
-	depthStencilState.stencilTestEnable = VK_FALSE;
-
-	csmPipeline.pDepthStencilState = &depthStencilState;
-
-	// Color Blend
-	VkPipelineColorBlendStateCreateInfo colorBlend{};
-	colorBlend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	colorBlend.logicOpEnable = VK_FALSE;
-	colorBlend.logicOp = VK_LOGIC_OP_COPY;
-	colorBlend.blendConstants[0] = 0.0f;
-	colorBlend.blendConstants[1] = 0.0f;
-	colorBlend.blendConstants[2] = 0.0f;
-	colorBlend.blendConstants[3] = 0.0f;
-
-	colorBlend.attachmentCount = 0;
-	colorBlend.pAttachments = VK_NULL_HANDLE;
-
-	csmPipeline.pColorBlendState = &colorBlend;
-
-	// Dynamic State
-	std::vector<VkDynamicState> dynamicStates =
-	{
-		VK_DYNAMIC_STATE_VIEWPORT,
-		VK_DYNAMIC_STATE_SCISSOR,
-		VK_DYNAMIC_STATE_LINE_WIDTH,
-		VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY
-	};
-
-	VkPipelineDynamicStateCreateInfo dynamicState{};
-	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-	dynamicState.pDynamicStates = dynamicStates.data();
-
-	csmPipeline.pDynamicState = &dynamicState;
-
-	// RenderPass
-	csmPipeline.renderPass = m_shadowRenderPass;
-	csmPipeline.subpass = 0;
-
-	csmPipeline.basePipelineHandle = VK_NULL_HANDLE;
-
-	if (vkCreateGraphicsPipelines(m_rhi->GetLogicalDevice(), VK_NULL_HANDLE, 1, &csmPipeline, VK_NULL_HANDLE, &m_pipelineInfo.m_pipeline) != VK_SUCCESS)
-	{
-		throw std::runtime_error("create renderPipeline failed");
-	}
-
-	vkDestroyShaderModule(m_rhi->GetLogicalDevice(), vertShader.module, nullptr);
+	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_rhi, m_shadowRenderPass, 0)
+		.SetVertexShader((g_system_container.m_configSystem->m_shaderFolderPath / "CSM.vert.spv").string())
+		.SetVertexInput({ icpVertex::getBindingDescription() }, icpVertex::getAttributeDescription())
+		.SetInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+		.SetPipelineLayout(layouts, 1, pushRange)
+		.SetViewport({ 0.f, 0.f, s_cascadeShadowMapResolution, s_cascadeShadowMapResolution, 0.f, 1.f })
+		.SetScissor({ { 0,0 }, {s_cascadeShadowMapResolution, s_cascadeShadowMapResolution} })
+		.SetRasterizer(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_TRUE, 1.25f, 1.75f, 0.f)
+		.SetMultisampling(VK_SAMPLE_COUNT_1_BIT)
+		.SetDepthStencilState(VK_TRUE, VK_TRUE, VK_FALSE, VK_FALSE, VK_COMPARE_OP_LESS_OR_EQUAL)
+		.SetColorBlendState({})
+		.Build(m_pipelineInfo.m_pipelineLayout);
 }
 
 void icpCSMPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
