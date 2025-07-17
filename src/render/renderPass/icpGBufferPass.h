@@ -20,6 +20,7 @@ public:
 
 	void InitializeRenderPass(RenderPassInitInfo initInfo) override;
 	void SetupPipeline() override;
+	void SetupMaskedMeshPipeline();
 	void Cleanup() override;
 	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override;
 
@@ -28,6 +29,10 @@ public:
 	void UpdateRenderPassCB(uint32_t curFrame) override;
 
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
+private:
+
+	RenderPipelineInfo maskedMeshPipeline{};
+
 };
 
 INCEPTION_END_NAMESPACE

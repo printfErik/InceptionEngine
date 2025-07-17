@@ -345,7 +345,7 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, const std:
 	auto materialSystem = g_system_container.m_renderSystem->GetMaterialSubSystem();
 	for (auto& material : gltfModel.materials)
 	{
-		if (material.alphaMode != "OPAQUE")
+		if (material.alphaMode == "BLEND")
 		{
 			// todo: handle transparent objects
 			materials.push_back(nullptr);
@@ -356,6 +356,9 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, const std:
 
 		pbr.baseColorTexture.index = pbr.baseColorTexture.index < 0 ? 0 : pbr.baseColorTexture.index;
 		auto instance = materialSystem->createMaterialInstance(eMaterialShadingModel::PBR_LIT);
+
+		instance->AddScalaValue("alphaMask", { static_cast<float>(material.alphaMode == "MASK") });
+		instance->AddScalaValue("alphaMaskCutoff", { static_cast<float>(material.alphaCutoff) });
 
 		auto& baseImage = images[pbr.baseColorTexture.index];
 		instance->AddTexture("baseColorTexture", { baseImage });
@@ -395,9 +398,6 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, const std:
 
 		glm::vec4 emissiveFactor = glm::make_vec4(material.emissiveFactor.data());
 		instance->AddVector4Value( "emissiveFactor", { emissiveFactor });
-
-		//g_system_container.m_renderSystem->GetTextureRenderResourceManager()->UpdateManager();
-		//instance->SetupMaterialRenderResources();
 
 		materials.push_back(std::static_pointer_cast<icpMaterialInstance>(instance));
 	}

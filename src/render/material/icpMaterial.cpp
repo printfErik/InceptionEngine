@@ -245,15 +245,13 @@ void* icpMaterialInstance::CheckMaterialDataCache()
 		FillPBRDataCache();
 		return &m_pbrDataCache;
 		}
-	case eMaterialShadingModel::UNLIT:
-		{
-		break;
-		}
 	default:
 		{
 		break;
 		}
 	}
+
+	return nullptr;
 }
 
 void icpMaterialInstance::FillPBRDataCache()

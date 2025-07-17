@@ -231,4 +231,41 @@ void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	}
 }
 
+void icpGBufferPass::SetupMaskedMeshPipeline()
+{
+	// Pipeline Layout
+	std::vector<VkDescriptorSetLayout> layouts{};
+	for (auto& layoutInfo : m_DSLayouts)
+	{
+		layouts.push_back(layoutInfo.layout);
+	}
+	auto sceneRenderer = m_pSceneRenderer.lock();
+	layouts.push_back(sceneRenderer->GetSceneDSLayout().layout);
+
+	// Color Blend
+	VkPipelineColorBlendAttachmentState attBlendState{};
+	attBlendState.colorWriteMask = VkColorComponentFlagBits::VK_COLOR_COMPONENT_R_BIT
+		| VkColorComponentFlagBits::VK_COLOR_COMPONENT_G_BIT
+		| VkColorComponentFlagBits::VK_COLOR_COMPONENT_B_BIT
+		| VkColorComponentFlagBits::VK_COLOR_COMPONENT_A_BIT;
+	attBlendState.blendEnable = VK_FALSE;
+
+	std::vector<VkPipelineColorBlendAttachmentState> attBlendStates(GBUFFER_RT_COUNT, attBlendState);
+
+	maskedMeshPipeline.m_pipeline = GraphicsPipelineBuilder(m_rhi, sceneRenderer->GetGBufferRenderPass(), 0)
+		.SetVertexShader((g_system_container.m_configSystem->m_shaderFolderPath / "MaskedMeshPass.vert.spv").string())
+		.SetFragmentShader((g_system_container.m_configSystem->m_shaderFolderPath / "MaskedMeshPass.frag.spv").string())
+		.SetVertexInput({ icpVertex::getBindingDescription() }, icpVertex::getAttributeDescription())
+		.SetInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+		.SetPipelineLayout(layouts, 0, {})
+		.SetViewport({ 0.f, 0.f, static_cast<float>(m_rhi->GetSwapChainExtent().width), static_cast<float>(m_rhi->GetSwapChainExtent().height), 0.f, 1.f })
+		.SetScissor({ { 0,0 }, m_rhi->GetSwapChainExtent() })
+		.SetRasterizer(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE)
+		.SetMultisampling(VK_SAMPLE_COUNT_1_BIT)
+		.SetDepthStencilState(VK_TRUE, VK_TRUE, VK_FALSE, VK_FALSE, VK_COMPARE_OP_LESS)
+		.SetColorBlendState(attBlendStates)
+		.Build(maskedMeshPipeline.m_pipelineLayout);
+}
+
+
 INCEPTION_END_NAMESPACE
