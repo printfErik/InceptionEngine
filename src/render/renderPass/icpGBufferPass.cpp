@@ -157,8 +157,6 @@ void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 {
 	auto mgr = m_pSceneRenderer.lock();
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
-
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
@@ -190,6 +188,15 @@ void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 			if (meshRender.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
 			{
 				continue;
+			}
+
+			if (meshRender.m_pMaterial->m_blendMode == eMaterialBlendMode::OPAQUE)
+			{
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
+			}
+			else if (meshRender.m_pMaterial->m_blendMode == eMaterialBlendMode::MASK)
+			{
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, maskedMeshPipeline.m_pipeline);
 			}
 
 			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(meshRender.m_pMaterial->m_perMaterialDSs[curFrame]), 0, nullptr);

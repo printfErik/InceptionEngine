@@ -43,6 +43,13 @@ enum class eMaterialShadingModel
 	SHADING_MODEL_COUNT
 };
 
+enum class eMaterialBlendMode
+{
+	OPAQUE = 0, 
+	MASK,
+	TRANSLUCENT
+};
+
 
 class icpMaterialTemplate
 {
@@ -61,6 +68,7 @@ public:
 	virtual void* CheckMaterialDataCache() = 0;
 
 	eMaterialShadingModel m_shadingModel = eMaterialShadingModel::SHADING_MODEL_COUNT;
+	eMaterialBlendMode m_blendMode = eMaterialBlendMode::OPAQUE;
 
 	std::vector<VkDescriptorSet> m_perMaterialDSs;
 

@@ -53,16 +53,19 @@ vec3 getNormalFromMap()
 
 void main() 
 {   
-    vec4 BaseColorWithAlpha = uboPerMaterial.colorTextureSet > -1 ? 
-        pow(texture(BaseColorSampler, fragTexCoord), vec3(2.2)) * uboPerMaterial.baseColorFactor : 
-        uboPerMaterial.baseColorFactor;
+    float alpha = uboPerMaterial.colorTextureSet > -1 ? 
+        texture(BaseColorSampler, fragTexCoord).a * uboPerMaterial.baseColorFactor.a : 
+        uboPerMaterial.baseColorFactor.a;
+    
+    if (alpha < uboPerMaterial.alphaMaskCutoff)
+    {
+        discard;
+    }
 
-if (BaseColorWithAlpha.a < uboPerMaterial.alphaMaskCutoff)
-{
-	discard;
-}
-   vec3 BaseColor = BaseColorWithAlpha.rgb;
-  
+    vec3 BaseColor = uboPerMaterial.colorTextureSet > -1 ? 
+        pow(texture(BaseColorSampler, fragTexCoord).rgb, vec3(2.2)) * uboPerMaterial.baseColorFactor.rgb : 
+        uboPerMaterial.baseColorFactor.rgb;
+    
     float Metallic = uboPerMaterial.PhysicalDescriptorTextureSet > -1 ?
         texture(MetallicRoughnessSampler, fragTexCoord).g * uboPerMaterial.metallicFactor :
         uboPerMaterial.metallicTextureSet > -1 ? 

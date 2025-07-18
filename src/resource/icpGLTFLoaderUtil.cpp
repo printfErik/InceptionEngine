@@ -357,6 +357,7 @@ void icpGLTFLoaderUtil::LoadGLTFMaterials(tinygltf::Model& gltfModel, const std:
 		pbr.baseColorTexture.index = pbr.baseColorTexture.index < 0 ? 0 : pbr.baseColorTexture.index;
 		auto instance = materialSystem->createMaterialInstance(eMaterialShadingModel::PBR_LIT);
 
+		instance->m_blendMode = material.alphaMode == "OPAQUE" ? eMaterialBlendMode::OPAQUE : eMaterialBlendMode::MASK;
 		instance->AddScalaValue("alphaMask", { static_cast<float>(material.alphaMode == "MASK") });
 		instance->AddScalaValue("alphaMaskCutoff", { static_cast<float>(material.alphaCutoff) });
 
