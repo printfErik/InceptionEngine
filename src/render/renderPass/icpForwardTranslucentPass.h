@@ -21,6 +21,8 @@ public:
 	void CreateDescriptorSetLayouts() override;
 	void AllocateDescriptorSets() override {}
 	void UpdateRenderPassCB(uint32_t curFrame) override;
+
+
 private:
 
 	//void UpdateGlobalBuffers(uint32_t curFrame);

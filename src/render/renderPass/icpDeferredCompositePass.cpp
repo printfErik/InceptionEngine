@@ -86,7 +86,7 @@ void icpDeferredCompositePass::SetupPipeline()
 		| VkColorComponentFlagBits::VK_COLOR_COMPONENT_A_BIT;
 	attBlendState.blendEnable = VK_FALSE;
 
-	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_rhi, sceneRenderer->GetGBufferRenderPass(), 1)
+	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_rhi)
 		.SetVertexShader((g_system_container.m_configSystem->m_shaderFolderPath / "DeferredComposite.vert.spv").string())
 		.SetFragmentShader((g_system_container.m_configSystem->m_shaderFolderPath / "DeferredComposite.frag.spv").string())
 		.SetVertexInput({ icpVertex::getBindingDescription() }, icpVertex::getAttributeDescription())
@@ -98,6 +98,7 @@ void icpDeferredCompositePass::SetupPipeline()
 		.SetMultisampling(VK_SAMPLE_COUNT_1_BIT)
 		.SetDepthStencilState(VK_TRUE, VK_FALSE, VK_FALSE, VK_FALSE, VK_COMPARE_OP_ALWAYS)
 		.SetColorBlendState({ attBlendState })
+		.SetRenderPass(sceneRenderer->GetGBufferRenderPass(), 1)
 		.Build(m_pipelineInfo.m_pipelineLayout);
 }
 

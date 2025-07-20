@@ -12,8 +12,8 @@ class GraphicsPipelineBuilder
 {
 public:
 	
-    GraphicsPipelineBuilder(std::shared_ptr<icpGPUDevice> device, VkRenderPass render_pass, uint32_t sub_pass)
-        : device(device), renderPass(render_pass), subpass(sub_pass)
+    GraphicsPipelineBuilder(std::shared_ptr<icpGPUDevice> device)
+        : device(device)
     {
     }
 
@@ -64,6 +64,11 @@ public:
 
     GraphicsPipelineBuilder& SetRenderPass(VkRenderPass render_pass, uint32_t sub_pass);
 
+    GraphicsPipelineBuilder& SetRenderingCreateInfo(
+        const std::vector<VkFormat>& colorFormat, 
+        VkFormat depthFormat, VkFormat stencilFormat);
+
+
     VkPipeline Build(VkPipelineLayout& pipelineLayout);
     
 private:
@@ -82,6 +87,8 @@ private:
     VkPipelineMultisampleStateCreateInfo multisample{};
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
     VkPipelineColorBlendStateCreateInfo colorBlendState{};
+
+    VkPipelineRenderingCreateInfo renderingCreateInfo{};
 
     VkPipelineShaderStageCreateInfo vertStageInfo{};
     VkPipelineShaderStageCreateInfo fragStageInfo{};

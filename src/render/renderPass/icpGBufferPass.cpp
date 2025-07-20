@@ -60,7 +60,7 @@ void icpGBufferPass::SetupPipeline()
 
 	std::vector<VkPipelineColorBlendAttachmentState> attBlendStates(GBUFFER_RT_COUNT, attBlendState);
 
-	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_rhi, sceneRenderer->GetGBufferRenderPass(), 0)
+	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_rhi)
 		.SetVertexShader((g_system_container.m_configSystem->m_shaderFolderPath / "GBuffer.vert.spv").string())
 		.SetFragmentShader((g_system_container.m_configSystem->m_shaderFolderPath / "GBuffer.frag.spv").string())
 		.SetVertexInput({ icpVertex::getBindingDescription() }, icpVertex::getAttributeDescription())
@@ -72,6 +72,7 @@ void icpGBufferPass::SetupPipeline()
 		.SetMultisampling(VK_SAMPLE_COUNT_1_BIT)
 		.SetDepthStencilState(VK_TRUE, VK_TRUE, VK_FALSE, VK_FALSE, VK_COMPARE_OP_LESS)
 		.SetColorBlendState(attBlendStates)
+		.SetRenderPass(sceneRenderer->GetGBufferRenderPass(), 0)
 		.Build(m_pipelineInfo.m_pipelineLayout);
 }
 
@@ -259,7 +260,7 @@ void icpGBufferPass::SetupMaskedMeshPipeline()
 
 	std::vector<VkPipelineColorBlendAttachmentState> attBlendStates(GBUFFER_RT_COUNT, attBlendState);
 
-	maskedMeshPipeline.m_pipeline = GraphicsPipelineBuilder(m_rhi, sceneRenderer->GetGBufferRenderPass(), 0)
+	maskedMeshPipeline.m_pipeline = GraphicsPipelineBuilder(m_rhi)
 		.SetVertexShader((g_system_container.m_configSystem->m_shaderFolderPath / "MaskedMeshPass.vert.spv").string())
 		.SetFragmentShader((g_system_container.m_configSystem->m_shaderFolderPath / "MaskedMeshPass.frag.spv").string())
 		.SetVertexInput({ icpVertex::getBindingDescription() }, icpVertex::getAttributeDescription())
@@ -271,6 +272,7 @@ void icpGBufferPass::SetupMaskedMeshPipeline()
 		.SetMultisampling(VK_SAMPLE_COUNT_1_BIT)
 		.SetDepthStencilState(VK_TRUE, VK_TRUE, VK_FALSE, VK_FALSE, VK_COMPARE_OP_LESS)
 		.SetColorBlendState(attBlendStates)
+		.SetRenderPass(sceneRenderer->GetGBufferRenderPass(), 0)
 		.Build(maskedMeshPipeline.m_pipelineLayout);
 }
 

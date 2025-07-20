@@ -133,6 +133,21 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetRenderPass(VkRenderPass ren
     return *this;
 }
 
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetRenderingCreateInfo(
+    const std::vector<VkFormat>& colorFormat, VkFormat depthFormat, VkFormat stencilFormat)
+{
+    renderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+    renderingCreateInfo.pNext = nullptr;
+    renderingCreateInfo.viewMask = 0;
+    renderingCreateInfo.colorAttachmentCount = colorFormat.size();
+    renderingCreateInfo.pColorAttachmentFormats = colorFormat.data();
+    renderingCreateInfo.depthAttachmentFormat = depthFormat;
+    renderingCreateInfo.stencilAttachmentFormat = stencilFormat;
+
+    return *this;
+}
+
+
 
 VkPipeline GraphicsPipelineBuilder::Build(VkPipelineLayout& pipelineLayout)
 {
@@ -177,6 +192,7 @@ VkPipeline GraphicsPipelineBuilder::Build(VkPipelineLayout& pipelineLayout)
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = subpass;
+    pipelineInfo.pNext = renderPass == VK_NULL_HANDLE ? &renderingCreateInfo : nullptr;
 
     VkPipeline pipeline;
     if (vkCreateGraphicsPipelines(device->GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
