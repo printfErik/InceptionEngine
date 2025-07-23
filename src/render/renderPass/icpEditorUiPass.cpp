@@ -74,7 +74,8 @@ void icpEditorUiPass::SetupPipeline()
 	info.PhysicalDevice = m_rhi->GetPhysicalDevice();
 	info.Queue = m_rhi->GetGraphicsQueue();
 	info.QueueFamily = m_rhi->GetQueueFamilyIndices().m_graphicsFamily.value();
-	info.Subpass = 1;
+	info.Subpass = 0;
+	info.UseDynamicRendering = true;
 
 	auto renderPass = m_pSceneRenderer.lock()->GetMainForwardRenderPass();
 	if (!renderPass)
@@ -82,7 +83,7 @@ void icpEditorUiPass::SetupPipeline()
 		renderPass = m_pSceneRenderer.lock()->GetGBufferRenderPass();
 	}
 
-	ImGui_ImplVulkan_Init(&info, renderPass);
+	ImGui_ImplVulkan_Init(&info, VK_NULL_HANDLE);
 }
 
 
