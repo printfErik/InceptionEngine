@@ -76,13 +76,15 @@ void icpEditorUiPass::SetupPipeline()
 	info.QueueFamily = m_rhi->GetQueueFamilyIndices().m_graphicsFamily.value();
 	info.Subpass = 0;
 	info.UseDynamicRendering = true;
+	info.ColorAttachmentFormat = m_rhi->GetSwapChainImageFormat();
 
+	/*
 	auto renderPass = m_pSceneRenderer.lock()->GetMainForwardRenderPass();
 	if (!renderPass)
 	{
 		renderPass = m_pSceneRenderer.lock()->GetGBufferRenderPass();
 	}
-
+	*/
 	ImGui_ImplVulkan_Init(&info, VK_NULL_HANDLE);
 }
 

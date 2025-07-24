@@ -9,6 +9,8 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
+
+
 struct icpDescriptorSetBindingInfo
 {
 	VkDescriptorType type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
@@ -34,6 +36,21 @@ struct icpDescriptorSetCreation
 		const std::vector<icpTextureRenderResourceInfo>& imgInfos);
 	icpDescriptorSetCreation& SetInputAttachment(uint16_t binding,
 		const std::vector<icpTextureRenderResourceInfo>& inputAttachmentInfos);
+};
+
+class DescriptorSetLayoutBuilder
+{
+public:
+	DescriptorSetLayoutBuilder() = default;
+
+	DescriptorSetLayoutBuilder& SetDescriptorSetBinding(uint32_t bindIndex,
+		VkDescriptorType dsType, VkShaderStageFlagBits stages);
+
+	VkDescriptorSetLayout Build(VkDevice logicDevice);
+
+	std::vector<VkDescriptorSetLayoutBinding> bindings;
+
+	VkDescriptorSetLayout layout { VK_NULL_HANDLE };
 };
 
 INCEPTION_END_NAMESPACE

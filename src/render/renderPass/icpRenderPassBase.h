@@ -36,13 +36,13 @@ public:
 	virtual void SetupPipeline() = 0;
 	virtual void Cleanup() = 0;
 	virtual void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) = 0;
-	virtual void CreateDescriptorSetLayouts() = 0;
-	virtual void AllocateDescriptorSets() = 0;
 	virtual void UpdateRenderPassCB(uint32_t curFrame) = 0;
 
-	RenderPipelineInfo m_pipelineInfo{};
-	std::vector<icpDescriptorSetLayoutInfo> m_DSLayouts;
+	void AddRenderpassInputLayout(VkDescriptorSetLayout layout);
 
+	RenderPipelineInfo m_pipelineInfo{};
+
+	std::vector<VkDescriptorSetLayout> dsLayouts;
 protected:
 	std::weak_ptr<icpSceneRenderer> m_pSceneRenderer;
 	std::shared_ptr<icpGPUDevice> m_rhi = nullptr;

@@ -44,4 +44,34 @@ icpDescriptorSetCreation& icpDescriptorSetCreation::SetInputAttachment(uint16_t 
 	return *this;
 }
 
+DescriptorSetLayoutBuilder& DescriptorSetLayoutBuilder::SetDescriptorSetBinding(uint32_t bindIndex, VkDescriptorType dsType, VkShaderStageFlagBits stages)
+{
+	VkDescriptorSetLayoutBinding binding{};
+	binding.binding = bindIndex;
+	binding.descriptorCount = 1;
+	binding.descriptorType = dsType;
+	binding.pImmutableSamplers = nullptr;
+	binding.stageFlags = stages;
+
+	bindings.push_back(binding);
+	return *this;
+}
+
+VkDescriptorSetLayout DescriptorSetLayoutBuilder::Build(VkDevice logicDevice)
+{
+	VkDescriptorSetLayoutCreateInfo createInfo{};
+	createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+	createInfo.pBindings = bindings.data();
+	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+	if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &layout) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create descriptor set layout!");
+	}
+
+	return layout;
+}
+
+
+
 INCEPTION_END_NAMESPACE

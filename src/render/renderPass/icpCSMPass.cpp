@@ -40,7 +40,17 @@ void icpCSMPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	CreateCSMRenderPass();
 	CreateCSMFrameBuffer();
 
-	CreateDescriptorSetLayouts();
+	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
+		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.Build(m_rhi->GetLogicalDevice())
+	);
+
+	// csm projview matrix DS layout 
+	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
+		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.Build(m_rhi->GetLogicalDevice())
+	);
+
 	SetupPipeline();
 }
 
@@ -172,63 +182,26 @@ void icpCSMPass::CreateCSMFrameBuffer()
 	}
 }
 
-void icpCSMPass::CreateDescriptorSetLayouts()
-{
-	m_DSLayouts.resize(eCSMPassDSType::LAYOUT_TYPE_COUNT);
-	auto logicDevice = m_rhi->GetLogicalDevice();
-	// per mesh
-	{
-		// set 0, binding 0 
-		VkDescriptorSetLayoutBinding perObjectUBOBinding{};
-		perObjectUBOBinding.binding = 0;
-		perObjectUBOBinding.descriptorCount = 1;
-		perObjectUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		perObjectUBOBinding.pImmutableSamplers = nullptr;
-		perObjectUBOBinding.stageFlags = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
-		m_DSLayouts[eCSMPassDSType::PER_MESH].bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
-
-		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perObjectUBOBinding };
-
-		VkDescriptorSetLayoutCreateInfo createInfo{};
-		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-		createInfo.pBindings = bindings.data();
-		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-
-		if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &m_DSLayouts[eCSMPassDSType::PER_MESH].layout) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create descriptor set layout!");
-		}
-	}
-}
-
-
 void icpCSMPass::SetupPipeline()
 {
-	std::vector<VkDescriptorSetLayout> layouts{};
-	for (auto& layoutInfo : m_DSLayouts)
-	{
-		layouts.push_back(layoutInfo.layout);
-	}
-
-	// csm projview matrix DS layout 
-	layouts.push_back(g_system_container.m_renderSystem->m_shadowManager->m_csmDSLayout.layout);
 
 	VkPushConstantRange pushRange{};
 	pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	pushRange.offset = 0;
 	pushRange.size = sizeof(glm::mat4);
 
-	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_rhi, m_shadowRenderPass, 0)
+	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_rhi)
 		.SetVertexShader((g_system_container.m_configSystem->m_shaderFolderPath / "CSM.vert.spv").string())
 		.SetVertexInput({ icpVertex::getBindingDescription() }, icpVertex::getAttributeDescription())
 		.SetInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-		.SetPipelineLayout(layouts, 1, pushRange)
+		.SetPipelineLayout(dsLayouts, 1, pushRange)
 		.SetViewport({ 0.f, 0.f, s_cascadeShadowMapResolution, s_cascadeShadowMapResolution, 0.f, 1.f })
 		.SetScissor({ { 0,0 }, {s_cascadeShadowMapResolution, s_cascadeShadowMapResolution} })
 		.SetRasterizer(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_TRUE, 1.25f, 1.75f, 0.f)
 		.SetMultisampling(VK_SAMPLE_COUNT_1_BIT)
 		.SetDepthStencilState(VK_TRUE, VK_TRUE, VK_FALSE, VK_FALSE, VK_COMPARE_OP_LESS_OR_EQUAL)
 		.SetColorBlendState({})
+		.SetRenderPass(m_shadowRenderPass, 0)
 		.Build(m_pipelineInfo.m_pipelineLayout);
 }
 
@@ -255,7 +228,6 @@ void icpCSMPass::RecordCommandBufferPushConstant(VkCommandBuffer commandBuffer, 
 	auto sceneRenderer = m_pSceneRenderer.lock();
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
-
 	
 	VkViewport viewport{};
 	viewport.x = 0.0f;
