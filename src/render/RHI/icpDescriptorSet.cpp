@@ -63,6 +63,7 @@ VkDescriptorSetLayout DescriptorSetLayoutBuilder::Build(VkDevice logicDevice)
 	createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 	createInfo.pBindings = bindings.data();
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
 
 	if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &layout) != VK_SUCCESS)
 	{

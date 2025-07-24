@@ -48,7 +48,7 @@ void icpGBufferPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	);
 
 	auto sceneRenderer = m_pSceneRenderer.lock();
-	AddRenderpassInputLayout(sceneRenderer->GetSceneDSLayout().layout);
+	AddRenderpassInputLayout(sceneRenderer->GetSceneDSLayout());
 
 	SetupPipeline();
 }
@@ -96,7 +96,6 @@ void icpGBufferPass::UpdateRenderPassCB(uint32_t curFrame)
 void icpGBufferPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
 	auto mgr = m_pSceneRenderer.lock();
-	//vkResetCommandBuffer(mgr->m_vMainForwardCommandBuffers[currentFrame], 0);
 	RecordCommandBuffer(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
 }
 
@@ -120,8 +119,10 @@ void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 
 	std::vector<VkDeviceSize> offsets{ 0 };
 
-	auto sceneDS = mgr->GetSceneDescriptorSet(curFrame);
-	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 2, 1, &sceneDS, 0, nullptr);
+	
+	vkCmdPushDescriptorSetKHR(commandBuffer, 
+		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, 
+		m_pipelineInfo.m_pipelineLayout, 2, 1, );
 
 	std::vector<std::shared_ptr<icpGameEntity>> rootList;
 	g_system_container.m_sceneSystem->getRootEntityList(rootList);

@@ -10,7 +10,8 @@
 #include "../render/icpRenderSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	std::shared_ptr<icpRenderPassBase> icpSceneRenderer::AccessRenderPass(eRenderPass passType)
+
+std::shared_ptr<icpRenderPassBase> icpSceneRenderer::AccessRenderPass(eRenderPass passType)
 {
 	if (m_renderPasses.contains(passType))
 	{
@@ -90,58 +91,17 @@ void icpSceneRenderer::UpdateCSMProjViewMat(uint32_t curFrame)
 
 void icpSceneRenderer::CreateGlobalSceneDescriptorSetLayout()
 {
-	// perFrame
-	{
-		VkDescriptorSetLayoutBinding perFrameUBOBinding{};
-		perFrameUBOBinding.binding = 0;
-		perFrameUBOBinding.descriptorCount = 1;
-		perFrameUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		perFrameUBOBinding.pImmutableSamplers = nullptr;
-		perFrameUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-		m_sceneDSLayout.bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+	m_sceneDSLayout = DescriptorSetLayoutBuilder()
+		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+		.Build(m_pDevice->GetLogicalDevice());
 
-		std::array<VkDescriptorSetLayoutBinding, 1> bindings{ perFrameUBOBinding };
-
-		VkDescriptorSetLayoutCreateInfo createInfo{};
-		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-		createInfo.pBindings = bindings.data();
-		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-
-		if (vkCreateDescriptorSetLayout(m_pDevice->GetLogicalDevice(), &createInfo, nullptr, &m_sceneDSLayout.layout) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create descriptor set layout!");
-		}
-	}
 }
 
-void icpSceneRenderer::AllocateGlobalSceneDescriptorSets()
-{
-	icpDescriptorSetCreation creation{};
-	creation.layoutInfo = m_sceneDSLayout;
-
-	std::vector<icpBufferRenderResourceInfo> bufferInfos;
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		icpBufferRenderResourceInfo bufferInfo{};
-		bufferInfo.buffer = m_vSceneCBs[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(perFrameCB);
-		bufferInfos.push_back(bufferInfo);
-	}
-
-	creation.SetUniformBuffer(0, bufferInfos);
-	m_pDevice->CreateDescriptorSet(creation, m_vSceneDSs);
-}
-
-icpDescriptorSetLayoutInfo& icpSceneRenderer::GetSceneDSLayout()
+VkDescriptorSetLayout icpSceneRenderer::GetSceneDSLayout()
 {
 	return m_sceneDSLayout;
 }
 
-VkDescriptorSet icpSceneRenderer::GetSceneDescriptorSet(uint32_t curFrame)
-{
-	return m_vSceneDSs[curFrame];
-}
 
 uint32_t icpSceneRenderer::GetCurrentFrame() const
 {

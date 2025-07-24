@@ -46,11 +46,10 @@ struct perFrameCB
 
 enum class eRenderPass
 {
-	MAIN_FORWARD_PASS = 0,
-	UNLIT_PASS,
-	CSM_PASS,
+	CSM_PASS = 0,
 	GBUFFER_PASS,
 	DEFERRED_COMPOSITION_PASS,
+	TRANSLUCENT_PASS,
 	EDITOR_UI_PASS,
 	RENDER_PASS_COUNT
 };
@@ -64,10 +63,6 @@ public:
 	virtual bool Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI) = 0;
 	virtual void Cleanup();
 	virtual void Render() = 0;
-
-	// Forward
-	virtual VkCommandBuffer GetMainForwardCommandBuffer(uint32_t curFrame) = 0;
-	virtual VkRenderPass GetMainForwardRenderPass() = 0;
 
 	// Deferred
 	virtual VkRenderPass GetGBufferRenderPass() = 0;
@@ -83,10 +78,7 @@ public:
 	void UpdateCSMProjViewMat(uint32_t curFrame);
 
 	void CreateGlobalSceneDescriptorSetLayout();
-	void AllocateGlobalSceneDescriptorSets();
-
-	VkDescriptorSet GetSceneDescriptorSet(uint32_t curFrame);
-	icpDescriptorSetLayoutInfo& GetSceneDSLayout();
+	VkDescriptorSetLayout GetSceneDSLayout();
 
 	uint32_t GetCurrentFrame() const;
 
@@ -94,11 +86,9 @@ protected:
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
 	std::map<eRenderPass, std::shared_ptr<icpRenderPassBase>> m_renderPasses;
 
+	VkDescriptorSetLayout m_sceneDSLayout{ VK_NULL_HANDLE };
 	std::vector<VkBuffer> m_vSceneCBs;
 	std::vector<VmaAllocation> m_vSceneCBAllocations;
-
-	icpDescriptorSetLayoutInfo m_sceneDSLayout{};
-	std::vector<VkDescriptorSet> m_vSceneDSs;
 
 	uint32_t m_currentFrame = 0;
 private:

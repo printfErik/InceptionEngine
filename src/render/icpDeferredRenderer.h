@@ -23,9 +23,6 @@ public:
 	void Cleanup() override;
 	void Render() override;
 
-	VkCommandBuffer GetMainForwardCommandBuffer(uint32_t curFrame) override{ return VK_NULL_HANDLE; }
-	VkRenderPass GetMainForwardRenderPass() override{ return VK_NULL_HANDLE; }
-
 	VkRenderPass GetGBufferRenderPass() override;
 	VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) override;
 	VkImageView GetGBufferAView() override;
@@ -67,7 +64,7 @@ private:
 	VkRenderPass m_deferredRenderPass{ VK_NULL_HANDLE };
 	std::vector<VkFramebuffer> m_vDeferredFrameBuffers;
 
-	icpDescriptorSetLayoutInfo m_sceneDeferredDSLayout{};
+	VkDescriptorSetLayout m_sceneDeferredDSLayout{ VK_NULL_HANDLE };
 
 	std::vector<VkCommandBuffer> m_vDeferredCommandBuffers;
 };

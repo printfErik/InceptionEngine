@@ -8,9 +8,10 @@
 #include "renderPass/icpGBufferPass.h"
 #include "shadow/icpShadowManager.h"
 #include "../render/icpRenderSystem.h"
+#include "renderPass/icpForwardTranslucentPass.h"
 
 INCEPTION_BEGIN_NAMESPACE
-icpDeferredRenderer::~icpDeferredRenderer()
+	icpDeferredRenderer::~icpDeferredRenderer()
 {
 	Cleanup();
 }
@@ -22,7 +23,6 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 
 	CreateSceneCB();
 	CreateGlobalSceneDescriptorSetLayout();
-	AllocateGlobalSceneDescriptorSets();
 	AllocateCommandBuffers();
 
 	CreateGBufferAttachments();
@@ -55,6 +55,15 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 	deferredCompositePass->InitializeRenderPass(deferredCompositePassCreateInfo);
 
 	m_renderPasses[eRenderPass::DEFERRED_COMPOSITION_PASS] = deferredCompositePass;
+
+	icpRenderPassBase::RenderPassInitInfo translucentPassCreateInfo;
+	translucentPassCreateInfo.device = m_pDevice;
+	translucentPassCreateInfo.passType = eRenderPass::TRANSLUCENT_PASS;
+	translucentPassCreateInfo.sceneRenderer = shared_from_this();
+	std::shared_ptr<icpRenderPassBase> translucentPass = std::make_shared<icpForwardTranslucentPass>();
+	translucentPass->InitializeRenderPass(translucentPassCreateInfo);
+
+	m_renderPasses[eRenderPass::TRANSLUCENT_PASS] = translucentPass;
 
 	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
 	editorUIInfo.device = m_pDevice;
@@ -244,39 +253,12 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	subpassDescriptions[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpassDescriptions[1].colorAttachmentCount = 1;
 	subpassDescriptions[1].pColorAttachments = &colorReference;
-	//subpassDescriptions[1].pDepthStencilAttachment = &depthReference;
-	// Use the color attachments filled in the first pass as input attachments
 	subpassDescriptions[1].inputAttachmentCount = 4;
 	subpassDescriptions[1].pInputAttachments = inputReferences;
 
-	/*
-	// Third subpass: Forward transparency
-	// ----------------------------------------------------------------------------------------
-	colorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-
-	inputReferences[0] = { 1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
-
-	subpassDescriptions[2].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpassDescriptions[2].colorAttachmentCount = 1;
-	subpassDescriptions[2].pColorAttachments = &colorReference;
-	subpassDescriptions[2].pDepthStencilAttachment = &depthReference;
-	// Use the color/depth attachments filled in the first pass as input attachments
-	subpassDescriptions[2].inputAttachmentCount = 1;
-	subpassDescriptions[2].pInputAttachments = inputReferences;
-	*/
-	// Subpass dependencies for layout transitions
 	std::array<VkSubpassDependency, 3> dependencies;
 
-	/*
-	// This makes sure that writes to the depth image are done before we try to write to it again
-	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependencies[0].dstSubpass = 0;
-	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;;
-	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;;
-	dependencies[0].srcAccessMask = 0;
-	dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-	dependencies[0].dependencyFlags = 0;
-	*/
+	
 	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
 	dependencies[0].dstSubpass = 0;
 	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -302,15 +284,6 @@ void icpDeferredRenderer::CreateDeferredRenderPass()
 	dependencies[2].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 	dependencies[2].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-	/*
-	dependencies[3].srcSubpass = 2;
-	dependencies[3].dstSubpass = VK_SUBPASS_EXTERNAL;
-	dependencies[3].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[3].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-	dependencies[3].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[3].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	dependencies[3].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-	*/
 	VkRenderPassCreateInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());

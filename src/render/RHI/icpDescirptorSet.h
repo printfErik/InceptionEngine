@@ -10,18 +10,6 @@
 INCEPTION_BEGIN_NAMESPACE
 
 
-
-struct icpDescriptorSetBindingInfo
-{
-	VkDescriptorType type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
-};
-
-struct icpDescriptorSetLayoutInfo
-{
-	VkDescriptorSetLayout layout{ VK_NULL_HANDLE };
-	std::vector<icpDescriptorSetBindingInfo> bindings;
-};
-
 struct icpDescriptorSetCreation
 {
 	icpDescriptorSetLayoutInfo layoutInfo{};
