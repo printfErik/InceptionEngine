@@ -462,7 +462,7 @@ void icpDeferredRenderer::ResetThenBeginCommandBuffer()
 	}
 }
 
-void icpDeferredRenderer::BeginForwardRenderPass(uint32_t imageIndex)
+void icpDeferredRenderer::BeginDeferredRenderPass(uint32_t imageIndex)
 {
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -485,7 +485,7 @@ void icpDeferredRenderer::BeginForwardRenderPass(uint32_t imageIndex)
 }
 
 
-void icpDeferredRenderer::EndForwardRenderPass()
+void icpDeferredRenderer::EndDeferredRenderPass()
 {
 	vkCmdEndRenderPass(m_vDeferredCommandBuffers[m_currentFrame]);
 }

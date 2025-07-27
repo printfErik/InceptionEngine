@@ -41,9 +41,9 @@ private:
 	void CreateDeferredRenderPass();
 
 	void ResetThenBeginCommandBuffer();
-	void BeginForwardRenderPass(uint32_t imageIndex);
+	void BeginDeferredRenderPass(uint32_t imageIndex);
 
-	void EndForwardRenderPass();
+	void EndDeferredRenderPass();
 	void EndRecordingCommandBuffer();
 
 	void SubmitCommandList();
@@ -63,8 +63,6 @@ private:
 
 	VkRenderPass m_deferredRenderPass{ VK_NULL_HANDLE };
 	std::vector<VkFramebuffer> m_vDeferredFrameBuffers;
-
-	VkDescriptorSetLayout m_sceneDeferredDSLayout{ VK_NULL_HANDLE };
 
 	std::vector<VkCommandBuffer> m_vDeferredCommandBuffers;
 };
