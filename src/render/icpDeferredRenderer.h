@@ -25,9 +25,10 @@ public:
 
 	VkRenderPass GetGBufferRenderPass() override;
 	VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) override;
-	VkImageView GetGBufferAView() override;
-	VkImageView GetGBufferBView() override;
-	VkImageView GetGBufferCView() override;
+
+	icpTextureRenderResourceInfo& GetGBufferARenderResource() override;
+	icpTextureRenderResourceInfo& GetGBufferBRenderResource() override;
+	icpTextureRenderResourceInfo& GetGBufferCRenderResource() override;
 
 	void RecreateSwapChain();
 	void CleanupSwapChain();
@@ -49,17 +50,9 @@ private:
 	void SubmitCommandList();
 	void Present(uint32_t imageIndex);
 
-	VkImage m_gBufferA{ VK_NULL_HANDLE };
-	VkImageView m_gBufferAView{ VK_NULL_HANDLE };
-	VmaAllocation m_gBufferAAllocation{ VK_NULL_HANDLE };
-
-	VkImage m_gBufferB{ VK_NULL_HANDLE };
-	VkImageView m_gBufferBView{ VK_NULL_HANDLE };
-	VmaAllocation m_gBufferBAllocation{ VK_NULL_HANDLE };
-
-	VkImage m_gBufferC{ VK_NULL_HANDLE };
-	VkImageView m_gBufferCView{ VK_NULL_HANDLE };
-	VmaAllocation m_gBufferCAllocation{ VK_NULL_HANDLE };
+	icpTextureRenderResourceInfo GBufferA;
+	icpTextureRenderResourceInfo GBufferB;
+	icpTextureRenderResourceInfo GBufferC;
 
 	VkRenderPass m_deferredRenderPass{ VK_NULL_HANDLE };
 	std::vector<VkFramebuffer> m_vDeferredFrameBuffers;

@@ -67,9 +67,10 @@ public:
 	// Deferred
 	virtual VkRenderPass GetGBufferRenderPass() = 0;
 	virtual VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) = 0;
-	virtual VkImageView GetGBufferAView() = 0;
-	virtual VkImageView GetGBufferBView() = 0;
-	virtual VkImageView GetGBufferCView() = 0;
+
+	virtual icpTextureRenderResourceInfo& GetGBufferARenderResource() = 0;
+	virtual icpTextureRenderResourceInfo& GetGBufferBRenderResource() = 0;
+	virtual icpTextureRenderResourceInfo& GetGBufferCRenderResource() = 0;
 
 	std::shared_ptr<icpRenderPassBase> AccessRenderPass(eRenderPass passType);
 
@@ -88,8 +89,6 @@ protected:
 	std::map<eRenderPass, std::shared_ptr<icpRenderPassBase>> m_renderPasses;
 
 	VkDescriptorSetLayout m_sceneDSLayout{ VK_NULL_HANDLE };
-
-	
 
 	uint32_t m_currentFrame = 0;
 private:

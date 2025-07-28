@@ -1,7 +1,6 @@
 #include "icpRenderSystem.h"
 
 #include "icpDeferredRenderer.h"
-#include "icpForwardSceneRenderer.h"
 #include "RHI/Vulkan/icpVkGPUDevice.h"
 #include "../core/icpSystemContainer.h"
 #include "../scene/icpSceneSystem.h"

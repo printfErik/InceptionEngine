@@ -74,6 +74,19 @@ void icpMaterialInstance::AddedTextureDescriptor(const std::string& textureType,
 	imgInfosAllFrames.push_back(imageInfos);
 }
 
+icpTextureRenderResourceInfo& icpMaterialInstance::GetTextureRenderResourceByID(const std::string& texType)
+{
+	auto texRenderResMgr = g_system_container.m_renderSystem->GetTextureRenderResourceManager();
+
+	if (!m_vTextureParameterValues.contains(texType))
+	{
+		return texRenderResMgr->GetTextureRenderResByID("empty2D001");
+	}
+
+	auto& texture = m_vTextureParameterValues[texType];
+	return texRenderResMgr->GetTextureRenderResByID(texture.m_textureID);
+}
+
 void icpMaterialInstance::AllocateDescriptorSets()
 {
 	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
@@ -253,6 +266,8 @@ void* icpMaterialInstance::CheckMaterialDataCache()
 
 	return nullptr;
 }
+
+
 
 void icpMaterialInstance::FillPBRDataCache()
 {

@@ -243,7 +243,7 @@ void icpTextureRenderResourceManager::UpdateManager()
 	}
 }
 
-icpTextureRenderResourceInfo icpTextureRenderResourceManager::GetTextureRenderResByID(const std::string& texID)
+icpTextureRenderResourceInfo& icpTextureRenderResourceManager::GetTextureRenderResByID(const std::string& texID)
 {
 	std::lock_guard<std::mutex> lock_guard(m_textureRenderResLock);
 	return m_textureRenderResources[texID];

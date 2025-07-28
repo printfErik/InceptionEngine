@@ -106,12 +106,12 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
 		m_pDevice->GetVmaAllocator(),
-		m_gBufferA,
-		m_gBufferAAllocation
+		GBufferA.m_texImage,
+		GBufferA.m_texBufferAllocation
 	);
 
-	m_gBufferAView = icpVulkanUtility::CreateGPUImageView(
-		m_gBufferA,
+	GBufferA.m_texImageView = icpVulkanUtility::CreateGPUImageView(
+		GBufferA.m_texImage,
 		VK_IMAGE_VIEW_TYPE_2D,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		aspectMask,
@@ -130,12 +130,12 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
 		m_pDevice->GetVmaAllocator(),
-		m_gBufferB,
-		m_gBufferBAllocation
+		GBufferB.m_texImage,
+		GBufferB.m_texBufferAllocation
 	);
 
-	m_gBufferBView = icpVulkanUtility::CreateGPUImageView(
-		m_gBufferB,
+	GBufferB.m_texImageView = icpVulkanUtility::CreateGPUImageView(
+		GBufferB.m_texImage,
 		VK_IMAGE_VIEW_TYPE_2D,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		aspectMask,
@@ -154,12 +154,12 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
 		m_pDevice->GetVmaAllocator(),
-		m_gBufferC,
-		m_gBufferCAllocation
+		GBufferC.m_texImage,
+		GBufferC.m_texBufferAllocation
 	);
 
-	m_gBufferCView = icpVulkanUtility::CreateGPUImageView(
-		m_gBufferC,
+	GBufferC.m_texImageView = icpVulkanUtility::CreateGPUImageView(
+		GBufferC.m_texImage,
 		VK_IMAGE_VIEW_TYPE_2D,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		aspectMask,
@@ -306,9 +306,9 @@ void icpDeferredRenderer::CreateDeferredFrameBuffer()
 		std::array<VkImageView, 5> attachments =
 		{
 			imageViews[i],
-			m_gBufferAView,
-			m_gBufferBView,
-			m_gBufferCView,
+			GBufferA.m_texImageView,
+			GBufferB.m_texImageView,
+			GBufferC.m_texImageView,
 			m_pDevice->GetDepthImageView()
 		};
 
@@ -408,13 +408,13 @@ void icpDeferredRenderer::CleanupSwapChain()
 		vkDestroyFramebuffer(m_pDevice->GetLogicalDevice(), framebuffer, nullptr);
 	}
 
-	vmaDestroyImage(m_pDevice->GetVmaAllocator(), m_gBufferA, m_gBufferAAllocation);
-	vmaDestroyImage(m_pDevice->GetVmaAllocator(), m_gBufferB, m_gBufferBAllocation);
-	vmaDestroyImage(m_pDevice->GetVmaAllocator(), m_gBufferC, m_gBufferCAllocation);
+	vmaDestroyImage(m_pDevice->GetVmaAllocator(), GBufferA.m_texImage, GBufferA.m_texBufferAllocation);
+	vmaDestroyImage(m_pDevice->GetVmaAllocator(), GBufferB.m_texImage, GBufferB.m_texBufferAllocation);
+	vmaDestroyImage(m_pDevice->GetVmaAllocator(), GBufferC.m_texImage, GBufferC.m_texBufferAllocation);
 
-	vkDestroyImageView(m_pDevice->GetLogicalDevice(), m_gBufferAView, nullptr);
-	vkDestroyImageView(m_pDevice->GetLogicalDevice(), m_gBufferBView, nullptr);
-	vkDestroyImageView(m_pDevice->GetLogicalDevice(), m_gBufferCView, nullptr);
+	vkDestroyImageView(m_pDevice->GetLogicalDevice(), GBufferA.m_texImageView, nullptr);
+	vkDestroyImageView(m_pDevice->GetLogicalDevice(), GBufferB.m_texImageView, nullptr);
+	vkDestroyImageView(m_pDevice->GetLogicalDevice(), GBufferC.m_texImageView, nullptr);
 }
 
 void icpDeferredRenderer::AllocateCommandBuffers()
@@ -433,19 +433,19 @@ void icpDeferredRenderer::AllocateCommandBuffers()
 	}
 }
 
-VkImageView icpDeferredRenderer::GetGBufferAView()
+icpTextureRenderResourceInfo& icpDeferredRenderer::GetGBufferARenderResource()
 {
-	return m_gBufferAView;
+	return GBufferA;
 }
 
-VkImageView icpDeferredRenderer::GetGBufferBView()
+icpTextureRenderResourceInfo& icpDeferredRenderer::GetGBufferBRenderResource()
 {
-	return m_gBufferBView;
+	return GBufferB;
 }
 
-VkImageView icpDeferredRenderer::GetGBufferCView()
+icpTextureRenderResourceInfo& icpDeferredRenderer::GetGBufferCRenderResource()
 {
-	return m_gBufferCView;
+	return GBufferC;
 }
 
 

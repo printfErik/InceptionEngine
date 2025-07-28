@@ -41,6 +41,9 @@ void icpMeshRendererComponent::createUniformBuffers()
 			queueIndices.size(),
 			queueIndices.data()
 		);
+
+		MeshUBOs[i].range = perMeshSize;
+		MeshUBOs[i].offset = 0u;
 	}
 }
 
@@ -187,6 +190,11 @@ void icpMeshRendererComponent::UploadMaterialCB()
 	vmaMapMemory(vulkanRHI->GetVmaAllocator(), m_pMaterial->MaterialUBOs[curFrame].bufferAllocation, &materialData);
 	memcpy(materialData, m_pMaterial->CheckMaterialDataCache(), sizeof(PBRShaderMaterial));
 	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), m_pMaterial->MaterialUBOs[curFrame].bufferAllocation);
+}
+
+uint32_t icpMeshRendererComponent::GetMeshIndexNum()
+{
+	return m_meshVertexIndicesNum;
 }
 
 

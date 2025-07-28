@@ -51,6 +51,9 @@ void icpSceneRenderer::CreateSceneCB()
 			queueIndices.size(),
 			queueIndices.data()
 		);
+
+		SceneUBOs[i].range = perFrameSize;
+		SceneUBOs[i].offset = 0u;
 	}
 }
 
@@ -91,7 +94,7 @@ void icpSceneRenderer::UpdateCSMProjViewMat(uint32_t curFrame)
 void icpSceneRenderer::CreateGlobalSceneDescriptorSetLayout()
 {
 	m_sceneDSLayout = DescriptorSetLayoutBuilder()
-		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
 		.Build(m_pDevice->GetLogicalDevice());
 
 }

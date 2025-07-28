@@ -13,19 +13,21 @@ INCEPTION_BEGIN_NAMESPACE
 class WriteDescriptorSetBuilder
 {
 public:
-	WriteDescriptorSetBuilder() = default;
+	WriteDescriptorSetBuilder(size_t size);
 
 	WriteDescriptorSetBuilder& SetUniformBuffer(
 		uint16_t dstBinding,
-		const icpBufferRenderResource& bufferRes,
-		uint64_t _range,
-		uint64_t _offset = 0);
+		const icpBufferRenderResource& bufferRes);
 
-	WriteDescriptorSetBuilder& SetCombinedImageSampler(uint16_t binding,
-		const icpTextureRenderResourceInfo& imgInfos);
+	WriteDescriptorSetBuilder& SetCombinedImageSampler(uint16_t dstBinding,
+		const icpTextureRenderResourceInfo& imgInfo);
 
-	WriteDescriptorSetBuilder& SetInputAttachment(uint16_t binding,
-		const icpTextureRenderResourceInfo& inputAttachmentInfos);
+	WriteDescriptorSetBuilder& SetInputAttachment(uint16_t dstBinding,
+		const icpTextureRenderResourceInfo& imgInfo);
+
+	std::vector<VkWriteDescriptorSet>& Build();
+
+private:
 
 	std::vector<VkWriteDescriptorSet> WriteDSs;
 };
@@ -36,7 +38,7 @@ public:
 	DescriptorSetLayoutBuilder() = default;
 
 	DescriptorSetLayoutBuilder& SetDescriptorSetBinding(uint32_t bindIndex,
-		VkDescriptorType dsType, VkShaderStageFlagBits stages);
+		VkDescriptorType dsType, VkShaderStageFlags stages);
 
 	VkDescriptorSetLayout Build(VkDevice logicDevice);
 

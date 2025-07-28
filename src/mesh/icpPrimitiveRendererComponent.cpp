@@ -234,6 +234,9 @@ void icpPrimitiveRendererComponent::CreateUniformBuffers()
 			queueIndices.size(),
 			queueIndices.data()
 		);
+
+		MeshUBOs[i].range = bufferSize;
+		MeshUBOs[i].offset = 0u;
 	}
 }
 
@@ -268,6 +271,11 @@ void icpPrimitiveRendererComponent::UploadMaterialCB()
 	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), m_pMaterial->MaterialUBOs[curFrame].bufferAllocation);
 }
 
+
+uint32_t icpPrimitiveRendererComponent::GetMeshIndexNum()
+{
+	return m_vertexIndices.size();
+}
 
 
 INCEPTION_END_NAMESPACE

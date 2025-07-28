@@ -16,7 +16,7 @@ public:
 	};
 
     icpDeferredCompositePass();
-    virtual ~icpDeferredCompositePass();
+    virtual ~icpDeferredCompositePass() override;
 
     void InitializeRenderPass(RenderPassInitInfo initInfo) override;
 	void SetupPipeline() override;
@@ -27,9 +27,6 @@ public:
 	void UpdateRenderPassCB(uint32_t curFrame) override;
 
 private:
-
-	std::vector<VkDescriptorSet> m_vGBufferDSs;
-	std::vector<VkDescriptorSet> m_csmDSs;
 };
 
 INCEPTION_END_NAMESPACE

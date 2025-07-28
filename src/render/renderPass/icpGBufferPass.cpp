@@ -43,7 +43,6 @@ void icpGBufferPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 		.SetDescriptorSetBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.SetDescriptorSetBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.SetDescriptorSetBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.SetDescriptorSetBinding(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.Build(m_rhi->GetLogicalDevice())
 	);
 
@@ -115,72 +114,23 @@ void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	scissor.extent = m_rhi->GetSwapChainExtent();
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	VkDeviceSize offsets = 0;
-
 	auto renderer = m_pSceneRenderer.lock();
 	
+	auto writeDS = WriteDescriptorSetBuilder(1u)
+		.SetUniformBuffer(0, renderer->SceneUBOs[curFrame])
+		.Build();
 
 	vkCmdPushDescriptorSetKHR(commandBuffer, 
 		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, 
-		m_pipelineInfo.m_pipelineLayout, 2, 1, );
+		m_pipelineInfo.m_pipelineLayout, 2, 1, writeDS.data());
 
 	std::vector<std::shared_ptr<icpGameEntity>> rootList;
 	g_system_container.m_sceneSystem->getRootEntityList(rootList);
 
 	for (auto entity : rootList)
 	{
-		if (entity->hasComponent<icpMeshRendererComponent>())
-		{
-			const auto& meshRender = entity->accessComponent<icpMeshRendererComponent>();
-
-			if (meshRender.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
-			{
-				continue;
-			}
-
-			if (meshRender.m_pMaterial->m_blendMode == eMaterialBlendMode::OPAQUE)
-			{
-				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
-			}
-			else if (meshRender.m_pMaterial->m_blendMode == eMaterialBlendMode::MASK)
-			{
-				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, maskedMeshPipeline.m_pipeline);
-			}
-			else
-			{
-				continue;
-			}
-
-			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(meshRender.m_pMaterial->m_perMaterialDSs[curFrame]), 0, nullptr);
-
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &meshRender.MeshVB.buffer, &offsets);
-			vkCmdBindIndexBuffer(commandBuffer, meshRender.MeshIB.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
-			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-			vkCmdDrawIndexed(commandBuffer, meshRender.m_meshVertexIndicesNum, 1, 0, 0, 0);
-		}
-		else if (entity->hasComponent<icpPrimitiveRendererComponent>())
-		{
-			auto& primitive = entity->accessComponent<icpPrimitiveRendererComponent>();
-
-			if (primitive.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
-			{
-				continue;
-			}
-
-			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(primitive.m_pMaterial->m_perMaterialDSs[curFrame]), 0, nullptr);
-
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &primitive.MeshVB.buffer, offsets.data());
-			vkCmdBindIndexBuffer(commandBuffer, primitive.MeshIB.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-			auto& descriptorSets = primitive.m_descriptorSets;
-			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
-
-			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
-
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(primitive.m_vertexIndices.size()), 1, 0, 0, 0);
-		}
+		Draw<icpMeshRendererComponent>(entity, commandBuffer, curFrame);
+		Draw<icpPrimitiveRendererComponent>(entity, commandBuffer, curFrame);
 	}
 }
 

@@ -52,7 +52,7 @@ public:
 	void InitializeEmptyTexture();
 	bool RegisterTextureResource(const std::string& texID);
 
-	icpTextureRenderResourceInfo GetTextureRenderResByID(const std::string& texID);
+	icpTextureRenderResourceInfo& GetTextureRenderResByID(const std::string& texID);
 
 	void UpdateManager();
 

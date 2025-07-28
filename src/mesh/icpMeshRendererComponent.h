@@ -44,6 +44,8 @@ public:
 	void UploadMeshCB(const UBOMeshRenderResource& ubo);
 	void UploadMaterialCB();
 
+	uint32_t GetMeshIndexNum();
+
 	std::vector<icpBufferRenderResource> MeshUBOs;
 
 	icpBufferRenderResource MeshVB;

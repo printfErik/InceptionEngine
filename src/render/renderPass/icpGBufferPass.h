@@ -1,10 +1,11 @@
 #pragma once
 #include "../../core/icpMacros.h"
 #include "icpRenderPassBase.h"
+#include "../../render/material/icpMaterial.h"
+#include "../../scene/icpEntity.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-class icpGBufferPass : public icpRenderPassBase
+	class icpGBufferPass : public icpRenderPassBase
 {
 public:
 
@@ -27,7 +28,66 @@ public:
 	void UpdateRenderPassCB(uint32_t curFrame) override;
 
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
+
 private:
+
+	template<typename CompType>
+	void Draw(std::shared_ptr<icpGameEntity> entity, VkCommandBuffer commandBuffer, uint32_t currentFrame)
+	{
+		if (entity->hasComponent<CompType>())
+		{
+			const auto& meshRender = entity->accessComponent<CompType>();
+
+			if (meshRender.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT)
+			{
+				return;
+			}
+
+			if (meshRender.m_pMaterial->m_blendMode == eMaterialBlendMode::OPAQUE)
+			{
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
+			}
+			else if (meshRender.m_pMaterial->m_blendMode == eMaterialBlendMode::MASK)
+			{
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, maskedMeshPipeline.m_pipeline);
+			}
+			else
+			{
+				return;
+			}
+
+			VkDeviceSize offsets = 0;
+
+			auto MeshWriteDS = WriteDescriptorSetBuilder(1u)
+				.SetUniformBuffer(0, meshRender.MeshUBOs[currentFrame])
+				.Build();
+
+			vkCmdPushDescriptorSetKHR(commandBuffer,
+				VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_pipelineInfo.m_pipelineLayout, 0, 1, MeshWriteDS.data());
+
+			auto MaterialWriteDS = WriteDescriptorSetBuilder(8u)
+				.SetUniformBuffer(0, meshRender.m_pMaterial->MaterialUBOs[currentFrame])
+				.SetCombinedImageSampler(1, meshRender.m_pMaterial->GetTextureRenderResourceByID("baseColorTexture"))
+				.SetCombinedImageSampler(2, meshRender.m_pMaterial->GetTextureRenderResourceByID("metallicRoughnessTexture"))
+				.SetCombinedImageSampler(3, meshRender.m_pMaterial->GetTextureRenderResourceByID("metallicTexture"))
+				.SetCombinedImageSampler(4, meshRender.m_pMaterial->GetTextureRenderResourceByID("roughnessTexture"))
+				.SetCombinedImageSampler(5, meshRender.m_pMaterial->GetTextureRenderResourceByID("normalTexture"))
+				.SetCombinedImageSampler(6, meshRender.m_pMaterial->GetTextureRenderResourceByID("occlusionTexture"))
+				.SetCombinedImageSampler(7, meshRender.m_pMaterial->GetTextureRenderResourceByID("emissiveTexture"))
+				.Build();
+
+			vkCmdPushDescriptorSetKHR(commandBuffer,
+				VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_pipelineInfo.m_pipelineLayout, 2, 1, MaterialWriteDS.data());
+
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &meshRender.MeshVB.buffer, &offsets);
+			vkCmdBindIndexBuffer(commandBuffer, meshRender.MeshIB.buffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+
+			vkCmdDrawIndexed(commandBuffer, meshRender.GetMeshIndexNum(), 1, 0, 0, 0);
+		}
+	}
 
 	RenderPipelineInfo maskedMeshPipeline{};
 

@@ -3,56 +3,87 @@
 #include "Vulkan/icpVkGPUDevice.h"
 #include "icpGPUBuffer.h"
 
+
 INCEPTION_BEGIN_NAMESPACE
+
+WriteDescriptorSetBuilder::WriteDescriptorSetBuilder(size_t size)
+{
+	WriteDSs.resize(size);
+}
 
 WriteDescriptorSetBuilder& WriteDescriptorSetBuilder::SetUniformBuffer(
 	uint16_t dstBinding,
-	const icpBufferRenderResource& bufferRes,
-	uint64_t _range,
-	uint64_t _offset)
+	const icpBufferRenderResource& bufferRes)
 {
+	VkDescriptorBufferInfo bufferInfo{};
+
 	bufferInfo.buffer = bufferRes.buffer;
-	bufferInfo.offset = _offset;
-	bufferInfo.range = _range;
+	bufferInfo.offset = bufferRes.offset;
+	bufferInfo.range = bufferRes.range;
 
-	WriteDS.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	WriteDS.dstSet = VK_NULL_HANDLE;
-	WriteDS.dstBinding = dstBinding;
-	WriteDS.dstArrayElement = 0;
-	WriteDS.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	WriteDS.descriptorCount = 1;
-	WriteDS.pBufferInfo = &bufferInfo;
+	WriteDSs[dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	WriteDSs[dstBinding].dstSet = VK_NULL_HANDLE;
+	WriteDSs[dstBinding].dstBinding = dstBinding;
+	WriteDSs[dstBinding].dstArrayElement = 0;
+	WriteDSs[dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	WriteDSs[dstBinding].descriptorCount = 1;
+	WriteDSs[dstBinding].pBufferInfo = &bufferInfo;
 
 	return *this;
 }
 
-WriteDescriptorSetBuilder& WriteDescriptorSetBuilder::SetCombinedImageSampler(uint16_t binding, const std::vector<icpTextureRenderResourceInfo>& imgInfos)
+WriteDescriptorSetBuilder& WriteDescriptorSetBuilder::SetCombinedImageSampler(
+	uint16_t dstBinding,
+	const icpTextureRenderResourceInfo& imgInfo)
 {
-	bindings.push_back(binding);
+	VkDescriptorImageInfo imageInfo{};
 
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		std::variant<icpBufferRenderResourceInfo, icpTextureRenderResourceInfo> v = imgInfos[i];
-		resources.push_back(v);
-	}
+	imageInfo.sampler = imgInfo.m_texSampler;
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = imgInfo.m_texImageView;
+
+	WriteDSs[dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	WriteDSs[dstBinding].dstSet = VK_NULL_HANDLE;
+	WriteDSs[dstBinding].dstBinding = dstBinding;
+	WriteDSs[dstBinding].dstArrayElement = 0;
+	WriteDSs[dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	WriteDSs[dstBinding].descriptorCount = 1;
+	WriteDSs[dstBinding].pImageInfo = &imageInfo;
 
 	return *this;
 }
 
-WriteDescriptorSetBuilder& WriteDescriptorSetBuilder::SetInputAttachment(uint16_t binding, const std::vector<icpTextureRenderResourceInfo>& imgInfos)
+WriteDescriptorSetBuilder& WriteDescriptorSetBuilder::SetInputAttachment(
+	uint16_t dstBinding,
+	const icpTextureRenderResourceInfo& imgInfo)
 {
-	bindings.push_back(binding);
+	VkDescriptorImageInfo imageInfo{};
 
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		std::variant<icpBufferRenderResourceInfo, icpTextureRenderResourceInfo> v = imgInfos[i];
-		resources.push_back(v);
-	}
+	imageInfo.sampler = imgInfo.m_texSampler;
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = imgInfo.m_texImageView;
+
+	WriteDSs[dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	WriteDSs[dstBinding].dstSet = VK_NULL_HANDLE;
+	WriteDSs[dstBinding].dstBinding = dstBinding;
+	WriteDSs[dstBinding].dstArrayElement = 0;
+	WriteDSs[dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+	WriteDSs[dstBinding].descriptorCount = 1;
+	WriteDSs[dstBinding].pImageInfo = &imageInfo;
 
 	return *this;
 }
 
-DescriptorSetLayoutBuilder& DescriptorSetLayoutBuilder::SetDescriptorSetBinding(uint32_t bindIndex, VkDescriptorType dsType, VkShaderStageFlagBits stages)
+std::vector<VkWriteDescriptorSet>& WriteDescriptorSetBuilder::Build()
+{
+	return WriteDSs;
+}
+
+
+DescriptorSetLayoutBuilder& DescriptorSetLayoutBuilder::SetDescriptorSetBinding(
+	uint32_t bindIndex,
+	VkDescriptorType dsType,
+	VkShaderStageFlags stages)
 {
 	VkDescriptorSetLayoutBinding binding{};
 	binding.binding = bindIndex;
