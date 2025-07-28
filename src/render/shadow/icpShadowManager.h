@@ -26,25 +26,10 @@ public:
 
 	void InitCascadeDistance();
 	void UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& direction, uint32_t curFrame);
-
-	void UpdateCSMCB(uint32_t cascadeIndex, uint32_t curFrame);
 	void UpdateCascadeShadowMapCB(uint32_t curFrame);
-
 	void CreateCSMCB();
-	void CreateCSMDSLayout();
-	void AllocateCSMDS();
 
-	std::vector<VkBuffer> m_csmCBs;
-	std::vector<VmaAllocation> m_csmCBAllocations;
-
-	icpDescriptorSetLayoutInfo m_csmDSLayout{};
-	std::vector<VkDescriptorSet> m_csmDSs;
-
-	std::vector<VkBuffer> m_cascadeShadowMapCBs;
-	std::vector<VmaAllocation> m_cascadeShadowMapCBAllocations;
-
-	icpDescriptorSetLayoutInfo m_cascadeShadowMapDSLayout{};
-	std::vector<VkDescriptorSet> m_cascadeShadowMapDSs;
+	std::vector<icpBufferRenderResource> CSMUBOs;
 	
 	std::vector<float> m_cascadeSplits;
 	std::vector<glm::mat4> m_lightProjViews;
@@ -52,7 +37,6 @@ public:
 private:
 	
 
-	
 };
 
 

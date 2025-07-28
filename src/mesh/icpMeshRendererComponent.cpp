@@ -7,7 +7,6 @@
 #include "../resource/icpResourceSystem.h"
 #include "icpMeshResource.h"
 #include "../render/renderPass/icpEditorUiPass.h"
-#include "../render/renderPass/icpMainForwardPass.h"
 #include "../render/RHI/icpDescirptorSet.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -17,33 +16,6 @@ void icpMeshRendererComponent::prepareRenderResourceForMesh()
 	createVertexBuffers();
 	createIndexBuffers();
 	createUniformBuffers();
-	allocateDescriptorSets();
-}
-
-void icpMeshRendererComponent::allocateDescriptorSets()
-{
-	auto pGPUDevice = g_system_container.m_renderSystem->GetGPUDevice();
-
-	//todo: reconsider how to manage layout
-	icpDescriptorSetCreation creation;
-	auto& layout = g_system_container.m_renderSystem->GetSceneRenderer()
-		->AccessRenderPass(eRenderPass::GBUFFER_PASS)
-		->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MESH];
-
-	creation.layoutInfo = layout;
-
-	std::vector<icpBufferRenderResourceInfo> bufferInfos;
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		icpBufferRenderResourceInfo bufferInfo{};
-		bufferInfo.buffer = m_perMeshUniformBuffers[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UBOMeshRenderResource);
-		bufferInfos.push_back(bufferInfo);
-	}
-
-	creation.SetUniformBuffer(0, bufferInfos);
-	pGPUDevice->CreateDescriptorSet(creation, m_perMeshDSs);
 }
 
 void icpMeshRendererComponent::createUniformBuffers()
@@ -52,8 +24,7 @@ void icpMeshRendererComponent::createUniformBuffers()
 
 	auto perMeshSize = sizeof(UBOMeshRenderResource);
 
-	m_perMeshUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	m_perMeshUniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
+	MeshUBOs.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkSharingMode mode = vulkanRHI->GetQueueFamilyIndices().m_graphicsFamily.value() == vulkanRHI->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 	auto& queueIndices = vulkanRHI->GetQueueFamilyIndicesVector();
@@ -65,8 +36,8 @@ void icpMeshRendererComponent::createUniformBuffers()
 			mode,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			vulkanRHI->GetVmaAllocator(),
-			m_perMeshUniformBufferAllocations[i],
-			m_perMeshUniformBuffers[i],
+			MeshUBOs[i].bufferAllocation,
+			MeshUBOs[i].buffer,
 			queueIndices.size(),
 			queueIndices.data()
 		);
@@ -107,14 +78,14 @@ void icpMeshRendererComponent::createVertexBuffers()
 		mode,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		vulkanRHI->GetVmaAllocator(),
-		m_vertexBufferAllocation,
-		m_vertexBuffer,
+		MeshVB.bufferAllocation,
+		MeshVB.buffer,
 		queueIndices.size(),
 		queueIndices.data()
 	);
 
 	icpVulkanUtility::copyBuffer(stagingBuffer,
-		m_vertexBuffer,
+		MeshVB.buffer,
 		bufferSize,
 		vulkanRHI->GetLogicalDevice(),
 		vulkanRHI->GetTransferCommandPool(),
@@ -157,14 +128,14 @@ void icpMeshRendererComponent::createIndexBuffers()
 		mode,
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		vulkanRHI->GetVmaAllocator(),
-		m_indexBufferAllocation,
-		m_indexBuffer,
+		MeshIB.bufferAllocation,
+		MeshIB.buffer,
 		queueIndices.size(),
 		queueIndices.data()
 	);
 
 	icpVulkanUtility::copyBuffer(stagingBuffer,
-		m_indexBuffer,
+		MeshIB.buffer,
 		bufferSize,
 		vulkanRHI->GetLogicalDevice(),
 		vulkanRHI->GetTransferCommandPool(),
@@ -202,9 +173,9 @@ void icpMeshRendererComponent::UploadMeshCB(const UBOMeshRenderResource& ubo)
 	auto curFrame = g_system_container.m_renderSystem->GetSceneRenderer()->GetCurrentFrame();
 
 	void* data;
-	vmaMapMemory(vulkanRHI->GetVmaAllocator(), m_perMeshUniformBufferAllocations[curFrame], &data);
+	vmaMapMemory(vulkanRHI->GetVmaAllocator(), MeshUBOs[curFrame].bufferAllocation, &data);
 	memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
-	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), m_perMeshUniformBufferAllocations[curFrame]);
+	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), MeshUBOs[curFrame].bufferAllocation);
 }
 
 void icpMeshRendererComponent::UploadMaterialCB()
@@ -213,9 +184,9 @@ void icpMeshRendererComponent::UploadMaterialCB()
 	auto curFrame = g_system_container.m_renderSystem->GetSceneRenderer()->GetCurrentFrame();
 
 	void* materialData;
-	vmaMapMemory(vulkanRHI->GetVmaAllocator(), m_pMaterial->m_perMaterialUniformBufferAllocations[curFrame], &materialData);
+	vmaMapMemory(vulkanRHI->GetVmaAllocator(), m_pMaterial->MaterialUBOs[curFrame].bufferAllocation, &materialData);
 	memcpy(materialData, m_pMaterial->CheckMaterialDataCache(), sizeof(PBRShaderMaterial));
-	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), m_pMaterial->m_perMaterialUniformBufferAllocations[curFrame]);
+	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), m_pMaterial->MaterialUBOs[curFrame].bufferAllocation);
 }
 
 

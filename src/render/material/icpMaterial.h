@@ -9,6 +9,7 @@
 #include <vk_mem_alloc.h>
 
 #include "icpTextureRenderResourceManager.h"
+#include "../RHI/icpGPUBuffer.h"
 #include "glm/vec3.hpp"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -70,10 +71,7 @@ public:
 	eMaterialShadingModel m_shadingModel = eMaterialShadingModel::SHADING_MODEL_COUNT;
 	eMaterialBlendMode m_blendMode = eMaterialBlendMode::OPAQUE;
 
-	std::vector<VkDescriptorSet> m_perMaterialDSs;
-
-	std::vector<VkBuffer> m_perMaterialUniformBuffers;
-	std::vector<VmaAllocation> m_perMaterialUniformBufferAllocations;
+	std::vector<icpBufferRenderResource> MaterialUBOs;
 
 	bool m_bRenderResourcesReady = false;
 };

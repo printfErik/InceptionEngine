@@ -15,9 +15,10 @@
 #include "../render/material/icpMaterial.h"
 #include <vk_mem_alloc.h>
 
-INCEPTION_BEGIN_NAMESPACE
+#include "../render/RHI/icpGPUBuffer.h"
 
-class icpImageResource;
+INCEPTION_BEGIN_NAMESPACE
+	class icpImageResource;
 
 
 struct UBOMeshRenderResource
@@ -37,24 +38,16 @@ public:
 	void createIndexBuffers();
 	void createUniformBuffers();
 
-	void allocateDescriptorSets();
-
 	void AddMaterial(std::shared_ptr<icpMaterialTemplate> material);
 	std::shared_ptr<icpMaterialTemplate> addMaterial(eMaterialShadingModel shading_model);
 
 	void UploadMeshCB(const UBOMeshRenderResource& ubo);
 	void UploadMaterialCB();
 
-	std::vector<VkDescriptorSet> m_perMeshDSs;
+	std::vector<icpBufferRenderResource> MeshUBOs;
 
-	std::vector<VkBuffer> m_perMeshUniformBuffers;
-	std::vector<VmaAllocation> m_perMeshUniformBufferAllocations;
-
-	VkBuffer m_vertexBuffer{ VK_NULL_HANDLE };
-	VmaAllocation m_vertexBufferAllocation{ VK_NULL_HANDLE };
-
-	VkBuffer m_indexBuffer{ VK_NULL_HANDLE };
-	VmaAllocation m_indexBufferAllocation{ VK_NULL_HANDLE };
+	icpBufferRenderResource MeshVB;
+	icpBufferRenderResource MeshIB;
 
 	std::string m_meshResId;
 

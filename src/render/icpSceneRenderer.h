@@ -82,13 +82,14 @@ public:
 
 	uint32_t GetCurrentFrame() const;
 
+	std::vector<icpBufferRenderResource> SceneUBOs;
 protected:
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
 	std::map<eRenderPass, std::shared_ptr<icpRenderPassBase>> m_renderPasses;
 
 	VkDescriptorSetLayout m_sceneDSLayout{ VK_NULL_HANDLE };
-	std::vector<VkBuffer> m_vSceneCBs;
-	std::vector<VmaAllocation> m_vSceneCBAllocations;
+
+	
 
 	uint32_t m_currentFrame = 0;
 private:

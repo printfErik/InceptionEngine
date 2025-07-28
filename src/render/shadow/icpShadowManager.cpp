@@ -93,14 +93,6 @@ void icpShadowManager::UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& 
     }
 }
 
-void icpShadowManager::UpdateCSMCB(uint32_t cascadeIndex, uint32_t curFrame)
-{
-    void* data;
-    vmaMapMemory(m_pDevice->GetVmaAllocator(), m_csmCBAllocations[curFrame], &data);
-    memcpy(data, &m_lightProjViews[cascadeIndex], sizeof(glm::mat4));
-    vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_csmCBAllocations[curFrame]);
-}
-
 void icpShadowManager::UpdateCascadeShadowMapCB(uint32_t curFrame)
 {
     UBOCSM ubo{};
@@ -112,37 +104,19 @@ void icpShadowManager::UpdateCascadeShadowMapCB(uint32_t curFrame)
     }
 
     void* data;
-    vmaMapMemory(m_pDevice->GetVmaAllocator(), m_cascadeShadowMapCBAllocations[curFrame], &data);
+    vmaMapMemory(m_pDevice->GetVmaAllocator(), CSMUBOs[curFrame].bufferAllocation, &data);
     memcpy(data, &ubo, sizeof(UBOCSM));
-    vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_cascadeShadowMapCBAllocations[curFrame]);
+    vmaUnmapMemory(m_pDevice->GetVmaAllocator(), CSMUBOs[curFrame].bufferAllocation);
 }
 
 void icpShadowManager::CreateCSMCB()
 {
     VkSharingMode mode = m_pDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == m_pDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
-    m_csmCBs.resize(MAX_FRAMES_IN_FLIGHT);
-    m_csmCBAllocations.resize(MAX_FRAMES_IN_FLIGHT);
-
     auto allocator = m_pDevice->GetVmaAllocator();
     auto& queueIndices = m_pDevice->GetQueueFamilyIndicesVector();
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        icpVulkanUtility::CreateGPUBuffer(
-            sizeof(glm::mat4),
-            mode,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            allocator,
-            m_csmCBAllocations[i],
-            m_csmCBs[i],
-            queueIndices.size(),
-            queueIndices.data()
-        );
-    }
-
-    m_cascadeShadowMapCBs.resize(MAX_FRAMES_IN_FLIGHT);
-    m_cascadeShadowMapCBAllocations.resize(MAX_FRAMES_IN_FLIGHT);
+    CSMUBOs.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -151,56 +125,13 @@ void icpShadowManager::CreateCSMCB()
             mode,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             allocator,
-            m_cascadeShadowMapCBAllocations[i],
-            m_cascadeShadowMapCBs[i],
+            CSMUBOs[i].bufferAllocation,
+            CSMUBOs[i].buffer,
             queueIndices.size(),
             queueIndices.data()
         );
     }
 
-}
-
-void icpShadowManager::CreateCSMDSLayout()
-{
-    VkDescriptorSetLayoutBinding CSMUBOBinding{};
-    CSMUBOBinding.binding = 0;
-    CSMUBOBinding.descriptorCount = 1;
-    CSMUBOBinding.descriptorType = VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    CSMUBOBinding.pImmutableSamplers = nullptr;
-    CSMUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    m_csmDSLayout.bindings.push_back({ VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
-
-    std::array<VkDescriptorSetLayoutBinding, 1> bindings{ CSMUBOBinding };
-
-    VkDescriptorSetLayoutCreateInfo createInfo{};
-    createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-    createInfo.pBindings = bindings.data();
-    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-
-    if (vkCreateDescriptorSetLayout(m_pDevice->GetLogicalDevice(), &createInfo, nullptr, &m_csmDSLayout.layout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create descriptor set layout!");
-    }
-
-}
-
-void icpShadowManager::AllocateCSMDS()
-{
-    icpDescriptorSetCreation creation{};
-    creation.layoutInfo = m_csmDSLayout;
-
-    std::vector<icpBufferRenderResourceInfo> bufferInfos;
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        icpBufferRenderResourceInfo bufferInfo{};
-        bufferInfo.buffer = m_csmCBs[i];
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(glm::mat4);
-        bufferInfos.push_back(bufferInfo);
-    }
-
-    creation.SetUniformBuffer(0, bufferInfos);
-    m_pDevice->CreateDescriptorSet(creation, m_csmDSs);
 }
 
 INCEPTION_END_NAMESPACE

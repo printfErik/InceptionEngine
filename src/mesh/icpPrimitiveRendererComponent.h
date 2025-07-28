@@ -31,8 +31,6 @@ public:
 	void CreateIndexBuffers();
 	void CreateUniformBuffers();
 
-	void AllocateDescriptorSets();
-
 	void FillInPrimitiveData(const glm::vec3& color);
 
 	std::shared_ptr<icpMaterialTemplate> AddMaterial(eMaterialShadingModel shading_model);
@@ -40,16 +38,10 @@ public:
 	void UploadMeshCB(const UBOMeshRenderResource& ubo);
 	void UploadMaterialCB();
 
-	std::vector<VkDescriptorSet> m_descriptorSets;
+	std::vector<icpBufferRenderResource> MeshUBOs;
 
-	std::vector<VkBuffer> m_uniformBuffers;
-	std::vector<VmaAllocation> m_uniformBufferAllocations;
-
-	VkBuffer m_vertexBuffer{VK_NULL_HANDLE};
-	VmaAllocation m_vertexBufferAllocation{ VK_NULL_HANDLE };
-
-	VkBuffer m_indexBuffer{ VK_NULL_HANDLE };
-	VmaAllocation m_indexBufferAllocation{ VK_NULL_HANDLE };
+	icpBufferRenderResource MeshVB;
+	icpBufferRenderResource MeshIB;
 
 	std::vector<icpVertex> m_vertices;
 	std::vector<uint32_t> m_vertexIndices;

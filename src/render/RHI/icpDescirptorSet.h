@@ -10,20 +10,24 @@
 INCEPTION_BEGIN_NAMESPACE
 
 
-struct icpDescriptorSetCreation
+class WriteDescriptorSetBuilder
 {
-	icpDescriptorSetLayoutInfo layoutInfo{};
+public:
+	WriteDescriptorSetBuilder() = default;
 
-	std::vector<std::variant<icpBufferRenderResourceInfo, icpTextureRenderResourceInfo>> resources;
-	std::vector<uint16_t> bindings;
+	WriteDescriptorSetBuilder& SetUniformBuffer(
+		uint16_t dstBinding,
+		const icpBufferRenderResource& bufferRes,
+		uint64_t _range,
+		uint64_t _offset = 0);
 
-	uint32_t setIndex = 0;
-	icpDescriptorSetCreation& SetUniformBuffer(uint16_t binding, 
-		const std::vector<icpBufferRenderResourceInfo>& ub);
-	icpDescriptorSetCreation& SetCombinedImageSampler(uint16_t binding,
-		const std::vector<icpTextureRenderResourceInfo>& imgInfos);
-	icpDescriptorSetCreation& SetInputAttachment(uint16_t binding,
-		const std::vector<icpTextureRenderResourceInfo>& inputAttachmentInfos);
+	WriteDescriptorSetBuilder& SetCombinedImageSampler(uint16_t binding,
+		const icpTextureRenderResourceInfo& imgInfos);
+
+	WriteDescriptorSetBuilder& SetInputAttachment(uint16_t binding,
+		const icpTextureRenderResourceInfo& inputAttachmentInfos);
+
+	std::vector<VkWriteDescriptorSet> WriteDSs;
 };
 
 class DescriptorSetLayoutBuilder

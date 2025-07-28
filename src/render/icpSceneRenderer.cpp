@@ -34,8 +34,7 @@ void icpSceneRenderer::CreateSceneCB()
 	auto perFrameSize = sizeof(perFrameCB);
 	VkSharingMode mode = m_pDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == m_pDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
-	m_vSceneCBs.resize(MAX_FRAMES_IN_FLIGHT);
-	m_vSceneCBAllocations.resize(MAX_FRAMES_IN_FLIGHT);
+	SceneUBOs.resize(MAX_FRAMES_IN_FLIGHT);
 
 	auto allocator = m_pDevice->GetVmaAllocator();
 	auto& queueIndices = m_pDevice->GetQueueFamilyIndicesVector();
@@ -47,8 +46,8 @@ void icpSceneRenderer::CreateSceneCB()
 			mode,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			allocator,
-			m_vSceneCBAllocations[i],
-			m_vSceneCBs[i],
+			SceneUBOs[i].bufferAllocation,
+			SceneUBOs[i].buffer,
 			queueIndices.size(),
 			queueIndices.data()
 		);
@@ -67,9 +66,9 @@ void icpSceneRenderer::UpdateGlobalSceneCB(uint32_t curFrame)
 	lightSys->UpdateLightCB(CBPerFrame);
 
 	void* data;
-	vmaMapMemory(m_pDevice->GetVmaAllocator(), m_vSceneCBAllocations[curFrame], &data);
+	vmaMapMemory(m_pDevice->GetVmaAllocator(), SceneUBOs[curFrame].bufferAllocation, &data);
 	memcpy(data, &CBPerFrame, sizeof(perFrameCB));
-	vmaUnmapMemory(m_pDevice->GetVmaAllocator(), m_vSceneCBAllocations[curFrame]);
+	vmaUnmapMemory(m_pDevice->GetVmaAllocator(), SceneUBOs[curFrame].bufferAllocation);
 }
 
 void icpSceneRenderer::UpdateCSMProjViewMat(uint32_t curFrame)

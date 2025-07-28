@@ -357,18 +357,17 @@ void icpDeferredRenderer::Render()
 	for (uint32_t i = 0; i < s_csmCascadeCount; i++)
 	{
 		CSMPass->BeginCSMRenderPass(m_currentFrame, i, m_vDeferredCommandBuffers[m_currentFrame]);
-		g_system_container.m_renderSystem->m_shadowManager->UpdateCSMCB(i, m_currentFrame);
 		CSMPass->RenderPushConstant(index, m_currentFrame, i, result);
 		CSMPass->EndCSMRenderPass(m_vDeferredCommandBuffers[m_currentFrame]);
 	}
 
-	BeginForwardRenderPass(index);
+	BeginDeferredRenderPass(index);
 
 	m_renderPasses[eRenderPass::GBUFFER_PASS]->Render(index, m_currentFrame, result);
 	m_renderPasses[eRenderPass::DEFERRED_COMPOSITION_PASS]->Render(index, m_currentFrame, result);
 	m_renderPasses[eRenderPass::EDITOR_UI_PASS]->Render(index, m_currentFrame, result);
 
-	EndForwardRenderPass();
+	EndDeferredRenderPass();
 	EndRecordingCommandBuffer();
 
 	SubmitCommandList();

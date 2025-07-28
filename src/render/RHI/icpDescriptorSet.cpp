@@ -5,20 +5,28 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-icpDescriptorSetCreation& icpDescriptorSetCreation::SetUniformBuffer(uint16_t binding, const std::vector<icpBufferRenderResourceInfo>& ub)
+WriteDescriptorSetBuilder& WriteDescriptorSetBuilder::SetUniformBuffer(
+	uint16_t dstBinding,
+	const icpBufferRenderResource& bufferRes,
+	uint64_t _range,
+	uint64_t _offset)
 {
-	bindings.push_back(binding);
+	bufferInfo.buffer = bufferRes.buffer;
+	bufferInfo.offset = _offset;
+	bufferInfo.range = _range;
 
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		std::variant<icpBufferRenderResourceInfo, icpTextureRenderResourceInfo> v = ub[i];
-		resources.push_back(v);
-	}
+	WriteDS.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	WriteDS.dstSet = VK_NULL_HANDLE;
+	WriteDS.dstBinding = dstBinding;
+	WriteDS.dstArrayElement = 0;
+	WriteDS.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	WriteDS.descriptorCount = 1;
+	WriteDS.pBufferInfo = &bufferInfo;
 
 	return *this;
 }
 
-icpDescriptorSetCreation& icpDescriptorSetCreation::SetCombinedImageSampler(uint16_t binding, const std::vector<icpTextureRenderResourceInfo>& imgInfos)
+WriteDescriptorSetBuilder& WriteDescriptorSetBuilder::SetCombinedImageSampler(uint16_t binding, const std::vector<icpTextureRenderResourceInfo>& imgInfos)
 {
 	bindings.push_back(binding);
 
@@ -31,7 +39,7 @@ icpDescriptorSetCreation& icpDescriptorSetCreation::SetCombinedImageSampler(uint
 	return *this;
 }
 
-icpDescriptorSetCreation& icpDescriptorSetCreation::SetInputAttachment(uint16_t binding, const std::vector<icpTextureRenderResourceInfo>& imgInfos)
+WriteDescriptorSetBuilder& WriteDescriptorSetBuilder::SetInputAttachment(uint16_t binding, const std::vector<icpTextureRenderResourceInfo>& imgInfos)
 {
 	bindings.push_back(binding);
 

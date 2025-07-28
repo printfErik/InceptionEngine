@@ -101,8 +101,6 @@ void icpGBufferPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, Vk
 
 void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
-	auto mgr = m_pSceneRenderer.lock();
-
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
@@ -117,9 +115,11 @@ void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	scissor.extent = m_rhi->GetSwapChainExtent();
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	std::vector<VkDeviceSize> offsets{ 0 };
+	VkDeviceSize offsets = 0;
 
+	auto renderer = m_pSceneRenderer.lock();
 	
+
 	vkCmdPushDescriptorSetKHR(commandBuffer, 
 		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, 
 		m_pipelineInfo.m_pipelineLayout, 2, 1, );
@@ -153,11 +153,8 @@ void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 
 			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(meshRender.m_pMaterial->m_perMaterialDSs[curFrame]), 0, nullptr);
 
-			auto vertBuf = meshRender.m_vertexBuffer;
-			std::vector<VkBuffer>vertexBuffers{ vertBuf };
-
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
-			vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &meshRender.MeshVB.buffer, &offsets);
+			vkCmdBindIndexBuffer(commandBuffer, meshRender.MeshIB.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
 			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
@@ -174,11 +171,8 @@ void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 
 			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(primitive.m_pMaterial->m_perMaterialDSs[curFrame]), 0, nullptr);
 
-			auto vertBuf = primitive.m_vertexBuffer;
-			std::vector<VkBuffer>vertexBuffers{ vertBuf };
-
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
-			vkCmdBindIndexBuffer(commandBuffer, primitive.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &primitive.MeshVB.buffer, offsets.data());
+			vkCmdBindIndexBuffer(commandBuffer, primitive.MeshIB.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 			auto& descriptorSets = primitive.m_descriptorSets;
 			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
