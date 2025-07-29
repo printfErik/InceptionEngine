@@ -30,8 +30,6 @@ bool icpRenderSystem::initializeRenderSystem()
 	m_shadowManager->m_pDevice = m_pGPUDevice;
 	m_shadowManager->InitCascadeDistance();
 	m_shadowManager->CreateCSMCB();
-	m_shadowManager->CreateCSMDSLayout();
-	m_shadowManager->AllocateCSMDS();
 
 	m_pSceneRenderer = std::make_shared<icpDeferredRenderer>();
 	m_pSceneRenderer->Initialize(m_pGPUDevice);
@@ -94,8 +92,6 @@ void icpRenderSystem::drawCube()
 	primitive.CreateVertexBuffers();
 	primitive.CreateIndexBuffers();
 	primitive.CreateUniformBuffers();
-
-	primitive.AllocateDescriptorSets();
 }
 
 void icpRenderSystem::createDirLight()

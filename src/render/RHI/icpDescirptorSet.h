@@ -20,10 +20,10 @@ public:
 		const icpBufferRenderResource& bufferRes);
 
 	WriteDescriptorSetBuilder& SetCombinedImageSampler(uint16_t dstBinding,
-		const icpTextureRenderResourceInfo& imgInfo);
+		const icpTextureRenderResourceInfo& imgInfo, uint32_t viewIndex = 0);
 
 	WriteDescriptorSetBuilder& SetInputAttachment(uint16_t dstBinding,
-		const icpTextureRenderResourceInfo& imgInfo);
+		const icpTextureRenderResourceInfo& imgInfo, uint32_t viewIndex = 0);
 
 	std::vector<VkWriteDescriptorSet>& Build();
 

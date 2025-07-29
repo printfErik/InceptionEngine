@@ -192,7 +192,7 @@ void icpMeshRendererComponent::UploadMaterialCB()
 	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), m_pMaterial->MaterialUBOs[curFrame].bufferAllocation);
 }
 
-uint32_t icpMeshRendererComponent::GetMeshIndexNum()
+uint32_t icpMeshRendererComponent::GetMeshIndexNum() const
 {
 	return m_meshVertexIndicesNum;
 }

@@ -387,7 +387,6 @@ void icpSceneSystem::LoadDefaultScene()
 		sphere.CreateVertexBuffers();
 		sphere.CreateIndexBuffers();
 		sphere.CreateUniformBuffers();
-		sphere.AllocateDescriptorSets();
 
 		auto&& material = sphere.AddMaterial(eMaterialShadingModel::PBR_LIT);
 

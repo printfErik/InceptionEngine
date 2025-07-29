@@ -51,7 +51,7 @@ void icpEditorUiPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, V
 
 	ImGui::Render();
 
-	auto commandBuffer = mgr->GetDeferredCommandBuffer(currentFrame) ? mgr->GetDeferredCommandBuffer(currentFrame) : mgr->GetMainForwardCommandBuffer(currentFrame);
+	auto commandBuffer = mgr->GetDeferredCommandBuffer(currentFrame);
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 }
 

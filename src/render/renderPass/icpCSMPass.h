@@ -1,8 +1,12 @@
 #pragma once
 #include "../../core/icpMacros.h"
 #include "icpRenderPassBase.h"
+#include "../../mesh/icpPrimitiveRendererComponent.h"
+#include "../../render/material/icpMaterial.h"
+#include "../../scene/icpEntity.h"
 
 INCEPTION_BEGIN_NAMESPACE
+
 
 class icpCSMPass : public icpRenderPassBase
 {
@@ -39,9 +43,44 @@ private:
 	void CreateCSMFrameBuffer();
 	void CreateCSMImageRenderResource();
 
-	float m_fDepthBiasConstantFactor;
-	float m_fDepthBiasClamp;
-	float m_fDepthBiasSlopeFactor;
+	template<typename CompType>
+	void Draw(std::shared_ptr<icpGameEntity> entity, VkCommandBuffer commandBuffer, uint32_t currentFrame)
+	{
+		if (entity->hasComponent<CompType>())
+		{
+			const auto& meshRender = entity->accessComponent<CompType>();
+			if (meshRender.m_pMaterial->m_blendMode != eMaterialBlendMode::TRANSLUCENT)
+			{
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
+			}
+			else
+			{
+				return;
+			}
+			auto MeshWriteDS = WriteDescriptorSetBuilder(1u)
+				.SetUniformBuffer(0, meshRender.MeshUBOs[currentFrame])
+				.Build();
+
+			vkCmdPushDescriptorSetKHR(commandBuffer,
+				VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_pipelineInfo.m_pipelineLayout, 0, 1, MeshWriteDS.data());
+
+			VkDeviceSize offsets = 0;
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &meshRender.MeshVB.buffer, &offsets);
+			vkCmdBindIndexBuffer(commandBuffer, meshRender.MeshIB.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+			if constexpr (std::is_same_v<CompType, icpPrimitiveRendererComponent>)
+			{
+				vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+			}
+			else
+			{
+				vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+			}
+
+			vkCmdDrawIndexed(commandBuffer, meshRender.GetMeshIndexNum(), 1, 0, 0, 0);
+		}
+	}
 
 	VkRenderPass m_shadowRenderPass;
 	std::vector<VkFramebuffer> m_csmFrameBuffers;

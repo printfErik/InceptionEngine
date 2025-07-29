@@ -3,6 +3,7 @@
 #include "icpRenderPassBase.h"
 #include "../../render/material/icpMaterial.h"
 #include "../../scene/icpEntity.h"
+#include "../../mesh/icpPrimitiveRendererComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
 	class icpGBufferPass : public icpRenderPassBase
@@ -83,8 +84,15 @@ private:
 
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &meshRender.MeshVB.buffer, &offsets);
 			vkCmdBindIndexBuffer(commandBuffer, meshRender.MeshIB.buffer, 0, VK_INDEX_TYPE_UINT32);
-			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-
+			
+			if constexpr (std::is_same_v<CompType, icpPrimitiveRendererComponent>)
+			{
+				vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+			}
+			else
+			{
+				vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+			}
 			vkCmdDrawIndexed(commandBuffer, meshRender.GetMeshIndexNum(), 1, 0, 0, 0);
 		}
 	}

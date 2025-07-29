@@ -45,12 +45,6 @@ void icpCSMPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 		.Build(m_rhi->GetLogicalDevice())
 	);
 
-	// csm projview matrix DS layout 
-	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
-		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.Build(m_rhi->GetLogicalDevice())
-	);
-
 	SetupPipeline();
 }
 
@@ -245,12 +239,6 @@ void icpCSMPass::RecordCommandBufferPushConstant(VkCommandBuffer commandBuffer, 
 	
 	auto shadowMgr = g_system_container.m_renderSystem->m_shadowManager;
 
-	vkCmdBindDescriptorSets(commandBuffer, 
-		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, 
-		m_pipelineInfo.m_pipelineLayout, 
-		1, 1, &shadowMgr->m_csmDSs[curFrame], 0, nullptr
-	);
-
 	vkCmdPushConstants(
 		commandBuffer,
 		m_pipelineInfo.m_pipelineLayout,
@@ -266,37 +254,8 @@ void icpCSMPass::RecordCommandBufferPushConstant(VkCommandBuffer commandBuffer, 
 
 	for (auto entity : rootList)
 	{
-		if (entity->hasComponent<icpMeshRendererComponent>())
-		{
-			const auto& meshRender = entity->accessComponent<icpMeshRendererComponent>();
-
-			auto vertBuf = meshRender.m_vertexBuffer;
-			std::vector<VkBuffer>vertexBuffers{ vertBuf };
-
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
-			vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
-			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-			vkCmdDrawIndexed(commandBuffer, meshRender.m_meshVertexIndicesNum, 1, 0, 0, 0);
-		}
-		else if (entity->hasComponent<icpPrimitiveRendererComponent>())
-		{
-			auto& primitive = entity->accessComponent<icpPrimitiveRendererComponent>();
-
-			auto vertBuf = primitive.m_vertexBuffer;
-			std::vector<VkBuffer>vertexBuffers{ vertBuf };
-
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
-			vkCmdBindIndexBuffer(commandBuffer, primitive.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-			auto& descriptorSets = primitive.m_descriptorSets;
-			vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &descriptorSets[curFrame], 0, nullptr);
-
-			vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
-
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(primitive.m_vertexIndices.size()), 1, 0, 0, 0);
-		}
+		Draw<icpMeshRendererComponent>(entity, commandBuffer, curFrame);
+		Draw<icpPrimitiveRendererComponent>(entity, commandBuffer, curFrame);
 	}
 }
 

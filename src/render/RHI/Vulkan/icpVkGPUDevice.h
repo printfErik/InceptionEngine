@@ -48,7 +48,6 @@ public:
 
 	VkDevice& GetLogicalDevice() override;
 	VkPhysicalDevice& GetPhysicalDevice() override;
-	void CreateDescriptorSet(const icpDescriptorSetCreation& creation, std::vector<VkDescriptorSet>& DSs) override;
 
 	VmaAllocator& GetVmaAllocator() override;
 	QueueFamilyIndices& GetQueueFamilyIndices() override;

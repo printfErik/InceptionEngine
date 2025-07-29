@@ -34,13 +34,14 @@ WriteDescriptorSetBuilder& WriteDescriptorSetBuilder::SetUniformBuffer(
 
 WriteDescriptorSetBuilder& WriteDescriptorSetBuilder::SetCombinedImageSampler(
 	uint16_t dstBinding,
-	const icpTextureRenderResourceInfo& imgInfo)
+	const icpTextureRenderResourceInfo& imgInfo,
+	uint32_t viewIndex)
 {
 	VkDescriptorImageInfo imageInfo{};
 
 	imageInfo.sampler = imgInfo.m_texSampler;
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = imgInfo.m_texImageView;
+	imageInfo.imageView = imgInfo.m_texImageViews[viewIndex];
 
 	WriteDSs[dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	WriteDSs[dstBinding].dstSet = VK_NULL_HANDLE;
@@ -55,13 +56,14 @@ WriteDescriptorSetBuilder& WriteDescriptorSetBuilder::SetCombinedImageSampler(
 
 WriteDescriptorSetBuilder& WriteDescriptorSetBuilder::SetInputAttachment(
 	uint16_t dstBinding,
-	const icpTextureRenderResourceInfo& imgInfo)
+	const icpTextureRenderResourceInfo& imgInfo,
+	uint32_t viewIndex)
 {
 	VkDescriptorImageInfo imageInfo{};
 
 	imageInfo.sampler = imgInfo.m_texSampler;
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = imgInfo.m_texImageView;
+	imageInfo.imageView = imgInfo.m_texImageViews[viewIndex];
 
 	WriteDSs[dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	WriteDSs[dstBinding].dstSet = VK_NULL_HANDLE;

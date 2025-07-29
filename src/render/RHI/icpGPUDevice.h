@@ -68,8 +68,6 @@ public:
 	virtual void CreateSwapChainImageViews() = 0;
 	virtual void CreateDepthResources() = 0;
 
-	virtual void CreateDescriptorSet(const icpDescriptorSetCreation& creation, std::vector<VkDescriptorSet>& DSs) = 0;
-
 	bool m_framebufferResized = false;
 	GLFWwindow* m_window{ VK_NULL_HANDLE };
 };

@@ -272,7 +272,7 @@ void icpPrimitiveRendererComponent::UploadMaterialCB()
 }
 
 
-uint32_t icpPrimitiveRendererComponent::GetMeshIndexNum()
+uint32_t icpPrimitiveRendererComponent::GetMeshIndexNum() const
 {
 	return m_vertexIndices.size();
 }

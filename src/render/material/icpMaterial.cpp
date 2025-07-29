@@ -9,7 +9,6 @@
 #include "../../core/icpLogSystem.h"
 #include "../../mesh/icpMeshResource.h"
 #include "../icpImageResource.h"
-#include "../renderPass/icpMainForwardPass.h"
 #include "../../core/icpConfigSystem.h"
 
 INCEPTION_BEGIN_NAMESPACE
@@ -27,8 +26,7 @@ void icpMaterialInstance::CreateUniformBuffers()
 
 	if (UBOSize > 0)
 	{
-		m_perMaterialUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-		m_perMaterialUniformBufferAllocations.resize(MAX_FRAMES_IN_FLIGHT);
+		MaterialUBOs.resize(MAX_FRAMES_IN_FLIGHT);
 
 		VkSharingMode mode = vulkanRHI->GetQueueFamilyIndices().m_graphicsFamily.value() == vulkanRHI->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
 
@@ -41,8 +39,8 @@ void icpMaterialInstance::CreateUniformBuffers()
 				mode,
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				vulkanRHI->GetVmaAllocator(),
-				m_perMaterialUniformBufferAllocations[i],
-				m_perMaterialUniformBuffers[i],
+				MaterialUBOs[i].bufferAllocation,
+				MaterialUBOs[i].buffer,
 				indicesVec.size(),
 				indicesVec.data()
 			);
@@ -87,80 +85,14 @@ icpTextureRenderResourceInfo& icpMaterialInstance::GetTextureRenderResourceByID(
 	return texRenderResMgr->GetTextureRenderResByID(texture.m_textureID);
 }
 
-void icpMaterialInstance::AllocateDescriptorSets()
-{
-	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
-
-	//todo: reconsider how to manage layout
-	icpDescriptorSetCreation creation{};
-	auto& layout = g_system_container.m_renderSystem->GetSceneRenderer()
-		->AccessRenderPass(eRenderPass::GBUFFER_PASS)
-		->m_DSLayouts[icpMainForwardPass::eMainForwardPassDSType::PER_MATERIAL];
-
-	creation.layoutInfo = layout;
-
-	uint64_t UBOSize = ComputeUBOSize();
-	if (UBOSize > 0)
-	{
-		std::vector<icpBufferRenderResourceInfo> bufferInfos;
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-		{
-			icpBufferRenderResourceInfo bufferInfo{};
-			bufferInfo.buffer = m_perMaterialUniformBuffers[i];
-			bufferInfo.offset = 0;
-			bufferInfo.range = UBOSize;
-
-			bufferInfos.push_back(bufferInfo);
-		}
-
-		creation.SetUniformBuffer(0, bufferInfos);
-	}
-
-	std::vector<std::vector<icpTextureRenderResourceInfo>> imgInfosAllFrames;
-
-	switch (m_shadingModel)
-	{
-	case eMaterialShadingModel::PBR_LIT:
-		{
-		AddedTextureDescriptor("baseColorTexture", imgInfosAllFrames);
-		AddedTextureDescriptor("metallicRoughnessTexture", imgInfosAllFrames);
-		AddedTextureDescriptor("metallicTexture", imgInfosAllFrames);
-		AddedTextureDescriptor("roughnessTexture", imgInfosAllFrames);
-		AddedTextureDescriptor("normalTexture", imgInfosAllFrames);
-		AddedTextureDescriptor("occlusionTexture", imgInfosAllFrames);
-		AddedTextureDescriptor("emissiveTexture", imgInfosAllFrames);
-		break;
-		}
-	case eMaterialShadingModel::UNLIT:
-		{
-		AddedTextureDescriptor("baseColorTexture", imgInfosAllFrames);
-		break;
-		}
-	default:
-		{
-			break;
-		}
-	}
-
-	for (uint32_t i = 0; i < imgInfosAllFrames.size(); i++)
-	{
-		creation.SetCombinedImageSampler(i + (UBOSize > 0 ? 1 : 0), imgInfosAllFrames[i]);
-	}
-
-	vulkanRHI->CreateDescriptorSet(creation, m_perMaterialDSs);
-}
-
 void icpMaterialSubSystem::initializeMaterialSubSystem()
 {
 	
 }
 
-
-
 std::shared_ptr<icpMaterialTemplate> icpMaterialSubSystem::CreateMaterialInstance_LoadThread(eMaterialShadingModel shadingModel)
 {
 	std::shared_ptr<icpMaterialTemplate> instance = std::make_shared<icpMaterialInstance>(shadingModel);
-
 	{
 		std::scoped_lock<std::mutex> lck(m_materialLock);
 		m_NewAddedMaterials.push_back(instance);
@@ -238,8 +170,6 @@ void icpMaterialInstance::SetupMaterialRenderResources()
 	if (!m_bRenderResourcesReady)
 	{
 		CreateUniformBuffers();
-		AllocateDescriptorSets();
-
 		m_bRenderResourcesReady = true;
 	}
 }

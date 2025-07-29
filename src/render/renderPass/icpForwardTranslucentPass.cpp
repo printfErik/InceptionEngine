@@ -36,7 +36,7 @@ void icpForwardTranslucentPass::InitializeRenderPass(RenderPassInitInfo initInfo
 	);
 
 	auto sceneRenderer = m_pSceneRenderer.lock();
-	AddRenderpassInputLayout(sceneRenderer->GetSceneDSLayout().layout);
+	AddRenderpassInputLayout(sceneRenderer->GetSceneDSLayout());
 
 	SetupPipeline();
 }
@@ -78,7 +78,8 @@ void icpForwardTranslucentPass::Render(uint32_t frameBufferIndex, uint32_t curre
 
 void icpForwardTranslucentPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
-	auto mgr = m_pSceneRenderer.lock();
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
+
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
@@ -93,9 +94,15 @@ void icpForwardTranslucentPass::RecordCommandBuffer(VkCommandBuffer commandBuffe
 	scissor.extent = m_rhi->GetSwapChainExtent();
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	std::vector<VkDeviceSize> offsets{ 0 };
+	auto renderer = m_pSceneRenderer.lock();
 
-	auto sceneDS = mgr->GetSceneDescriptorSet(curFrame);
+	auto writeDS = WriteDescriptorSetBuilder(1u)
+		.SetUniformBuffer(0, renderer->SceneUBOs[curFrame])
+		.Build();
+
+	vkCmdPushDescriptorSetKHR(commandBuffer,
+		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_pipelineInfo.m_pipelineLayout, 2, 1, writeDS.data());
 
 	std::vector<std::shared_ptr<icpGameEntity>> rootList;
 	g_system_container.m_sceneSystem->getRootEntityList(rootList);
@@ -109,21 +116,47 @@ void icpForwardTranslucentPass::RecordCommandBuffer(VkCommandBuffer commandBuffe
 		{
 			continue;
 		}
+		auto MeshWriteDS = WriteDescriptorSetBuilder(1u)
+			.SetUniformBuffer(0, meshRender.MeshUBOs[curFrame])
+			.Build();
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
+		vkCmdPushDescriptorSetKHR(commandBuffer,
+			VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
+			m_pipelineInfo.m_pipelineLayout, 0, 1, MeshWriteDS.data());
 
-		vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 1, 1, &(meshRender.m_pMaterial->m_perMaterialDSs[curFrame]), 0, nullptr);
+		auto MaterialWriteDS = WriteDescriptorSetBuilder(8u)
+			.SetUniformBuffer(0, meshRender.m_pMaterial->MaterialUBOs[curFrame])
+			.SetCombinedImageSampler(1, meshRender.m_pMaterial->GetTextureRenderResourceByID("baseColorTexture"))
+			.SetCombinedImageSampler(2, meshRender.m_pMaterial->GetTextureRenderResourceByID("metallicRoughnessTexture"))
+			.SetCombinedImageSampler(3, meshRender.m_pMaterial->GetTextureRenderResourceByID("metallicTexture"))
+			.SetCombinedImageSampler(4, meshRender.m_pMaterial->GetTextureRenderResourceByID("roughnessTexture"))
+			.SetCombinedImageSampler(5, meshRender.m_pMaterial->GetTextureRenderResourceByID("normalTexture"))
+			.SetCombinedImageSampler(6, meshRender.m_pMaterial->GetTextureRenderResourceByID("occlusionTexture"))
+			.SetCombinedImageSampler(7, meshRender.m_pMaterial->GetTextureRenderResourceByID("emissiveTexture"))
+			.Build();
 
-		auto vertBuf = meshRender.m_vertexBuffer;
-		std::vector<VkBuffer>vertexBuffers{ vertBuf };
+		vkCmdPushDescriptorSetKHR(commandBuffer,
+			VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
+			m_pipelineInfo.m_pipelineLayout, 2, 1, MaterialWriteDS.data());
 
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets.data());
-		vkCmdBindIndexBuffer(commandBuffer, meshRender.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-		vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipelineLayout, 0, 1, &meshRender.m_perMeshDSs[curFrame], 0, nullptr);
+		VkDeviceSize offsets = 0;
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &meshRender.MeshVB.buffer, &offsets);
+		vkCmdBindIndexBuffer(commandBuffer, meshRender.MeshIB.buffer, 0, VK_INDEX_TYPE_UINT32);
+
 		vkCmdSetPrimitiveTopology(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 		vkCmdDrawIndexed(commandBuffer, meshRender.m_meshVertexIndicesNum, 1, 0, 0, 0);
 	}
+}
+
+void icpForwardTranslucentPass::Cleanup()
+{
+	
+}
+
+void icpForwardTranslucentPass::UpdateRenderPassCB(uint32_t curFrame)
+{
+	
 }
 
 

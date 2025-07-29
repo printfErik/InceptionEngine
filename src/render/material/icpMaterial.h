@@ -58,7 +58,7 @@ public:
 	icpMaterialTemplate() = default;
 	icpMaterialTemplate(eMaterialShadingModel shading_model){}
 	virtual ~icpMaterialTemplate() = default;
-	virtual void AllocateDescriptorSets() = 0;
+
 	virtual void CreateUniformBuffers() = 0;
 	virtual void AddTexture(const std::string& key, const icpTextureMaterialParameterInfo& textureInfo) = 0;
 	virtual void AddScalaValue(const std::string& key, const icpScalaMaterialParameterInfo& value) = 0;
@@ -67,7 +67,7 @@ public:
 	virtual void MemCopyToBuffer(void* dst, void* src, size_t size) = 0;
 	virtual uint32_t GetSRVNumber() const = 0;
 	virtual void* CheckMaterialDataCache() = 0;
-	virtual icpTextureRenderResourceInfo& GetTextureRenderResourceByID(const std::string& texID) = 0;
+	virtual icpTextureRenderResourceInfo& GetTextureRenderResourceByID(const std::string& texType) = 0;
 
 	eMaterialShadingModel m_shadingModel = eMaterialShadingModel::SHADING_MODEL_COUNT;
 	eMaterialBlendMode m_blendMode = eMaterialBlendMode::OPAQUE;
@@ -111,7 +111,6 @@ public:
 	icpMaterialInstance(eMaterialShadingModel shading_model);
 	~icpMaterialInstance() override = default ;
 
-	void AllocateDescriptorSets() override;
 	void CreateUniformBuffers() override;
 	void AddTexture(const std::string& key, const icpTextureMaterialParameterInfo& textureInfo) override;
 	void AddScalaValue(const std::string& key, const icpScalaMaterialParameterInfo& value) override;
