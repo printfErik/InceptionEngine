@@ -110,7 +110,7 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 		GBufferA.m_texBufferAllocation
 	);
 
-	GBufferA.m_texImageView = icpVulkanUtility::CreateGPUImageView(
+	GBufferA.m_texImageViews[0] = icpVulkanUtility::CreateGPUImageView(
 		GBufferA.m_texImage,
 		VK_IMAGE_VIEW_TYPE_2D,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -134,7 +134,7 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 		GBufferB.m_texBufferAllocation
 	);
 
-	GBufferB.m_texImageView = icpVulkanUtility::CreateGPUImageView(
+	GBufferB.m_texImageViews[0] = icpVulkanUtility::CreateGPUImageView(
 		GBufferB.m_texImage,
 		VK_IMAGE_VIEW_TYPE_2D,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -158,7 +158,7 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 		GBufferC.m_texBufferAllocation
 	);
 
-	GBufferC.m_texImageView = icpVulkanUtility::CreateGPUImageView(
+	GBufferC.m_texImageViews[0] = icpVulkanUtility::CreateGPUImageView(
 		GBufferC.m_texImage,
 		VK_IMAGE_VIEW_TYPE_2D,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -306,9 +306,9 @@ void icpDeferredRenderer::CreateDeferredFrameBuffer()
 		std::array<VkImageView, 5> attachments =
 		{
 			imageViews[i],
-			GBufferA.m_texImageView,
-			GBufferB.m_texImageView,
-			GBufferC.m_texImageView,
+			GBufferA.m_texImageViews[0],
+			GBufferB.m_texImageViews[0],
+			GBufferC.m_texImageViews[0],
 			m_pDevice->GetDepthImageView()
 		};
 
@@ -412,9 +412,9 @@ void icpDeferredRenderer::CleanupSwapChain()
 	vmaDestroyImage(m_pDevice->GetVmaAllocator(), GBufferB.m_texImage, GBufferB.m_texBufferAllocation);
 	vmaDestroyImage(m_pDevice->GetVmaAllocator(), GBufferC.m_texImage, GBufferC.m_texBufferAllocation);
 
-	vkDestroyImageView(m_pDevice->GetLogicalDevice(), GBufferA.m_texImageView, nullptr);
-	vkDestroyImageView(m_pDevice->GetLogicalDevice(), GBufferB.m_texImageView, nullptr);
-	vkDestroyImageView(m_pDevice->GetLogicalDevice(), GBufferC.m_texImageView, nullptr);
+	vkDestroyImageView(m_pDevice->GetLogicalDevice(), GBufferA.m_texImageViews[0], nullptr);
+	vkDestroyImageView(m_pDevice->GetLogicalDevice(), GBufferB.m_texImageViews[0], nullptr);
+	vkDestroyImageView(m_pDevice->GetLogicalDevice(), GBufferC.m_texImageViews[0], nullptr);
 }
 
 void icpDeferredRenderer::AllocateCommandBuffers()

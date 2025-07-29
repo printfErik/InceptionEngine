@@ -32,9 +32,6 @@ public:
 	void EndCSMRenderPass(VkCommandBuffer& commandBuffer);
 
 	icpTextureRenderResourceInfo CascadeShadowMaps;
-	VkImage m_csmArray;
-	VmaAllocation m_csmArrayAllocation;
-	std::vector<VkImageView> m_csmArrayViews;
 
 private:
 

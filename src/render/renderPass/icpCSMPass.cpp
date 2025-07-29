@@ -119,15 +119,15 @@ void icpCSMPass::CreateCSMImageRenderResource()
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		m_rhi->GetVmaAllocator(),
-		m_csmArray, m_csmArrayAllocation
+		CascadeShadowMaps.m_texImage, CascadeShadowMaps.m_texBufferAllocation
 	);
 
-	m_csmArrayViews.resize(s_csmCascadeCount + 1);
+	CascadeShadowMaps.m_texImageViews.resize(s_csmCascadeCount + 1);
 
 	for (uint32_t i = 0; i < s_csmCascadeCount; i++)
 	{
-		m_csmArrayViews[i] = icpVulkanUtility::CreateGPUImageView(
-			m_csmArray,
+		CascadeShadowMaps.m_texImageViews[i] = icpVulkanUtility::CreateGPUImageView(
+			CascadeShadowMaps.m_texImage,
 			VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 			m_rhi->GetDepthFormat(),
 			VK_IMAGE_ASPECT_DEPTH_BIT,
@@ -138,8 +138,8 @@ void icpCSMPass::CreateCSMImageRenderResource()
 		);
 	}
 
-	m_csmArrayViews[s_csmCascadeCount] = icpVulkanUtility::CreateGPUImageView(
-		m_csmArray,
+	CascadeShadowMaps.m_texImageViews[s_csmCascadeCount] = icpVulkanUtility::CreateGPUImageView(
+		CascadeShadowMaps.m_texImage,
 		VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 		m_rhi->GetDepthFormat(),
 		VK_IMAGE_ASPECT_DEPTH_BIT,
@@ -162,7 +162,7 @@ void icpCSMPass::CreateCSMFrameBuffer()
 		{
 			std::array<VkImageView, 1> attachment =
 			{
-				m_csmArrayViews[cascade]
+				CascadeShadowMaps.m_texImageViews[cascade]
 			};
 
 			VkFramebufferCreateInfo framebufferInfo{};

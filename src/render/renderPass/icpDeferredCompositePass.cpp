@@ -56,9 +56,11 @@ void icpDeferredCompositePass::RecordCommandBuffer(VkCommandBuffer commandBuffer
 		m_pipelineInfo.m_pipelineLayout, 0, 1, GbufferWriteDS.data());
 
 	auto csmPass = std::dynamic_pointer_cast<icpCSMPass>(m_pSceneRenderer.lock()->AccessRenderPass(eRenderPass::CSM_PASS));
+	icpTextureRenderResourceInfo csmInfo;
+	csmInfo.m_texImageView = csmPass->
 	auto CSMWriteDS = WriteDescriptorSetBuilder(2u)
 		.SetUniformBuffer(0, g_system_container.m_renderSystem->m_shadowManager->CSMUBOs[curFrame])
-		.SetCombinedImageSampler(1, csmPass->)
+		.SetCombinedImageSampler(1, )
 		.Build();
 
 

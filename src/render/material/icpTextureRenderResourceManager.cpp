@@ -57,7 +57,7 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 
 	icpVulkanUtility::generateMipmaps(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, static_cast<uint32_t>(info.m_texImageRes->m_width), static_cast<uint32_t>(info.m_texImageRes->m_height), static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue(), m_rhi->GetPhysicalDevice());
 
-	info.m_texImageView = icpVulkanUtility::CreateGPUImageView(
+	info.m_texImageViews[0] = icpVulkanUtility::CreateGPUImageView(
 		info.m_texImage,
 		VK_IMAGE_VIEW_TYPE_2D,
 		VK_FORMAT_R8G8B8A8_SRGB, 
@@ -91,7 +91,7 @@ void icpTextureRenderResourceManager::checkAndCleanAllDiscardedRenderResources()
 		if (info.m_state == eTextureRenderResourceState::DISCARD)
 		{
 			vkDestroySampler(m_rhi->GetLogicalDevice(), info.m_texSampler, nullptr);
-			vkDestroyImageView(m_rhi->GetLogicalDevice(), info.m_texImageView, nullptr);
+			vkDestroyImageView(m_rhi->GetLogicalDevice(), info.m_texImageViews[0], nullptr);
 			vmaDestroyImage(m_rhi->GetVmaAllocator(), info.m_texImage, info.m_texBufferAllocation);
 
 			m_textureRenderResources.erase(name);
@@ -151,7 +151,7 @@ void icpTextureRenderResourceManager::InitializeEmptyTexture()
 
 	//icpVulkanUtility::generateMipmaps(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, static_cast<uint32_t>(info.m_texImageRes->m_width), static_cast<uint32_t>(info.m_texImageRes->m_height), static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue(), m_rhi->GetPhysicalDevice());
 
-	info.m_texImageView = icpVulkanUtility::CreateGPUImageView(
+	info.m_texImageViews[0] = icpVulkanUtility::CreateGPUImageView(
 		info.m_texImage, 
 		VK_IMAGE_VIEW_TYPE_2D,
 		VK_FORMAT_R8_SNORM, 

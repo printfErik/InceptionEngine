@@ -28,15 +28,20 @@ struct icpTextureRenderResourceInfo
 {
 	VkImage m_texImage{ VK_NULL_HANDLE };
 	VmaAllocation m_texBufferAllocation{ VK_NULL_HANDLE };
-	VkImageView m_texImageView{ VK_NULL_HANDLE };
 	VkSampler m_texSampler{ VK_NULL_HANDLE };
+	std::vector<VkImageView> m_texImageViews;
+
 	VkImageLayout m_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	std::shared_ptr<icpImageResource> m_texImageRes = nullptr;
 	std::string m_texId;
 
 	eTextureRenderResourceState m_state = eTextureRenderResourceState::UNINITIALIZED;
-};
 
+	icpTextureRenderResourceInfo()
+	{
+		m_texImageViews.resize(1);
+	}
+};
 
 class icpTextureRenderResourceManager
 {
