@@ -120,7 +120,7 @@ void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 		.SetUniformBuffer(0, renderer->SceneUBOs[curFrame])
 		.Build();
 
-	vkCmdPushDescriptorSetKHR(commandBuffer, 
+	vkCmdPushDescriptorSet(commandBuffer, 
 		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, 
 		m_pipelineInfo.m_pipelineLayout, 2, 1, writeDS.data());
 

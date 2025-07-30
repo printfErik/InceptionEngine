@@ -74,7 +74,9 @@ void icpVkGPUDevice::createInstance()
 	VkApplicationInfo appInfo{};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 
-#ifdef VK_VERSION_1_3
+#ifdef VK_VERSION_1_4
+	appInfo.apiVersion = VK_API_VERSION_1_4;
+#elif VK_VERSION_1_3
 	appInfo.apiVersion = VK_API_VERSION_1_3;
 #elif VK_VERSION_1_2
 	appInfo.apiVersion = VK_API_VERSION_1_2;

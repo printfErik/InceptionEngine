@@ -63,7 +63,7 @@ private:
 				.SetUniformBuffer(0, meshRender.MeshUBOs[currentFrame])
 				.Build();
 
-			vkCmdPushDescriptorSetKHR(commandBuffer,
+			vkCmdPushDescriptorSet(commandBuffer,
 				VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
 				m_pipelineInfo.m_pipelineLayout, 0, 1, MeshWriteDS.data());
 
@@ -78,7 +78,7 @@ private:
 				.SetCombinedImageSampler(7, meshRender.m_pMaterial->GetTextureRenderResourceByID("emissiveTexture"))
 				.Build();
 
-			vkCmdPushDescriptorSetKHR(commandBuffer,
+			vkCmdPushDescriptorSet(commandBuffer,
 				VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
 				m_pipelineInfo.m_pipelineLayout, 2, 1, MaterialWriteDS.data());
 

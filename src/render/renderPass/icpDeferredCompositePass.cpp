@@ -50,7 +50,7 @@ void icpDeferredCompositePass::RecordCommandBuffer(VkCommandBuffer commandBuffer
 		.SetInputAttachment(2, renderer->GetGBufferCRenderResource())
 		.SetInputAttachment(3, depthInfo)
 		.Build();
-	vkCmdPushDescriptorSetKHR(commandBuffer,
+	vkCmdPushDescriptorSet(commandBuffer,
 		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
 		m_pipelineInfo.m_pipelineLayout, 0, 1, GbufferWriteDS.data());
 
@@ -59,14 +59,14 @@ void icpDeferredCompositePass::RecordCommandBuffer(VkCommandBuffer commandBuffer
 		.SetUniformBuffer(0, g_system_container.m_renderSystem->m_shadowManager->CSMUBOs[curFrame])
 		.SetCombinedImageSampler(1, csmPass->CascadeShadowMaps, s_csmCascadeCount)
 		.Build();
-	vkCmdPushDescriptorSetKHR(commandBuffer,
+	vkCmdPushDescriptorSet(commandBuffer,
 		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
 		m_pipelineInfo.m_pipelineLayout, 1, 1, CSMWriteDS.data());
 
 	auto SceneWriteDS = WriteDescriptorSetBuilder(1u)
 		.SetUniformBuffer(0, renderer->SceneUBOs[curFrame])
 		.Build();
-	vkCmdPushDescriptorSetKHR(commandBuffer,
+	vkCmdPushDescriptorSet(commandBuffer,
 		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
 		m_pipelineInfo.m_pipelineLayout, 2, 1, SceneWriteDS.data());
 
