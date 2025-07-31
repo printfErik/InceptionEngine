@@ -167,6 +167,7 @@ private:
 	const std::vector<const char*> m_validationLayers{ "VK_LAYER_KHRONOS_validation" };
 	std::vector<char const*> m_requiredDeviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+	VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME
 #if defined(__MACH__)
 			"VK_KHR_portability_subset"
 #endif

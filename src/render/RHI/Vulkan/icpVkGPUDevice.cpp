@@ -103,7 +103,7 @@ void icpVkGPUDevice::createInstance()
 	{
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
-	
+
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 	createInfo.ppEnabledExtensionNames = extensions.data();
 
@@ -325,6 +325,19 @@ void icpVkGPUDevice::initializePhysicalDevice()
 	{
 		throw std::runtime_error("failed to find suitable physical device");
 	}
+
+	VkPhysicalDevicePushDescriptorProperties pushProps = {
+	.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES,
+	.pNext = nullptr
+	};
+	VkPhysicalDeviceProperties2 props2 = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+		.pNext = &pushProps
+	};
+	vkGetPhysicalDeviceProperties2(m_physicalDevice, &props2);
+
+	printf("maxPushDescriptors = %u\n", pushProps.maxPushDescriptors);
+
 
 }
 
