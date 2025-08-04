@@ -110,5 +110,11 @@ uint32_t icpSceneRenderer::GetCurrentFrame() const
 	return m_currentFrame;
 }
 
+VkDescriptorSet icpSceneRenderer::GetSceneDescriptorSet(uint32_t curFrame)
+{
+	return m_sceneDSs[curFrame];
+}
+
+
 
 INCEPTION_END_NAMESPACE

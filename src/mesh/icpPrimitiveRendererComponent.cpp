@@ -5,7 +5,7 @@
 #include "../render/RHI/Vulkan/icpVulkanUtility.h"
 #include "../mesh/icpMeshData.h"
 #include <vk_mem_alloc.h>
-#include "../render/RHI/icpDescirptorSet.h"
+#include "../render/RHI/icpDescriptorSet.h"
 #include "../render/RHI/icpGPUBuffer.h"
 
 INCEPTION_BEGIN_NAMESPACE

@@ -22,6 +22,7 @@ public:
 	bool Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI) override;
 	void Cleanup() override;
 	void Render() override;
+	void AllocateGlobalSceneDescriptorSets() override;
 
 	VkRenderPass GetGBufferRenderPass() override;
 	VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) override;

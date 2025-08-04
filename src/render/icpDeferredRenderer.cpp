@@ -23,6 +23,8 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 
 	CreateSceneCB();
 	CreateGlobalSceneDescriptorSetLayout();
+	AllocateGlobalSceneDescriptorSets();
+
 	AllocateCommandBuffers();
 
 	CreateGBufferAttachments();
@@ -375,6 +377,13 @@ void icpDeferredRenderer::Render()
 	Present(index);
 
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void icpDeferredRenderer::AllocateGlobalSceneDescriptorSets()
+{
+	m_sceneDSs = DescriptorSetBuilder(1)
+		.SetUniformBuffer(0, SceneUBOs)
+		.Build(m_pDevice->GetLogicalDevice(), m_pDevice->GetDescriptorPool(), m_sceneDSLayout);
 }
 
 

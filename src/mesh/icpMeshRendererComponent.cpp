@@ -7,7 +7,7 @@
 #include "../resource/icpResourceSystem.h"
 #include "icpMeshResource.h"
 #include "../render/renderPass/icpEditorUiPass.h"
-#include "../render/RHI/icpDescirptorSet.h"
+#include "../render/RHI/icpDescriptorSet.h"
 
 INCEPTION_BEGIN_NAMESPACE
 

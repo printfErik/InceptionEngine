@@ -1,7 +1,7 @@
 #pragma once
 #include "../../core/icpMacros.h"
 #include "../RHI/Vulkan/icpVkGPUDevice.h"
-#include "../RHI/icpDescirptorSet.h"
+#include "../RHI/icpDescriptorSet.h"
 
 INCEPTION_BEGIN_NAMESPACE
 

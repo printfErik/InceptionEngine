@@ -47,4 +47,29 @@ public:
 	VkDescriptorSetLayout layout { VK_NULL_HANDLE };
 };
 
+class DescriptorSetBuilder
+{
+public:
+	DescriptorSetBuilder() = delete;
+	DescriptorSetBuilder(size_t size);
+
+	DescriptorSetBuilder& SetUniformBuffer(
+		uint16_t dstBinding,
+		const std::vector<icpBufferRenderResource>& bufferRes);
+
+	DescriptorSetBuilder& SetCombinedImageSampler(uint16_t dstBinding,
+		const icpTextureRenderResourceInfo& imgInfo, uint32_t viewIndex = 0);
+
+	DescriptorSetBuilder& SetInputAttachment(uint16_t dstBinding,
+		const icpTextureRenderResourceInfo& imgInfo, uint32_t viewIndex = 0);
+
+	std::vector<VkDescriptorSet>& Build(VkDevice logicDevice,
+		VkDescriptorPool dsPool, VkDescriptorSetLayout layout);
+
+private:
+
+	std::vector<VkDescriptorSet> m_DSs;
+	std::vector<std::vector<VkWriteDescriptorSet>> m_descriptorWrites;
+};
+
 INCEPTION_END_NAMESPACE

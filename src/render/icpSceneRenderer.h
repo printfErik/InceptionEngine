@@ -1,7 +1,7 @@
 #pragma once
 #include "../core/icpMacros.h"
 #include "light/icpLightSystem.h"
-#include "RHI/icpDescirptorSet.h"
+#include "RHI/icpDescriptorSet.h"
 #include "RHI/icpGPUDevice.h"
 
 
@@ -64,6 +64,8 @@ public:
 	virtual void Cleanup();
 	virtual void Render() = 0;
 
+	virtual void AllocateGlobalSceneDescriptorSets() = 0;
+
 	// Deferred
 	virtual VkRenderPass GetGBufferRenderPass() = 0;
 	virtual VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) = 0;
@@ -81,6 +83,8 @@ public:
 	void CreateGlobalSceneDescriptorSetLayout();
 	VkDescriptorSetLayout GetSceneDSLayout();
 
+	VkDescriptorSet GetSceneDescriptorSet(uint32_t curFrame);
+
 	uint32_t GetCurrentFrame() const;
 
 	std::vector<icpBufferRenderResource> SceneUBOs;
@@ -89,6 +93,7 @@ protected:
 	std::map<eRenderPass, std::shared_ptr<icpRenderPassBase>> m_renderPasses;
 
 	VkDescriptorSetLayout m_sceneDSLayout{ VK_NULL_HANDLE };
+	std::vector<VkDescriptorSet> m_sceneDSs;
 
 	uint32_t m_currentFrame = 0;
 private:

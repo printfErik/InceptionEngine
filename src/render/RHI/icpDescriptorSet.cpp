@@ -1,4 +1,4 @@
-#include "icpDescirptorSet.h"
+#include "icpDescriptorSet.h"
 #include "../material/icpTextureRenderResourceManager.h"
 #include "Vulkan/icpVkGPUDevice.h"
 #include "icpGPUBuffer.h"
@@ -112,6 +112,118 @@ VkDescriptorSetLayout DescriptorSetLayoutBuilder::Build(VkDevice logicDevice)
 	}
 
 	return layout;
+}
+
+DescriptorSetBuilder::DescriptorSetBuilder(size_t size)
+{
+	m_DSs.resize(MAX_FRAMES_IN_FLIGHT);
+	m_descriptorWrites.resize(MAX_FRAMES_IN_FLIGHT);
+
+	for (auto& dsWrite : m_descriptorWrites)
+	{
+		dsWrite.resize(size);
+	}
+}
+
+DescriptorSetBuilder& DescriptorSetBuilder::SetUniformBuffer(uint16_t dstBinding,
+	const std::vector<icpBufferRenderResource>& bufferRes)
+{
+	for (int32_t frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
+	{
+		VkDescriptorBufferInfo bufferInfo{};
+
+		bufferInfo.buffer = bufferRes[frame].buffer;
+		bufferInfo.offset = bufferRes[frame].offset;
+		bufferInfo.range = bufferRes[frame].range;
+
+		m_descriptorWrites[frame][dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		m_descriptorWrites[frame][dstBinding].dstSet = VK_NULL_HANDLE;
+		m_descriptorWrites[frame][dstBinding].dstBinding = dstBinding;
+		m_descriptorWrites[frame][dstBinding].dstArrayElement = 0;
+		m_descriptorWrites[frame][dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		m_descriptorWrites[frame][dstBinding].descriptorCount = 1;
+		m_descriptorWrites[frame][dstBinding].pBufferInfo = &bufferInfo;
+	}
+
+	return *this;
+}
+
+DescriptorSetBuilder& DescriptorSetBuilder::SetCombinedImageSampler(
+	uint16_t dstBinding,
+	const icpTextureRenderResourceInfo& imgInfo,
+	uint32_t viewIndex)
+{
+	for (int32_t frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
+	{
+		VkDescriptorImageInfo imageInfo{};
+
+		imageInfo.sampler = imgInfo.m_texSampler;
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = imgInfo.m_texImageViews[viewIndex];
+
+		m_descriptorWrites[frame][dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		m_descriptorWrites[frame][dstBinding].dstSet = VK_NULL_HANDLE;
+		m_descriptorWrites[frame][dstBinding].dstBinding = dstBinding;
+		m_descriptorWrites[frame][dstBinding].dstArrayElement = 0;
+		m_descriptorWrites[frame][dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		m_descriptorWrites[frame][dstBinding].descriptorCount = 1;
+		m_descriptorWrites[frame][dstBinding].pImageInfo = &imageInfo;
+	}
+
+	return *this;
+}
+
+DescriptorSetBuilder& DescriptorSetBuilder::SetInputAttachment(
+	uint16_t dstBinding,
+	const icpTextureRenderResourceInfo& imgInfo,
+	uint32_t viewIndex)
+{
+	for (int32_t frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
+	{
+		VkDescriptorImageInfo imageInfo{};
+
+		imageInfo.sampler = imgInfo.m_texSampler;
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = imgInfo.m_texImageViews[viewIndex];
+
+		m_descriptorWrites[frame][dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		m_descriptorWrites[frame][dstBinding].dstSet = VK_NULL_HANDLE;
+		m_descriptorWrites[frame][dstBinding].dstBinding = dstBinding;
+		m_descriptorWrites[frame][dstBinding].dstArrayElement = 0;
+		m_descriptorWrites[frame][dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		m_descriptorWrites[frame][dstBinding].descriptorCount = 1;
+		m_descriptorWrites[frame][dstBinding].pImageInfo = &imageInfo;
+	}
+
+	return *this;
+}
+
+std::vector<VkDescriptorSet>& DescriptorSetBuilder::Build(VkDevice logicDevice,
+	VkDescriptorPool dsPool, VkDescriptorSetLayout layout)
+{
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
+
+	VkDescriptorSetAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+	allocateInfo.descriptorPool = dsPool;
+	allocateInfo.pSetLayouts = layouts.data();
+
+
+	if (vkAllocateDescriptorSets(logicDevice, &allocateInfo, m_DSs.data()) != VK_SUCCESS)
+	{
+		// icp failed
+		return m_DSs;
+	}
+
+	for (int32_t frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
+	{
+		vkUpdateDescriptorSets(logicDevice, m_descriptorWrites[frame].size(),
+			m_descriptorWrites[frame].data(),
+			0, nullptr);
+	}
+
+	return m_DSs;
 }
 
 

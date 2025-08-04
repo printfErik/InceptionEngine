@@ -2,7 +2,7 @@
 #include "../../core/icpMacros.h"
 
 #include "../RHI/icpGPUDevice.h"
-#include "../RHI/icpDescirptorSet.h"
+#include "../RHI/icpDescriptorSet.h"
 
 
 INCEPTION_BEGIN_NAMESPACE

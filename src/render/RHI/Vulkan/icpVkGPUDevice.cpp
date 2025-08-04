@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "../icpDescirptorSet.h"
+#include "../icpDescriptorSet.h"
 #include "../icpGPUBuffer.h"
 #include "../../../core/icpConfigSystem.h"
 #include "../../material/icpTextureRenderResourceManager.h"
