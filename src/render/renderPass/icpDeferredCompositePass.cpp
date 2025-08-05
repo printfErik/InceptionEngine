@@ -101,8 +101,11 @@ void icpDeferredCompositePass::InitializeRenderPass(RenderPassInitInfo initInfo)
 
 	auto sceneRenderer = m_pSceneRenderer.lock();
 	AddRenderpassInputLayout(sceneRenderer->GetSceneDSLayout());
-	
+
+	AllocatedRenderPassDescriptorSets();
+
 	SetupPipeline();
+	
 }
 
 void icpDeferredCompositePass::SetupPipeline()

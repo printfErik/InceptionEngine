@@ -69,6 +69,7 @@ public:
 private:
 
 	std::vector<VkDescriptorSet> m_DSs;
+	std::vector<std::vector<std::variant<VkDescriptorBufferInfo, VkDescriptorImageInfo>>> m_descriptorInfos;
 	std::vector<std::vector<VkWriteDescriptorSet>> m_descriptorWrites;
 };
 

@@ -101,10 +101,9 @@ DescriptorSetLayoutBuilder& DescriptorSetLayoutBuilder::SetDescriptorSetBinding(
 VkDescriptorSetLayout DescriptorSetLayoutBuilder::Build(VkDevice logicDevice)
 {
 	VkDescriptorSetLayoutCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 	createInfo.pBindings = bindings.data();
-	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
 
 	if (vkCreateDescriptorSetLayout(logicDevice, &createInfo, nullptr, &layout) != VK_SUCCESS)
 	{
@@ -117,8 +116,14 @@ VkDescriptorSetLayout DescriptorSetLayoutBuilder::Build(VkDevice logicDevice)
 DescriptorSetBuilder::DescriptorSetBuilder(size_t size)
 {
 	m_DSs.resize(MAX_FRAMES_IN_FLIGHT);
-	m_descriptorWrites.resize(MAX_FRAMES_IN_FLIGHT);
+	m_descriptorInfos.resize(MAX_FRAMES_IN_FLIGHT);
 
+	for (auto& dsInfo : m_descriptorInfos)
+	{
+		dsInfo.resize(size);
+	}
+
+	m_descriptorWrites.resize(MAX_FRAMES_IN_FLIGHT);
 	for (auto& dsWrite : m_descriptorWrites)
 	{
 		dsWrite.resize(size);
@@ -131,18 +136,18 @@ DescriptorSetBuilder& DescriptorSetBuilder::SetUniformBuffer(uint16_t dstBinding
 	for (int32_t frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
 	{
 		VkDescriptorBufferInfo bufferInfo{};
-
 		bufferInfo.buffer = bufferRes[frame].buffer;
 		bufferInfo.offset = bufferRes[frame].offset;
 		bufferInfo.range = bufferRes[frame].range;
 
+		m_descriptorInfos[frame][dstBinding] = bufferInfo;
+
 		m_descriptorWrites[frame][dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		m_descriptorWrites[frame][dstBinding].dstSet = VK_NULL_HANDLE;
 		m_descriptorWrites[frame][dstBinding].dstBinding = dstBinding;
 		m_descriptorWrites[frame][dstBinding].dstArrayElement = 0;
 		m_descriptorWrites[frame][dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		m_descriptorWrites[frame][dstBinding].descriptorCount = 1;
-		m_descriptorWrites[frame][dstBinding].pBufferInfo = &bufferInfo;
+		m_descriptorWrites[frame][dstBinding].pBufferInfo = &std::get<VkDescriptorBufferInfo>(m_descriptorInfos[frame][dstBinding]);
 	}
 
 	return *this;
@@ -161,13 +166,14 @@ DescriptorSetBuilder& DescriptorSetBuilder::SetCombinedImageSampler(
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		imageInfo.imageView = imgInfo.m_texImageViews[viewIndex];
 
+		m_descriptorInfos[frame][dstBinding] = imageInfo;
+
 		m_descriptorWrites[frame][dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		m_descriptorWrites[frame][dstBinding].dstSet = VK_NULL_HANDLE;
 		m_descriptorWrites[frame][dstBinding].dstBinding = dstBinding;
 		m_descriptorWrites[frame][dstBinding].dstArrayElement = 0;
 		m_descriptorWrites[frame][dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		m_descriptorWrites[frame][dstBinding].descriptorCount = 1;
-		m_descriptorWrites[frame][dstBinding].pImageInfo = &imageInfo;
+		m_descriptorWrites[frame][dstBinding].pImageInfo = &std::get<VkDescriptorImageInfo>(m_descriptorInfos[frame][dstBinding]);
 	}
 
 	return *this;
@@ -186,14 +192,16 @@ DescriptorSetBuilder& DescriptorSetBuilder::SetInputAttachment(
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		imageInfo.imageView = imgInfo.m_texImageViews[viewIndex];
 
+		m_descriptorInfos[frame][dstBinding] = imageInfo;
+
 		m_descriptorWrites[frame][dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		m_descriptorWrites[frame][dstBinding].dstSet = VK_NULL_HANDLE;
 		m_descriptorWrites[frame][dstBinding].dstBinding = dstBinding;
 		m_descriptorWrites[frame][dstBinding].dstArrayElement = 0;
 		m_descriptorWrites[frame][dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
 		m_descriptorWrites[frame][dstBinding].descriptorCount = 1;
-		m_descriptorWrites[frame][dstBinding].pImageInfo = &imageInfo;
+		m_descriptorWrites[frame][dstBinding].pImageInfo = &std::get<VkDescriptorImageInfo>(m_descriptorInfos[frame][dstBinding]);
 	}
+		
 
 	return *this;
 }
@@ -218,6 +226,11 @@ std::vector<VkDescriptorSet>& DescriptorSetBuilder::Build(VkDevice logicDevice,
 
 	for (int32_t frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
 	{
+		for (auto& writeDS : m_descriptorWrites[frame])
+		{
+			writeDS.dstSet = m_DSs[frame];
+		}
+
 		vkUpdateDescriptorSets(logicDevice, m_descriptorWrites[frame].size(),
 			m_descriptorWrites[frame].data(),
 			0, nullptr);

@@ -15,6 +15,7 @@ public:
 	void Cleanup() override;
 	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override;
 	void UpdateRenderPassCB(uint32_t curFrame) override {}
+	void AllocatedRenderPassDescriptorSets() override {}
 private:
 	std::shared_ptr<icpEditorUI> m_editorUI;
 

@@ -29,7 +29,7 @@ public:
 	void UpdateRenderPassCB(uint32_t curFrame) override;
 
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
-
+	void AllocatedRenderPassDescriptorSets() override {}
 private:
 
 	template<typename CompType>

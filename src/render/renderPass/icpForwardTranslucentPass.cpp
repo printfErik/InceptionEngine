@@ -112,29 +112,14 @@ void icpForwardTranslucentPass::RecordCommandBuffer(VkCommandBuffer commandBuffe
 		{
 			continue;
 		}
-		auto MeshWriteDS = WriteDescriptorSetBuilder(1u)
-			.SetUniformBuffer(0, meshRender.MeshUBOs[curFrame])
-			.Build();
 
-		vkCmdPushDescriptorSet(commandBuffer,
-			VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
-			m_pipelineInfo.m_pipelineLayout, 0, 1, MeshWriteDS.data());
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			m_pipelineInfo.m_pipelineLayout, 0, 1,
+			&meshRender.MeshDSs[curFrame], 0, nullptr);
 
-		auto MaterialWriteDS = WriteDescriptorSetBuilder(8u)
-			.SetUniformBuffer(0, meshRender.m_pMaterial->MaterialUBOs[curFrame])
-			.SetCombinedImageSampler(1, meshRender.m_pMaterial->GetTextureRenderResourceByID("baseColorTexture"))
-			.SetCombinedImageSampler(2, meshRender.m_pMaterial->GetTextureRenderResourceByID("metallicRoughnessTexture"))
-			.SetCombinedImageSampler(3, meshRender.m_pMaterial->GetTextureRenderResourceByID("metallicTexture"))
-			.SetCombinedImageSampler(4, meshRender.m_pMaterial->GetTextureRenderResourceByID("roughnessTexture"))
-			.SetCombinedImageSampler(5, meshRender.m_pMaterial->GetTextureRenderResourceByID("normalTexture"))
-			.SetCombinedImageSampler(6, meshRender.m_pMaterial->GetTextureRenderResourceByID("occlusionTexture"))
-			.SetCombinedImageSampler(7, meshRender.m_pMaterial->GetTextureRenderResourceByID("emissiveTexture"))
-			.Build();
-
-		vkCmdPushDescriptorSet(commandBuffer,
-			VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
-			m_pipelineInfo.m_pipelineLayout, 2, 1, MaterialWriteDS.data());
-
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			m_pipelineInfo.m_pipelineLayout, 1, 1,
+			&meshRender.m_pMaterial->MaterialDSs[curFrame], 0, nullptr);
 
 		VkDeviceSize offsets = 0;
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &meshRender.MeshVB.buffer, &offsets);
