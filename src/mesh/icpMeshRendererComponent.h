@@ -37,6 +37,7 @@ public:
 	void createVertexBuffers();
 	void createIndexBuffers();
 	void createUniformBuffers();
+	void AllocateMeshDescriptorSets();
 
 	void AddMaterial(std::shared_ptr<icpMaterialTemplate> material);
 	std::shared_ptr<icpMaterialTemplate> addMaterial(eMaterialShadingModel shading_model);
@@ -50,6 +51,8 @@ public:
 
 	icpBufferRenderResource MeshVB;
 	icpBufferRenderResource MeshIB;
+
+	std::vector<VkDescriptorSet> MeshDSs;
 
 	std::string m_meshResId;
 

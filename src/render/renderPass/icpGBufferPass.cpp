@@ -114,15 +114,11 @@ void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	scissor.extent = m_rhi->GetSwapChainExtent();
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	auto renderer = m_pSceneRenderer.lock();
-	
-	auto writeDS = WriteDescriptorSetBuilder(1u)
-		.SetUniformBuffer(0, renderer->SceneUBOs[curFrame])
-		.Build();
-
-	vkCmdPushDescriptorSet(commandBuffer, 
-		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS, 
-		m_pipelineInfo.m_pipelineLayout, 2, 1, writeDS.data());
+	auto mgr = m_pSceneRenderer.lock();
+	auto SceneDS = mgr->GetSceneDescriptorSet(curFrame);
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_pipelineInfo.m_pipelineLayout, 2, 1, &SceneDS,
+		0, nullptr);
 
 	std::vector<std::shared_ptr<icpGameEntity>> rootList;
 	g_system_container.m_sceneSystem->getRootEntityList(rootList);

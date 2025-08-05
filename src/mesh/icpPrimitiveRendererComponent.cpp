@@ -7,6 +7,7 @@
 #include <vk_mem_alloc.h>
 #include "../render/RHI/icpDescriptorSet.h"
 #include "../render/RHI/icpGPUBuffer.h"
+#include "../render/renderPass/icpRenderPassBase.h"
 
 INCEPTION_BEGIN_NAMESPACE
 void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
@@ -238,6 +239,19 @@ void icpPrimitiveRendererComponent::CreateUniformBuffers()
 		MeshUBOs[i].range = bufferSize;
 		MeshUBOs[i].offset = 0u;
 	}
+}
+
+void icpPrimitiveRendererComponent::AllocateMeshDescriptorSets()
+{
+	auto pGPUDevice = g_system_container.m_renderSystem->GetGPUDevice();
+
+	auto& layout = g_system_container.m_renderSystem->GetSceneRenderer()
+		->AccessRenderPass(eRenderPass::GBUFFER_PASS)
+		->dsLayouts[0];
+
+	MeshDSs = DescriptorSetBuilder(1u)
+		.SetUniformBuffer(0, MeshUBOs)
+		.Build(pGPUDevice->GetLogicalDevice(), pGPUDevice->GetDescriptorPool(), layout);
 }
 
 std::shared_ptr<icpMaterialTemplate> icpPrimitiveRendererComponent::AddMaterial(eMaterialShadingModel shading_model)

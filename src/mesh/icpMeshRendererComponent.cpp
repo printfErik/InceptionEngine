@@ -16,6 +16,7 @@ void icpMeshRendererComponent::prepareRenderResourceForMesh()
 	createVertexBuffers();
 	createIndexBuffers();
 	createUniformBuffers();
+	AllocateMeshDescriptorSets();
 }
 
 void icpMeshRendererComponent::createUniformBuffers()
@@ -46,6 +47,20 @@ void icpMeshRendererComponent::createUniformBuffers()
 		MeshUBOs[i].offset = 0u;
 	}
 }
+
+void icpMeshRendererComponent::AllocateMeshDescriptorSets()
+{
+	auto pGPUDevice = g_system_container.m_renderSystem->GetGPUDevice();
+
+	auto& layout = g_system_container.m_renderSystem->GetSceneRenderer()
+		->AccessRenderPass(eRenderPass::GBUFFER_PASS)
+		->dsLayouts[0];
+
+	MeshDSs = DescriptorSetBuilder(1u)
+		.SetUniformBuffer(0, MeshUBOs)
+		.Build(pGPUDevice->GetLogicalDevice(), pGPUDevice->GetDescriptorPool(), layout);
+}
+
 
 void icpMeshRendererComponent::createVertexBuffers()
 {

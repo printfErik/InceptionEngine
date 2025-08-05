@@ -30,6 +30,7 @@ public:
 	void CreateVertexBuffers();
 	void CreateIndexBuffers();
 	void CreateUniformBuffers();
+	void AllocateMeshDescriptorSets();
 
 	void FillInPrimitiveData(const glm::vec3& color);
 
@@ -44,6 +45,8 @@ public:
 
 	icpBufferRenderResource MeshVB;
 	icpBufferRenderResource MeshIB;
+
+	std::vector<VkDescriptorSet> MeshDSs;
 
 	std::vector<icpVertex> m_vertices;
 	std::vector<uint32_t> m_vertexIndices;

@@ -8,8 +8,8 @@
 #include "../../resource/icpResourceSystem.h"
 #include "../../core/icpLogSystem.h"
 #include "../../mesh/icpMeshResource.h"
-#include "../icpImageResource.h"
 #include "../../core/icpConfigSystem.h"
+#include "../renderPass/icpRenderPassBase.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -47,6 +47,27 @@ void icpMaterialInstance::CreateUniformBuffers()
 		}
 	}
 }
+
+void icpMaterialInstance::AllocateMaterialDescriptorSets()
+{
+	auto pGPUDevice = g_system_container.m_renderSystem->GetGPUDevice();
+
+	auto& layout = g_system_container.m_renderSystem->GetSceneRenderer()
+		->AccessRenderPass(eRenderPass::GBUFFER_PASS)
+		->dsLayouts[1];
+
+	MaterialDSs = DescriptorSetBuilder(8u)
+		.SetUniformBuffer(0, MaterialUBOs)
+		.SetCombinedImageSampler(1, GetTextureRenderResourceByID("baseColorTexture"))
+		.SetCombinedImageSampler(2, GetTextureRenderResourceByID("metallicRoughnessTexture"))
+		.SetCombinedImageSampler(3, GetTextureRenderResourceByID("metallicTexture"))
+		.SetCombinedImageSampler(4, GetTextureRenderResourceByID("roughnessTexture"))
+		.SetCombinedImageSampler(5, GetTextureRenderResourceByID("normalTexture"))
+		.SetCombinedImageSampler(6, GetTextureRenderResourceByID("occlusionTexture"))
+		.SetCombinedImageSampler(7, GetTextureRenderResourceByID("emissiveTexture"))
+		.Build(pGPUDevice->GetLogicalDevice(), pGPUDevice->GetDescriptorPool(), layout);
+}
+
 
 void icpMaterialInstance::AddedTextureDescriptor(const std::string& textureType, std::vector<std::vector<icpTextureRenderResourceInfo>>& imgInfosAllFrames)
 {
@@ -170,6 +191,7 @@ void icpMaterialInstance::SetupMaterialRenderResources()
 	if (!m_bRenderResourcesReady)
 	{
 		CreateUniformBuffers();
+		AllocateMaterialDescriptorSets();
 		m_bRenderResourcesReady = true;
 	}
 }

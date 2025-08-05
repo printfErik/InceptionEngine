@@ -57,13 +57,10 @@ private:
 			{
 				return;
 			}
-			auto MeshWriteDS = WriteDescriptorSetBuilder(1u)
-				.SetUniformBuffer(0, meshRender.MeshUBOs[currentFrame])
-				.Build();
 
-			vkCmdPushDescriptorSet(commandBuffer,
-				VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
-				m_pipelineInfo.m_pipelineLayout, 0, 1, MeshWriteDS.data());
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_pipelineInfo.m_pipelineLayout, 0, 1,
+				&meshRender.MeshDSs[currentFrame], 0, nullptr);
 
 			VkDeviceSize offsets = 0;
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &meshRender.MeshVB.buffer, &offsets);
@@ -84,8 +81,6 @@ private:
 
 	VkRenderPass m_shadowRenderPass;
 	std::vector<VkFramebuffer> m_csmFrameBuffers;
-
-
 };
 
 

@@ -33,6 +33,22 @@ void icpDeferredCompositePass::Render(uint32_t frameBufferIndex, uint32_t curren
 	RecordCommandBuffer(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
 }
 
+void icpDeferredCompositePass::AllocatedRenderPassDescriptorSets()
+{
+	auto renderer = m_pSceneRenderer.lock();
+
+	icpTextureRenderResourceInfo depthInfo;
+	depthInfo.m_texImageViews[0] = m_rhi->GetDepthImageView();
+
+	CompositePassDSs = DescriptorSetBuilder(4u)
+		.SetInputAttachment(0, renderer->GetGBufferARenderResource())
+		.SetInputAttachment(1, renderer->GetGBufferBRenderResource())
+		.SetInputAttachment(2, renderer->GetGBufferCRenderResource())
+		.SetInputAttachment(3, depthInfo)
+		.Build(m_rhi->GetLogicalDevice(), m_rhi->GetDescriptorPool(), dsLayouts[0]);
+
+}
+
 void icpDeferredCompositePass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
 {
 	auto renderer = m_pSceneRenderer.lock();
@@ -41,34 +57,20 @@ void icpDeferredCompositePass::RecordCommandBuffer(VkCommandBuffer commandBuffer
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineInfo.m_pipeline);
 
-	icpTextureRenderResourceInfo depthInfo;
-	depthInfo.m_texImageViews[0] = m_rhi->GetDepthImageView();
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_pipelineInfo.m_pipelineLayout, 0, 1, &CompositePassDSs[curFrame],
+		0, nullptr);
 
-	auto GbufferWriteDS = WriteDescriptorSetBuilder(4u)
-		.SetInputAttachment(0, renderer->GetGBufferARenderResource())
-		.SetInputAttachment(1, renderer->GetGBufferBRenderResource())
-		.SetInputAttachment(2, renderer->GetGBufferCRenderResource())
-		.SetInputAttachment(3, depthInfo)
-		.Build();
-	vkCmdPushDescriptorSet(commandBuffer,
-		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
-		m_pipelineInfo.m_pipelineLayout, 0, 1, GbufferWriteDS.data());
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_pipelineInfo.m_pipelineLayout, 1, 1, 
+		&g_system_container.m_renderSystem->m_shadowManager->CSMDSs[curFrame],
+		0, nullptr);
 
-	auto csmPass = std::dynamic_pointer_cast<icpCSMPass>(m_pSceneRenderer.lock()->AccessRenderPass(eRenderPass::CSM_PASS));
-	auto CSMWriteDS = WriteDescriptorSetBuilder(2u)
-		.SetUniformBuffer(0, g_system_container.m_renderSystem->m_shadowManager->CSMUBOs[curFrame])
-		.SetCombinedImageSampler(1, csmPass->CascadeShadowMaps, s_csmCascadeCount)
-		.Build();
-	vkCmdPushDescriptorSet(commandBuffer,
-		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
-		m_pipelineInfo.m_pipelineLayout, 1, 1, CSMWriteDS.data());
-
-	auto SceneWriteDS = WriteDescriptorSetBuilder(1u)
-		.SetUniformBuffer(0, renderer->SceneUBOs[curFrame])
-		.Build();
-	vkCmdPushDescriptorSet(commandBuffer,
-		VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
-		m_pipelineInfo.m_pipelineLayout, 2, 1, SceneWriteDS.data());
+	auto mgr = m_pSceneRenderer.lock();
+	auto SceneDS = mgr->GetSceneDescriptorSet(curFrame);
+	vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_pipelineInfo.m_pipelineLayout, 2, 1, &SceneDS,
+		0, nullptr);
 
 	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 }

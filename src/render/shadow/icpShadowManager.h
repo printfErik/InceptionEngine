@@ -28,9 +28,11 @@ public:
 	void UpdateCSMProjViewMat(float aspectRatio, const glm::vec3& direction, uint32_t curFrame);
 	void UpdateCascadeShadowMapCB(uint32_t curFrame);
 	void CreateCSMCB();
+	void AllocateCSMDescriptorSet();
 
 	std::vector<icpBufferRenderResource> CSMUBOs;
-	
+	std::vector<VkDescriptorSet> CSMDSs;
+
 	std::vector<float> m_cascadeSplits;
 	std::vector<glm::mat4> m_lightProjViews;
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;

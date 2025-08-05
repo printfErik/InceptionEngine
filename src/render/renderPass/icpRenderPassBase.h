@@ -37,6 +37,7 @@ public:
 	virtual void Cleanup() = 0;
 	virtual void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) = 0;
 	virtual void UpdateRenderPassCB(uint32_t curFrame) = 0;
+	virtual void AllocatedRenderPassDescriptorSets() = 0;
 
 	void AddRenderpassInputLayout(VkDescriptorSetLayout layout);
 

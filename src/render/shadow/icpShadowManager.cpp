@@ -4,14 +4,16 @@
 #include "../../core/icpConfigSystem.h"
 #include "../../core/icpSystemContainer.h"
 #include "../RHI/Vulkan/icpVulkanUtility.h"
+#include "../icpRenderSystem.h"
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "../renderPass/icpCSMPass.h"
+#include "../renderPass/icpDeferredCompositePass.h"
 
 INCEPTION_BEGIN_NAMESPACE
-
-void icpShadowManager::InitCascadeDistance()
+	void icpShadowManager::InitCascadeDistance()
 {
     // Split View Frustum
     m_cascadeSplits.resize(s_csmCascadeCount + 1);
@@ -133,5 +135,19 @@ void icpShadowManager::CreateCSMCB()
     }
 
 }
+
+void icpShadowManager::AllocateCSMDescriptorSet()
+{
+    auto SceneRenderer = g_system_container.m_renderSystem->GetSceneRenderer();
+    auto csmPass = std::dynamic_pointer_cast<icpCSMPass>(SceneRenderer->AccessRenderPass(eRenderPass::CSM_PASS));
+
+    auto compositePass = std::dynamic_pointer_cast<icpDeferredCompositePass>(SceneRenderer->AccessRenderPass(eRenderPass::DEFERRED_COMPOSITION_PASS));
+
+    CSMDSs = DescriptorSetBuilder(2u)
+        .SetUniformBuffer(0, CSMUBOs)
+        .SetCombinedImageSampler(1, csmPass->CascadeShadowMaps, s_csmCascadeCount)
+        .Build(m_pDevice->GetLogicalDevice(), m_pDevice->GetDescriptorPool(), compositePass->dsLayouts[1]);
+}
+
 
 INCEPTION_END_NAMESPACE
