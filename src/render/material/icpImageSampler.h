@@ -14,7 +14,8 @@ struct FSamplerBuilderInfo
 	VkSamplerAddressMode AddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	float MaxSamplerAnisotropy = 1.f;
 	VkBorderColor BorderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
-	std::shared_ptr<icpImageResource> ImageRes;
+	float MaxLod = 1.f;
+	std::shared_ptr<icpImageResource> ImageRes = nullptr;
 	std::shared_ptr<icpGPUDevice> RHI = nullptr;
 };
 

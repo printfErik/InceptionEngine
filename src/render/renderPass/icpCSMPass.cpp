@@ -10,6 +10,8 @@
 #include "../../mesh/icpPrimitiveRendererComponent.h"
 #include "../../core/icpLogSystem.h"
 #include "../RHI/icpGraphicsPipelineBuilder.h"
+#include "../material/icpImageSampler.h"
+#
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -142,7 +144,16 @@ void icpCSMPass::CreateCSMImageRenderResource()
 		s_csmCascadeCount,
 		m_rhi->GetLogicalDevice()
 	);
-	
+
+	FSamplerBuilderInfo SamplerInfo;
+	SamplerInfo.ImageRes = CascadeShadowMaps.m_texImageRes;
+	VkPhysicalDeviceProperties properties;
+	vkGetPhysicalDeviceProperties(m_rhi->GetPhysicalDevice(), &properties);
+	SamplerInfo.MaxSamplerAnisotropy = properties.limits.maxSamplerAnisotropy;
+	SamplerInfo.RHI = m_rhi;
+
+	CascadeShadowMaps.m_texSampler = icpSamplerBuilder::BuildSampler(SamplerInfo);
+
 }
 
 void icpCSMPass::CreateCSMFrameBuffer()

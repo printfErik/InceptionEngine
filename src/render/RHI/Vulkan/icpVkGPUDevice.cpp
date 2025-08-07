@@ -327,8 +327,8 @@ void icpVkGPUDevice::initializePhysicalDevice()
 	}
 
 	VkPhysicalDevicePushDescriptorProperties pushProps = {
-	.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES,
-	.pNext = nullptr
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES,
+		.pNext = nullptr
 	};
 	VkPhysicalDeviceProperties2 props2 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
@@ -444,6 +444,16 @@ void icpVkGPUDevice::createLogicalDevice()
 	phyDeviceFeatures.independentBlend = VK_TRUE;
 	phyDeviceFeatures.samplerAnisotropy = VK_TRUE;
 
+	VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeat
+	{
+		VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES
+	};
+	dynamicRenderingFeat.dynamicRendering = VK_TRUE;
+
+	VkPhysicalDeviceFeatures2 feat2{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+	feat2.pNext = &dynamicRenderingFeat;
+	vkGetPhysicalDeviceFeatures2(m_physicalDevice, &feat2);
+
 	VkDeviceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.pQueueCreateInfos = queueCreateInfos.data();
@@ -452,6 +462,7 @@ void icpVkGPUDevice::createLogicalDevice()
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(m_requiredDeviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = m_requiredDeviceExtensions.data();
 	createInfo.enabledLayerCount = 0;
+	createInfo.pNext = &dynamicRenderingFeat;
 
 	if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device) != VK_SUCCESS)
 	{
@@ -697,13 +708,15 @@ bool hasStencilComponent(VkFormat format) {
 
 void icpVkGPUDevice::createDescriptorPools()
 {
-	std::array<VkDescriptorPoolSize, 3> poolSize{};
+	std::array<VkDescriptorPoolSize, 4> poolSize{};
 	poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSize[0].descriptorCount = 500;
 	poolSize[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSize[1].descriptorCount = 500;
 	poolSize[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	poolSize[2].descriptorCount = 500;
+	poolSize[3].type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+	poolSize[3].descriptorCount = 500;
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;

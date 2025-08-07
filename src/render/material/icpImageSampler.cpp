@@ -28,7 +28,7 @@ VkSampler icpSamplerBuilder::BuildSampler(const FSamplerBuilderInfo& builder_inf
 	sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	sampler.mipLodBias = 0.0f;
 	sampler.minLod = 0.0f;
-	sampler.maxLod = imgP ? static_cast<float>(imgP->m_mipmapLevel) : 1.f;
+	sampler.maxLod = imgP ? static_cast<float>(imgP->m_mipmapLevel) : builder_info.MaxLod;
 
 	VkSampler retSampler{ VK_NULL_HANDLE };
 	if (vkCreateSampler(builder_info.RHI->GetLogicalDevice(), &sampler, nullptr, &retSampler) != VK_SUCCESS)

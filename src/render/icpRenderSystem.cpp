@@ -34,6 +34,8 @@ bool icpRenderSystem::initializeRenderSystem()
 	m_pSceneRenderer = std::make_shared<icpDeferredRenderer>();
 	m_pSceneRenderer->Initialize(m_pGPUDevice);
 
+	m_shadowManager->AllocateCSMDescriptorSet();
+
 	m_textureRenderResourceManager = std::make_shared<icpTextureRenderResourceManager>(m_pGPUDevice);
 	m_textureRenderResourceManager->InitializeEmptyTexture();
 

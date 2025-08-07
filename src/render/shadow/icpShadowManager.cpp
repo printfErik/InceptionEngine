@@ -132,6 +132,9 @@ void icpShadowManager::CreateCSMCB()
             queueIndices.size(),
             queueIndices.data()
         );
+
+        CSMUBOs[i].offset = 0;
+        CSMUBOs[i].range = sizeof(UBOCSM);
     }
 
 }

@@ -22,7 +22,7 @@ void icpMaterialInstance::CreateUniformBuffers()
 {
 	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 
-	uint32_t UBOSize = ComputeUBOSize();
+	uint64_t UBOSize = sizeof(PBRShaderMaterial);
 
 	if (UBOSize > 0)
 	{
@@ -44,6 +44,9 @@ void icpMaterialInstance::CreateUniformBuffers()
 				indicesVec.size(),
 				indicesVec.data()
 			);
+
+			MaterialUBOs[i].offset = 0;
+			MaterialUBOs[i].range = UBOSize;
 		}
 	}
 }
