@@ -50,6 +50,7 @@ void icpGBufferPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	AddRenderpassInputLayout(sceneRenderer->GetSceneDSLayout());
 
 	SetupPipeline();
+	SetupMaskedMeshPipeline();
 }
 
 void icpGBufferPass::Cleanup()
@@ -145,8 +146,8 @@ void icpGBufferPass::SetupMaskedMeshPipeline()
 	std::vector<VkPipelineColorBlendAttachmentState> attBlendStates(GBUFFER_RT_COUNT, attBlendState);
 
 	maskedMeshPipeline.m_pipeline = GraphicsPipelineBuilder(m_rhi)
-		.SetVertexShader((g_system_container.m_configSystem->m_shaderFolderPath / "MaskedMeshPass.vert.spv").string())
-		.SetFragmentShader((g_system_container.m_configSystem->m_shaderFolderPath / "MaskedMeshPass.frag.spv").string())
+		.SetVertexShader((g_system_container.m_configSystem->m_shaderFolderPath / "MaskedMesh.vert.spv").string())
+		.SetFragmentShader((g_system_container.m_configSystem->m_shaderFolderPath / "MaskedMesh.frag.spv").string())
 		.SetVertexInput({ icpVertex::getBindingDescription() }, icpVertex::getAttributeDescription())
 		.SetInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 		.SetPipelineLayout(dsLayouts, 0, {})
