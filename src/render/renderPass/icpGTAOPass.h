@@ -15,7 +15,6 @@ public:
 
 	void InitializeRenderPass(RenderPassInitInfo initInfo) override;
 	void SetupPipeline() override;
-	void SetupMaskedMeshPipeline();
 	void Cleanup() override;
 	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override;
 

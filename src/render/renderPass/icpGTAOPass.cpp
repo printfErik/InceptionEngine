@@ -1,6 +1,7 @@
 #include "icpGTAOPass.h"
 
 INCEPTION_BEGIN_NAMESPACE
+
 void icpGTAOPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_rhi = initInfo.device;
@@ -27,7 +28,11 @@ void icpGTAOPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	AddRenderpassInputLayout(sceneRenderer->GetSceneDSLayout());
 
 	SetupPipeline();
-	SetupMaskedMeshPipeline();
+
+}
+
+void icpGTAOPass::SetupPipeline()
+{
 }
 
 
