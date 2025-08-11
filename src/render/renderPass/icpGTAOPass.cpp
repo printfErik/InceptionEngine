@@ -1,4 +1,5 @@
 #include "icpGTAOPass.h"
+#include "../icpSceneRenderer.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -8,19 +9,8 @@ void icpGTAOPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	m_pSceneRenderer = initInfo.sceneRenderer;
 
 	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
-		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.Build(m_rhi->GetLogicalDevice())
-	);
-
-	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
-		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.SetDescriptorSetBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.SetDescriptorSetBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.SetDescriptorSetBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.SetDescriptorSetBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.SetDescriptorSetBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.SetDescriptorSetBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.SetDescriptorSetBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT)
+		.SetDescriptorSetBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT)
 		.Build(m_rhi->GetLogicalDevice())
 	);
 
@@ -28,11 +18,16 @@ void icpGTAOPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	AddRenderpassInputLayout(sceneRenderer->GetSceneDSLayout());
 
 	SetupPipeline();
-
 }
 
 void icpGTAOPass::SetupPipeline()
 {
+}
+
+void icpGTAOPass::Dispatch(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
+{
+
+
 }
 
 

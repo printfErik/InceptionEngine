@@ -6,7 +6,7 @@
 #include "../../mesh/icpPrimitiveRendererComponent.h"
 
 INCEPTION_BEGIN_NAMESPACE
-	class icpGBufferPass : public icpRenderPassBase
+class icpGBufferPass : public icpRenderPassBase
 {
 public:
 
@@ -25,7 +25,7 @@ public:
 	void SetupMaskedMeshPipeline();
 	void Cleanup() override;
 	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override;
-
+	void BeginDeferredRenderingInfo(VkCommandBuffer cmdBuf, uint32_t imageIndex) override;
 	void UpdateRenderPassCB(uint32_t curFrame) override;
 
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);

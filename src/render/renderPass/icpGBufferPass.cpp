@@ -71,6 +71,8 @@ void icpGBufferPass::SetupPipeline()
 
 	std::vector<VkPipelineColorBlendAttachmentState> attBlendStates(GBUFFER_RT_COUNT, attBlendState);
 
+	std::vector<VkFormat> colorFormats(3, VK_FORMAT_R16G16B16A16_SFLOAT);
+
 	auto sceneRenderer = m_pSceneRenderer.lock();
 
 	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_rhi)
@@ -85,7 +87,7 @@ void icpGBufferPass::SetupPipeline()
 		.SetMultisampling(VK_SAMPLE_COUNT_1_BIT)
 		.SetDepthStencilState(VK_TRUE, VK_TRUE, VK_FALSE, VK_FALSE, VK_COMPARE_OP_LESS)
 		.SetColorBlendState(attBlendStates)
-		.SetRenderPass(sceneRenderer->GetGBufferRenderPass(), 0)
+		.SetRenderingCreateInfo(colorFormats, m_rhi->GetDepthFormat(), VK_FORMAT_UNDEFINED)
 		.Build(m_pipelineInfo.m_pipelineLayout);
 }
 
@@ -97,6 +99,82 @@ void icpGBufferPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, Vk
 {
 	auto mgr = m_pSceneRenderer.lock();
 	RecordCommandBuffer(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
+}
+
+void icpGBufferPass::BeginDeferredRenderingInfo(VkCommandBuffer cmdBuf, uint32_t imageIndex)
+{
+	VkRenderingAttachmentInfo GBufferAAttachment = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+		.pNext = nullptr,
+		.imageView = m_pSceneRenderer.lock()->GetGBufferARenderResource().m_texImageViews[0],
+		.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		.resolveMode = VK_RESOLVE_MODE_NONE,
+		.resolveImageView = VK_NULL_HANDLE,
+		.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.clearValue = (VkClearValue) {.color = {{0.0f, 0.0f, 0.0f, 1.0f}} },
+	};
+
+	VkRenderingAttachmentInfo GBufferBAttachment = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+		.pNext = nullptr,
+		.imageView = m_pSceneRenderer.lock()->GetGBufferBRenderResource().m_texImageViews[0],
+		.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		.resolveMode = VK_RESOLVE_MODE_NONE,
+		.resolveImageView = VK_NULL_HANDLE,
+		.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.clearValue = (VkClearValue) {.color = {{0.0f, 0.0f, 0.0f, 1.0f}} },
+	};
+
+	VkRenderingAttachmentInfo GBufferCAttachment = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+		.pNext = nullptr,
+		.imageView = m_pSceneRenderer.lock()->GetGBufferCRenderResource().m_texImageViews[0],
+		.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		.resolveMode = VK_RESOLVE_MODE_NONE,
+		.resolveImageView = VK_NULL_HANDLE,
+		.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.clearValue = (VkClearValue) {.color = {{0.0f, 0.0f, 0.0f, 1.0f}} },
+	};
+
+	VkRenderingAttachmentInfo depthAttachment = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+		.pNext = nullptr,
+		.imageView = m_rhi->GetDepthImageView(),
+		.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		.resolveMode = VK_RESOLVE_MODE_NONE,
+		.resolveImageView = VK_NULL_HANDLE,
+		.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.clearValue = (VkClearValue) {.depthStencil = {1.0f, 0} },
+	};
+
+	std::vector<VkRenderingAttachmentInfo> colorAttachments = {
+		GBufferAAttachment,
+		GBufferBAttachment,
+		GBufferCAttachment,
+	};
+
+	VkRenderingInfo renderingInfo = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.renderArea = {.offset = {0,0}, .extent = m_rhi->GetSwapChainExtent() },
+		.layerCount = 1,
+		.viewMask = 0,
+		.colorAttachmentCount = 3,
+		.pColorAttachments = colorAttachments.data(),
+		.pDepthAttachment = &depthAttachment,
+		.pStencilAttachment = nullptr,
+	};
+
+	vkCmdBeginRendering(cmdBuf, &renderingInfo);
 }
 
 void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame)
@@ -143,6 +221,8 @@ void icpGBufferPass::SetupMaskedMeshPipeline()
 		| VkColorComponentFlagBits::VK_COLOR_COMPONENT_A_BIT;
 	attBlendState.blendEnable = VK_FALSE;
 
+	std::vector<VkFormat> colorFormats(3, VK_FORMAT_R16G16B16A16_SFLOAT);
+
 	std::vector<VkPipelineColorBlendAttachmentState> attBlendStates(GBUFFER_RT_COUNT, attBlendState);
 
 	maskedMeshPipeline.m_pipeline = GraphicsPipelineBuilder(m_rhi)
@@ -157,7 +237,7 @@ void icpGBufferPass::SetupMaskedMeshPipeline()
 		.SetMultisampling(VK_SAMPLE_COUNT_1_BIT)
 		.SetDepthStencilState(VK_TRUE, VK_TRUE, VK_FALSE, VK_FALSE, VK_COMPARE_OP_LESS)
 		.SetColorBlendState(attBlendStates)
-		.SetRenderPass(sceneRenderer->GetGBufferRenderPass(), 0)
+		.SetRenderingCreateInfo(colorFormats, m_rhi->GetDepthFormat(), VK_FORMAT_UNDEFINED)
 		.Build(maskedMeshPipeline.m_pipelineLayout);
 }
 

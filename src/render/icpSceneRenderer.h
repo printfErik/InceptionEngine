@@ -67,7 +67,6 @@ public:
 	virtual void AllocateGlobalSceneDescriptorSets() = 0;
 
 	// Deferred
-	virtual VkRenderPass GetGBufferRenderPass() = 0;
 	virtual VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) = 0;
 
 	virtual icpTextureRenderResourceInfo& GetGBufferARenderResource() = 0;

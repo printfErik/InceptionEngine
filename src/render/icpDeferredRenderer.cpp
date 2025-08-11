@@ -85,11 +85,6 @@ void icpDeferredRenderer::Cleanup()
 	icpSceneRenderer::Cleanup();
 }
 
-VkRenderPass icpDeferredRenderer::GetGBufferRenderPass()
-{
-	return m_deferredRenderPass;
-}
-
 VkCommandBuffer icpDeferredRenderer::GetDeferredCommandBuffer(uint32_t curFrame)
 {
 	return m_vDeferredCommandBuffers[curFrame];
@@ -363,7 +358,7 @@ void icpDeferredRenderer::Render()
 		CSMPass->EndCSMRenderPass(m_vDeferredCommandBuffers[m_currentFrame]);
 	}
 
-	BeginDeferredRenderPass(index);
+	BeginDeferredRenderingInfo(m_vDeferredCommandBuffers[m_currentFrame], index);
 
 	m_renderPasses[eRenderPass::GBUFFER_PASS]->Render(index, m_currentFrame, result);
 	m_renderPasses[eRenderPass::DEFERRED_COMPOSITION_PASS]->Render(index, m_currentFrame, result);
@@ -468,28 +463,6 @@ void icpDeferredRenderer::ResetThenBeginCommandBuffer()
 	if (vkBeginCommandBuffer(m_vDeferredCommandBuffers[m_currentFrame], &beginInfo) != VK_SUCCESS) {
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
-}
-
-void icpDeferredRenderer::BeginDeferredRenderPass(uint32_t imageIndex)
-{
-	VkRenderPassBeginInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = m_deferredRenderPass;
-	renderPassInfo.framebuffer = m_vDeferredFrameBuffers[imageIndex];
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = m_pDevice->GetSwapChainExtent();
-
-	std::array<VkClearValue, 5> clearColors{};
-	clearColors[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
-	clearColors[1].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
-	clearColors[2].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
-	clearColors[3].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
-	clearColors[4].depthStencil = { 1.f, 0 };
-
-	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
-	renderPassInfo.pClearValues = clearColors.data();
-
-	vkCmdBeginRenderPass(m_vDeferredCommandBuffers[m_currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 

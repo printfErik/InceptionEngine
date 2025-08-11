@@ -24,7 +24,6 @@ public:
 	void Render() override;
 	void AllocateGlobalSceneDescriptorSets() override;
 
-	VkRenderPass GetGBufferRenderPass() override;
 	VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) override;
 
 	icpTextureRenderResourceInfo& GetGBufferARenderResource() override;
@@ -40,10 +39,11 @@ private:
 
 	void CreateGBufferAttachments();
 	void CreateDeferredFrameBuffer();
-	void CreateDeferredRenderPass();
+	//void CreateDeferredRenderPass();
 
 	void ResetThenBeginCommandBuffer();
-	void BeginDeferredRenderPass(uint32_t imageIndex);
+
+
 
 	void EndDeferredRenderPass();
 	void EndRecordingCommandBuffer();
@@ -55,7 +55,6 @@ private:
 	icpTextureRenderResourceInfo GBufferB;
 	icpTextureRenderResourceInfo GBufferC;
 
-	VkRenderPass m_deferredRenderPass{ VK_NULL_HANDLE };
 	std::vector<VkFramebuffer> m_vDeferredFrameBuffers;
 
 	std::vector<VkCommandBuffer> m_vDeferredCommandBuffers;

@@ -33,6 +33,22 @@ void icpDeferredCompositePass::Render(uint32_t frameBufferIndex, uint32_t curren
 	RecordCommandBuffer(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
 }
 
+void icpDeferredCompositePass::BeginDeferredRenderingInfo(VkCommandBuffer cmdBuf, uint32_t imageIndex)
+{
+	VkRenderingAttachmentInfo GBufferAAttachment = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+		.pNext = nullptr,
+		.imageView = m_pSceneRenderer.lock()->GetGBufferARenderResource().m_texImageViews[0],
+		.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		.resolveMode = VK_RESOLVE_MODE_NONE,
+		.resolveImageView = VK_NULL_HANDLE,
+		.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.clearValue = (VkClearValue) {.color = {{0.0f, 0.0f, 0.0f, 1.0f}} },
+	};
+}
+
 void icpDeferredCompositePass::AllocatedRenderPassDescriptorSets()
 {
 	auto renderer = m_pSceneRenderer.lock();
