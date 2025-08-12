@@ -206,6 +206,29 @@ DescriptorSetBuilder& DescriptorSetBuilder::SetInputAttachment(
 	return *this;
 }
 
+DescriptorSetBuilder& DescriptorSetBuilder::SetStorageImage(uint16_t dstBinding, const icpTextureRenderResourceInfo& imgInfo, uint32_t viewIndex)
+{
+	for (int32_t frame = 0; frame < MAX_FRAMES_IN_FLIGHT; frame++)
+	{
+		VkDescriptorImageInfo imageInfo{};
+
+		imageInfo.sampler = imgInfo.m_texSampler;
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		imageInfo.imageView = imgInfo.m_texImageViews[viewIndex];
+
+		m_descriptorInfos[frame][dstBinding] = imageInfo;
+
+		m_descriptorWrites[frame][dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		m_descriptorWrites[frame][dstBinding].dstBinding = dstBinding;
+		m_descriptorWrites[frame][dstBinding].dstArrayElement = 0;
+		m_descriptorWrites[frame][dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		m_descriptorWrites[frame][dstBinding].descriptorCount = 1;
+		m_descriptorWrites[frame][dstBinding].pImageInfo = &std::get<VkDescriptorImageInfo>(m_descriptorInfos[frame][dstBinding]);
+	}
+
+	return *this;
+}
+
 std::vector<VkDescriptorSet>& DescriptorSetBuilder::Build(VkDevice logicDevice,
 	VkDescriptorPool dsPool, VkDescriptorSetLayout layout)
 {

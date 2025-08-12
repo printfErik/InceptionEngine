@@ -63,6 +63,9 @@ public:
 	DescriptorSetBuilder& SetInputAttachment(uint16_t dstBinding,
 		const icpTextureRenderResourceInfo& imgInfo, uint32_t viewIndex = 0);
 
+	DescriptorSetBuilder& SetStorageImage(uint16_t dstBinding,
+		const icpTextureRenderResourceInfo& imgInfo, uint32_t viewIndex = 0);
+
 	std::vector<VkDescriptorSet>& Build(VkDevice logicDevice,
 		VkDescriptorPool dsPool, VkDescriptorSetLayout layout);
 

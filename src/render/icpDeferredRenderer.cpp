@@ -101,7 +101,7 @@ void icpDeferredRenderer::CreateGBufferAttachments()
 		1,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		m_pDevice->GetVmaAllocator(),
 		GBufferA.m_texImage,
 		GBufferA.m_texBufferAllocation

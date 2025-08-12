@@ -101,7 +101,7 @@ void icpGBufferPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, Vk
 	RecordCommandBuffer(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
 }
 
-void icpGBufferPass::BeginDeferredRenderingInfo(VkCommandBuffer cmdBuf, uint32_t imageIndex)
+void icpGBufferPass::BeginRenderingCreateInfo(VkCommandBuffer cmdBuf, uint32_t imageIndex)
 {
 	VkRenderingAttachmentInfo GBufferAAttachment = {
 		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,

@@ -21,8 +21,13 @@ public:
 	void UpdateRenderPassCB(uint32_t curFrame) override;
 
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
-	void AllocatedRenderPassDescriptorSets() override {}
+	void AllocatedRenderPassDescriptorSets() override;
 
+	void CreateAORenderTarget();
+private:
+	std::vector<VkDescriptorSet> GTAOPassDSs;
+
+	icpTextureRenderResourceInfo AORT;
 };
 
 INCEPTION_END_NAMESPACE
