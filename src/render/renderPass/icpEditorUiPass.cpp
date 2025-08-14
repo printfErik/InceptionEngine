@@ -21,15 +21,15 @@ icpEditorUiPass::~icpEditorUiPass()
 
 void icpEditorUiPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
-	m_rhi = initInfo.device;
+	m_pDevice = initInfo.device;
 	m_editorUI = initInfo.editorUi;
 	m_pSceneRenderer = initInfo.sceneRenderer;
 
 	SetupPipeline();
 
-	VkCommandBuffer command_buffer = icpVulkanUtility::beginSingleTimeCommands(m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice());
+	VkCommandBuffer command_buffer = icpVulkanUtility::beginSingleTimeCommands(m_pDevice->GetGraphicsCommandPool(), m_pDevice->GetLogicalDevice());
 	ImGui_ImplVulkan_CreateFontsTexture();
-	icpVulkanUtility::endSingleTimeCommandsAndSubmit(command_buffer, m_rhi->GetGraphicsQueue(), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice());
+	icpVulkanUtility::endSingleTimeCommandsAndSubmit(command_buffer, m_pDevice->GetGraphicsQueue(), m_pDevice->GetGraphicsCommandPool(), m_pDevice->GetLogicalDevice());
 }
 
 void icpEditorUiPass::Cleanup()
@@ -66,17 +66,17 @@ void icpEditorUiPass::SetupPipeline()
 	ImGui_ImplGlfw_InitForVulkan(window, true);
 
 	ImGui_ImplVulkan_InitInfo info{};
-	info.Device = m_rhi->GetLogicalDevice();
-	info.DescriptorPool = m_rhi->GetDescriptorPool();
+	info.Device = m_pDevice->GetLogicalDevice();
+	info.DescriptorPool = m_pDevice->GetDescriptorPool();
 	info.ImageCount = 3;
-	info.Instance = m_rhi->GetInstance();
+	info.Instance = m_pDevice->GetInstance();
 	info.MinImageCount = 3;
-	info.PhysicalDevice = m_rhi->GetPhysicalDevice();
-	info.Queue = m_rhi->GetGraphicsQueue();
-	info.QueueFamily = m_rhi->GetQueueFamilyIndices().m_graphicsFamily.value();
+	info.PhysicalDevice = m_pDevice->GetPhysicalDevice();
+	info.Queue = m_pDevice->GetGraphicsQueue();
+	info.QueueFamily = m_pDevice->GetQueueFamilyIndices().m_graphicsFamily.value();
 	info.Subpass = 0;
 	info.UseDynamicRendering = true;
-	info.ColorAttachmentFormat = m_rhi->GetSwapChainImageFormat();
+	info.ColorAttachmentFormat = m_pDevice->GetSwapChainImageFormat();
 
 	/*
 	auto renderPass = m_pSceneRenderer.lock()->GetMainForwardRenderPass();

@@ -28,14 +28,14 @@ icpCSMPass::~icpCSMPass()
 
 void icpCSMPass::Cleanup()
 {
-	vkDestroyPipelineLayout(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipelineLayout, nullptr);
-	vkDestroyPipeline(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipeline, nullptr);
+	vkDestroyPipelineLayout(m_pDevice->GetLogicalDevice(), m_pipelineInfo.m_pipelineLayout, nullptr);
+	vkDestroyPipeline(m_pDevice->GetLogicalDevice(), m_pipelineInfo.m_pipeline, nullptr);
 }
 
 
 void icpCSMPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
-	m_rhi = initInfo.device;
+	m_pDevice = initInfo.device;
 	m_pSceneRenderer = initInfo.sceneRenderer;
 
 	CreateCSMImageRenderResource();
@@ -44,7 +44,7 @@ void icpCSMPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 
 	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
 		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.Build(m_rhi->GetLogicalDevice())
+		.Build(m_pDevice->GetLogicalDevice())
 	);
 
 	SetupPipeline();
@@ -55,7 +55,7 @@ void icpCSMPass::CreateCSMRenderPass()
 	std::array<VkAttachmentDescription, 1> attachments{};
 
 	// Depth attachment
-	attachments[0].format = m_rhi->GetDepthFormat();
+	attachments[0].format = m_pDevice->GetDepthFormat();
 	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
 	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -98,7 +98,7 @@ void icpCSMPass::CreateCSMRenderPass()
 	shadowPassInfo.subpassCount = 1;
 	shadowPassInfo.pSubpasses = &subpassDescription;
 
-	if (vkCreateRenderPass(m_rhi->GetLogicalDevice(), &shadowPassInfo, nullptr, &m_shadowRenderPass) != VK_SUCCESS)
+	if (vkCreateRenderPass(m_pDevice->GetLogicalDevice(), &shadowPassInfo, nullptr, &m_shadowRenderPass) != VK_SUCCESS)
 	{
 		ICP_LOG_FATAL("failed to create cascade shadow map render pass!");
 	}
@@ -111,10 +111,10 @@ void icpCSMPass::CreateCSMImageRenderResource()
 		s_cascadeShadowMapResolution,
 		1,
 		s_csmCascadeCount,
-		m_rhi->GetDepthFormat(),
+		m_pDevice->GetDepthFormat(),
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		m_rhi->GetVmaAllocator(),
+		m_pDevice->GetVmaAllocator(),
 		CascadeShadowMaps.m_texImage, CascadeShadowMaps.m_texBufferAllocation
 	);
 
@@ -125,32 +125,32 @@ void icpCSMPass::CreateCSMImageRenderResource()
 		CascadeShadowMaps.m_texImageViews[i] = icpVulkanUtility::CreateGPUImageView(
 			CascadeShadowMaps.m_texImage,
 			VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-			m_rhi->GetDepthFormat(),
+			m_pDevice->GetDepthFormat(),
 			VK_IMAGE_ASPECT_DEPTH_BIT,
 			1,
 			i,
 			1,
-			m_rhi->GetLogicalDevice()
+			m_pDevice->GetLogicalDevice()
 		);
 	}
 
 	CascadeShadowMaps.m_texImageViews[s_csmCascadeCount] = icpVulkanUtility::CreateGPUImageView(
 		CascadeShadowMaps.m_texImage,
 		VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-		m_rhi->GetDepthFormat(),
+		m_pDevice->GetDepthFormat(),
 		VK_IMAGE_ASPECT_DEPTH_BIT,
 		1,
 		0,
 		s_csmCascadeCount,
-		m_rhi->GetLogicalDevice()
+		m_pDevice->GetLogicalDevice()
 	);
 
 	FSamplerBuilderInfo SamplerInfo;
 	SamplerInfo.ImageRes = CascadeShadowMaps.m_texImageRes;
 	VkPhysicalDeviceProperties properties;
-	vkGetPhysicalDeviceProperties(m_rhi->GetPhysicalDevice(), &properties);
+	vkGetPhysicalDeviceProperties(m_pDevice->GetPhysicalDevice(), &properties);
 	SamplerInfo.MaxSamplerAnisotropy = properties.limits.maxSamplerAnisotropy;
-	SamplerInfo.RHI = m_rhi;
+	SamplerInfo.RHI = m_pDevice;
 
 	CascadeShadowMaps.m_texSampler = icpSamplerBuilder::BuildSampler(SamplerInfo);
 
@@ -158,7 +158,7 @@ void icpCSMPass::CreateCSMImageRenderResource()
 
 void icpCSMPass::CreateCSMFrameBuffer()
 {
-	size_t swapChainImageViewSize = m_rhi->GetSwapChainImageViews().size();
+	size_t swapChainImageViewSize = m_pDevice->GetSwapChainImageViews().size();
 	m_csmFrameBuffers.resize(swapChainImageViewSize * s_csmCascadeCount);
 
 	for (size_t i = 0; i < swapChainImageViewSize; i++)
@@ -179,7 +179,7 @@ void icpCSMPass::CreateCSMFrameBuffer()
 			framebufferInfo.height = s_cascadeShadowMapResolution;
 			framebufferInfo.layers = 1;
 
-			if (vkCreateFramebuffer(m_rhi->GetLogicalDevice(), &framebufferInfo, nullptr, &m_csmFrameBuffers[i * s_csmCascadeCount + cascade]) != VK_SUCCESS)
+			if (vkCreateFramebuffer(m_pDevice->GetLogicalDevice(), &framebufferInfo, nullptr, &m_csmFrameBuffers[i * s_csmCascadeCount + cascade]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create csm frame buffer!");
 			}
@@ -195,7 +195,7 @@ void icpCSMPass::SetupPipeline()
 	pushRange.offset = 0;
 	pushRange.size = sizeof(glm::mat4);
 
-	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_rhi)
+	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_pDevice)
 		.SetVertexShader((g_system_container.m_configSystem->m_shaderFolderPath / "CSM.vert.spv").string())
 		.SetVertexInput({ icpVertex::getBindingDescription() }, icpVertex::getAttributeDescription())
 		.SetInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)

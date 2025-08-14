@@ -61,7 +61,7 @@ public:
 
 	void UpdateManager();
 
-	std::shared_ptr<icpGPUDevice> m_rhi = nullptr;
+	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
 	std::map<std::string, icpTextureRenderResourceInfo> m_textureRenderResources;
 
 	std::mutex m_textureRenderResLock;

@@ -9,7 +9,7 @@
 
 INCEPTION_BEGIN_NAMESPACE
 	icpTextureRenderResourceManager::icpTextureRenderResourceManager(std::shared_ptr<icpGPUDevice> rhi)
-	: m_rhi(rhi)
+	: m_pDevice(rhi)
 {
 	
 }
@@ -26,15 +26,15 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 		info.m_texImageRes->getImgBuffer().size(),
 		VK_SHARING_MODE_EXCLUSIVE,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		m_rhi->GetVmaAllocator(),
+		m_pDevice->GetVmaAllocator(),
 		stagingBufferAllocation,
 		stagingBuffer
 	);
 
 	void* data;
-	vmaMapMemory(m_rhi->GetVmaAllocator(), stagingBufferAllocation, &data);
+	vmaMapMemory(m_pDevice->GetVmaAllocator(), stagingBufferAllocation, &data);
 	memcpy(data, info.m_texImageRes->getImgBuffer().data(), info.m_texImageRes->getImgBuffer().size());
-	vmaUnmapMemory(m_rhi->GetVmaAllocator(), stagingBufferAllocation);
+	vmaUnmapMemory(m_pDevice->GetVmaAllocator(), stagingBufferAllocation);
 
 	icpVulkanUtility::CreateGPUImage(
 		static_cast<uint32_t>(info.m_texImageRes->m_width),
@@ -44,18 +44,18 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-		m_rhi->GetVmaAllocator(),
+		m_pDevice->GetVmaAllocator(),
 		info.m_texImage,
 		info.m_texBufferAllocation
 	);
 
-	icpVulkanUtility::transitionImageLayout(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue());
-	icpVulkanUtility::copyBuffer2Image(stagingBuffer, info.m_texImage, static_cast<uint32_t>(info.m_texImageRes->m_width), static_cast<uint32_t>(info.m_texImageRes->m_height), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue());
+	icpVulkanUtility::transitionImageLayout(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_pDevice->GetGraphicsCommandPool(), m_pDevice->GetLogicalDevice(), m_pDevice->GetGraphicsQueue());
+	icpVulkanUtility::copyBuffer2Image(stagingBuffer, info.m_texImage, static_cast<uint32_t>(info.m_texImageRes->m_width), static_cast<uint32_t>(info.m_texImageRes->m_height), m_pDevice->GetGraphicsCommandPool(), m_pDevice->GetLogicalDevice(), m_pDevice->GetGraphicsQueue());
 		//icpVulkanUtility::transitionImageLayout(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, );
 
-	vmaDestroyBuffer(m_rhi->GetVmaAllocator(), stagingBuffer, stagingBufferAllocation);
+	vmaDestroyBuffer(m_pDevice->GetVmaAllocator(), stagingBuffer, stagingBufferAllocation);
 
-	icpVulkanUtility::generateMipmaps(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, static_cast<uint32_t>(info.m_texImageRes->m_width), static_cast<uint32_t>(info.m_texImageRes->m_height), static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue(), m_rhi->GetPhysicalDevice());
+	icpVulkanUtility::generateMipmaps(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, static_cast<uint32_t>(info.m_texImageRes->m_width), static_cast<uint32_t>(info.m_texImageRes->m_height), static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_pDevice->GetGraphicsCommandPool(), m_pDevice->GetLogicalDevice(), m_pDevice->GetGraphicsQueue(), m_pDevice->GetPhysicalDevice());
 
 	info.m_texImageViews[0] = icpVulkanUtility::CreateGPUImageView(
 		info.m_texImage,
@@ -65,15 +65,15 @@ void icpTextureRenderResourceManager::setupTextureRenderResources(const std::str
 		info.m_texImageRes->m_mipmapLevel,
 		0,
 		1,
-		m_rhi->GetLogicalDevice()
+		m_pDevice->GetLogicalDevice()
 	);
 
 	FSamplerBuilderInfo SamplerInfo;
 	SamplerInfo.ImageRes = info.m_texImageRes;
 	VkPhysicalDeviceProperties properties;
-	vkGetPhysicalDeviceProperties(m_rhi->GetPhysicalDevice(), &properties);
+	vkGetPhysicalDeviceProperties(m_pDevice->GetPhysicalDevice(), &properties);
 	SamplerInfo.MaxSamplerAnisotropy = properties.limits.maxSamplerAnisotropy;
-	SamplerInfo.RHI = m_rhi;
+	SamplerInfo.RHI = m_pDevice;
 
 	info.m_texSampler = icpSamplerBuilder::BuildSampler(SamplerInfo);
 
@@ -90,9 +90,9 @@ void icpTextureRenderResourceManager::checkAndCleanAllDiscardedRenderResources()
 
 		if (info.m_state == eTextureRenderResourceState::DISCARD)
 		{
-			vkDestroySampler(m_rhi->GetLogicalDevice(), info.m_texSampler, nullptr);
-			vkDestroyImageView(m_rhi->GetLogicalDevice(), info.m_texImageViews[0], nullptr);
-			vmaDestroyImage(m_rhi->GetVmaAllocator(), info.m_texImage, info.m_texBufferAllocation);
+			vkDestroySampler(m_pDevice->GetLogicalDevice(), info.m_texSampler, nullptr);
+			vkDestroyImageView(m_pDevice->GetLogicalDevice(), info.m_texImageViews[0], nullptr);
+			vmaDestroyImage(m_pDevice->GetVmaAllocator(), info.m_texImage, info.m_texBufferAllocation);
 
 			m_textureRenderResources.erase(name);
 		}
@@ -119,16 +119,16 @@ void icpTextureRenderResourceManager::InitializeEmptyTexture()
 		1,
 		VK_SHARING_MODE_EXCLUSIVE,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		m_rhi->GetVmaAllocator(),
+		m_pDevice->GetVmaAllocator(),
 		stagingBufferAllocation,
 		stagingBuffer
 	);
 
 	const char defaultData[1] = { '1' };
 	void* data;
-	vmaMapMemory(m_rhi->GetVmaAllocator(), stagingBufferAllocation, &data);
+	vmaMapMemory(m_pDevice->GetVmaAllocator(), stagingBufferAllocation, &data);
 	memcpy(data, (void*)defaultData, 1);
-	vmaUnmapMemory(m_rhi->GetVmaAllocator(), stagingBufferAllocation);
+	vmaUnmapMemory(m_pDevice->GetVmaAllocator(), stagingBufferAllocation);
 
 	icpVulkanUtility::CreateGPUImage(
 		1,
@@ -138,18 +138,18 @@ void icpTextureRenderResourceManager::InitializeEmptyTexture()
 		VK_FORMAT_R8_SNORM,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-		m_rhi->GetVmaAllocator(),
+		m_pDevice->GetVmaAllocator(),
 		info.m_texImage,
 		info.m_texBufferAllocation
 	);
 
-	icpVulkanUtility::transitionImageLayout(info.m_texImage, VK_FORMAT_R8_SNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue());
-	icpVulkanUtility::copyBuffer2Image(stagingBuffer, info.m_texImage, 1, 1, m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue());
-	icpVulkanUtility::transitionImageLayout(info.m_texImage, VK_FORMAT_R8_SNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue());
+	icpVulkanUtility::transitionImageLayout(info.m_texImage, VK_FORMAT_R8_SNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, m_pDevice->GetGraphicsCommandPool(), m_pDevice->GetLogicalDevice(), m_pDevice->GetGraphicsQueue());
+	icpVulkanUtility::copyBuffer2Image(stagingBuffer, info.m_texImage, 1, 1, m_pDevice->GetGraphicsCommandPool(), m_pDevice->GetLogicalDevice(), m_pDevice->GetGraphicsQueue());
+	icpVulkanUtility::transitionImageLayout(info.m_texImage, VK_FORMAT_R8_SNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, m_pDevice->GetGraphicsCommandPool(), m_pDevice->GetLogicalDevice(), m_pDevice->GetGraphicsQueue());
 
-	vmaDestroyBuffer(m_rhi->GetVmaAllocator(), stagingBuffer, stagingBufferAllocation);
+	vmaDestroyBuffer(m_pDevice->GetVmaAllocator(), stagingBuffer, stagingBufferAllocation);
 
-	//icpVulkanUtility::generateMipmaps(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, static_cast<uint32_t>(info.m_texImageRes->m_width), static_cast<uint32_t>(info.m_texImageRes->m_height), static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_rhi->GetGraphicsCommandPool(), m_rhi->GetLogicalDevice(), m_rhi->GetGraphicsQueue(), m_rhi->GetPhysicalDevice());
+	//icpVulkanUtility::generateMipmaps(info.m_texImage, VK_FORMAT_R8G8B8A8_SRGB, static_cast<uint32_t>(info.m_texImageRes->m_width), static_cast<uint32_t>(info.m_texImageRes->m_height), static_cast<uint32_t>(info.m_texImageRes->m_mipmapLevel), m_pDevice->GetGraphicsCommandPool(), m_pDevice->GetLogicalDevice(), m_pDevice->GetGraphicsQueue(), m_pDevice->GetPhysicalDevice());
 
 	info.m_texImageViews[0] = icpVulkanUtility::CreateGPUImageView(
 		info.m_texImage, 
@@ -157,7 +157,7 @@ void icpTextureRenderResourceManager::InitializeEmptyTexture()
 		VK_FORMAT_R8_SNORM, 
 		VK_IMAGE_ASPECT_COLOR_BIT, 
 		1, 0, 1,
-		m_rhi->GetLogicalDevice()
+		m_pDevice->GetLogicalDevice()
 	);
 
 	VkSamplerCreateInfo sampler{};
@@ -172,7 +172,7 @@ void icpTextureRenderResourceManager::InitializeEmptyTexture()
 	sampler.anisotropyEnable = VK_TRUE;
 
 	VkPhysicalDeviceProperties properties;
-	vkGetPhysicalDeviceProperties(m_rhi->GetPhysicalDevice(), &properties);
+	vkGetPhysicalDeviceProperties(m_pDevice->GetPhysicalDevice(), &properties);
 
 	sampler.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 	sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
@@ -187,7 +187,7 @@ void icpTextureRenderResourceManager::InitializeEmptyTexture()
 	sampler.minLod = 0.0f;
 	sampler.maxLod = 1;
 
-	if (vkCreateSampler(m_rhi->GetLogicalDevice(), &sampler, nullptr, &info.m_texSampler) != VK_SUCCESS)
+	if (vkCreateSampler(m_pDevice->GetLogicalDevice(), &sampler, nullptr, &info.m_texSampler) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create sampler!");
 	}

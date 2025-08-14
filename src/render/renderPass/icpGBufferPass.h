@@ -27,9 +27,9 @@ public:
 	void Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult) override;
 	void BeginRenderingCreateInfo(VkCommandBuffer cmdBuf, uint32_t imageIndex) override;
 	void UpdateRenderPassCB(uint32_t curFrame) override;
-
+	void SetupPassOutput() override;
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, uint32_t curFrame);
-	void AllocatedRenderPassDescriptorSets() override {}
+	
 private:
 
 	template<typename CompType>
@@ -84,6 +84,9 @@ private:
 
 	RenderPipelineInfo maskedMeshPipeline{};
 
+	icpTextureRenderResourceInfo GBufferA;
+	icpTextureRenderResourceInfo GBufferB;
+	icpTextureRenderResourceInfo GBufferC;
 };
 
 INCEPTION_END_NAMESPACE

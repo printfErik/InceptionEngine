@@ -26,15 +26,15 @@ icpGBufferPass::~icpGBufferPass()
 
 void icpGBufferPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
-	m_rhi = initInfo.device;
+	m_pDevice = initInfo.device;
 	m_pSceneRenderer = initInfo.sceneRenderer;
 
-	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
+	AddPassInputLayout(DescriptorSetLayoutBuilder()
 		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.Build(m_rhi->GetLogicalDevice())
+		.Build(m_pDevice->GetLogicalDevice())
 	);
 
-	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
+	AddPassInputLayout(DescriptorSetLayoutBuilder()
 		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.SetDescriptorSetBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.SetDescriptorSetBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -43,11 +43,11 @@ void icpGBufferPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 		.SetDescriptorSetBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.SetDescriptorSetBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.SetDescriptorSetBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.Build(m_rhi->GetLogicalDevice())
+		.Build(m_pDevice->GetLogicalDevice())
 	);
 
 	auto sceneRenderer = m_pSceneRenderer.lock();
-	AddRenderpassInputLayout(sceneRenderer->GetSceneDSLayout());
+	AddPassInputLayout(sceneRenderer->GetSceneDSLayout());
 
 	SetupPipeline();
 	SetupMaskedMeshPipeline();
@@ -55,8 +55,8 @@ void icpGBufferPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 
 void icpGBufferPass::Cleanup()
 {
-	vkDestroyPipelineLayout(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipelineLayout, nullptr);
-	vkDestroyPipeline(m_rhi->GetLogicalDevice(), m_pipelineInfo.m_pipeline, nullptr);
+	vkDestroyPipelineLayout(m_pDevice->GetLogicalDevice(), m_pipelineInfo.m_pipelineLayout, nullptr);
+	vkDestroyPipeline(m_pDevice->GetLogicalDevice(), m_pipelineInfo.m_pipeline, nullptr);
 }
 
 void icpGBufferPass::SetupPipeline()
@@ -75,24 +75,101 @@ void icpGBufferPass::SetupPipeline()
 
 	auto sceneRenderer = m_pSceneRenderer.lock();
 
-	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_rhi)
+	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_pDevice)
 		.SetVertexShader((g_system_container.m_configSystem->m_shaderFolderPath / "GBuffer.vert.spv").string())
 		.SetFragmentShader((g_system_container.m_configSystem->m_shaderFolderPath / "GBuffer.frag.spv").string())
 		.SetVertexInput({ icpVertex::getBindingDescription() }, icpVertex::getAttributeDescription())
 		.SetInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 		.SetPipelineLayout(dsLayouts, 0, {})
-		.SetViewport({ 0.f, 0.f, static_cast<float>(m_rhi->GetSwapChainExtent().width), static_cast<float>(m_rhi->GetSwapChainExtent().height), 0.f, 1.f })
-		.SetScissor({ { 0,0 }, m_rhi->GetSwapChainExtent() })
+		.SetViewport({ 0.f, 0.f, static_cast<float>(m_pDevice->GetSwapChainExtent().width), static_cast<float>(m_pDevice->GetSwapChainExtent().height), 0.f, 1.f })
+		.SetScissor({ { 0,0 }, m_pDevice->GetSwapChainExtent() })
 		.SetRasterizer(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE)
 		.SetMultisampling(VK_SAMPLE_COUNT_1_BIT)
 		.SetDepthStencilState(VK_TRUE, VK_TRUE, VK_FALSE, VK_FALSE, VK_COMPARE_OP_LESS)
 		.SetColorBlendState(attBlendStates)
-		.SetRenderingCreateInfo(colorFormats, m_rhi->GetDepthFormat(), VK_FORMAT_UNDEFINED)
+		.SetRenderingCreateInfo(colorFormats, m_pDevice->GetDepthFormat(), VK_FORMAT_UNDEFINED)
 		.Build(m_pipelineInfo.m_pipelineLayout);
 }
 
 void icpGBufferPass::UpdateRenderPassCB(uint32_t curFrame)
 {
+}
+
+void icpGBufferPass::SetupPassOutput()
+{
+	VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+	icpVulkanUtility::CreateGPUImage(
+		(float)m_pDevice->GetSwapChainExtent().width,
+		(float)m_pDevice->GetSwapChainExtent().height,
+		1,
+		1,
+		VK_FORMAT_R16G16B16A16_SFLOAT,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		m_pDevice->GetVmaAllocator(),
+		GBufferA.m_texImage,
+		GBufferA.m_texBufferAllocation
+	);
+
+	GBufferA.m_texImageViews[0] = icpVulkanUtility::CreateGPUImageView(
+		GBufferA.m_texImage,
+		VK_IMAGE_VIEW_TYPE_2D,
+		VK_FORMAT_R16G16B16A16_SFLOAT,
+		aspectMask,
+		1,
+		0,
+		1,
+		m_pDevice->GetLogicalDevice()
+	);
+
+	icpVulkanUtility::CreateGPUImage(
+		(float)m_pDevice->GetSwapChainExtent().width,
+		(float)m_pDevice->GetSwapChainExtent().height,
+		1,
+		1,
+		VK_FORMAT_R16G16B16A16_SFLOAT,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+		m_pDevice->GetVmaAllocator(),
+		GBufferB.m_texImage,
+		GBufferB.m_texBufferAllocation
+	);
+
+	GBufferB.m_texImageViews[0] = icpVulkanUtility::CreateGPUImageView(
+		GBufferB.m_texImage,
+		VK_IMAGE_VIEW_TYPE_2D,
+		VK_FORMAT_R16G16B16A16_SFLOAT,
+		aspectMask,
+		1,
+		0,
+		1,
+		m_pDevice->GetLogicalDevice()
+	);
+
+	icpVulkanUtility::CreateGPUImage(
+		(float)m_pDevice->GetSwapChainExtent().width,
+		(float)m_pDevice->GetSwapChainExtent().height,
+		1,
+		1,
+		VK_FORMAT_R16G16B16A16_SFLOAT,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+		m_pDevice->GetVmaAllocator(),
+		GBufferC.m_texImage,
+		GBufferC.m_texBufferAllocation
+	);
+
+	GBufferC.m_texImageViews[0] = icpVulkanUtility::CreateGPUImageView(
+		GBufferC.m_texImage,
+		VK_IMAGE_VIEW_TYPE_2D,
+		VK_FORMAT_R16G16B16A16_SFLOAT,
+		aspectMask,
+		1,
+		0,
+		1,
+		m_pDevice->GetLogicalDevice()
+	);
 }
 
 void icpGBufferPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
@@ -145,7 +222,7 @@ void icpGBufferPass::BeginRenderingCreateInfo(VkCommandBuffer cmdBuf, uint32_t i
 	VkRenderingAttachmentInfo depthAttachment = {
 		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 		.pNext = nullptr,
-		.imageView = m_rhi->GetDepthImageView(),
+		.imageView = m_pDevice->GetDepthImageView(),
 		.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 		.resolveMode = VK_RESOLVE_MODE_NONE,
 		.resolveImageView = VK_NULL_HANDLE,
@@ -165,7 +242,7 @@ void icpGBufferPass::BeginRenderingCreateInfo(VkCommandBuffer cmdBuf, uint32_t i
 		.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
 		.pNext = nullptr,
 		.flags = 0,
-		.renderArea = {.offset = {0,0}, .extent = m_rhi->GetSwapChainExtent() },
+		.renderArea = {.offset = {0,0}, .extent = m_pDevice->GetSwapChainExtent() },
 		.layerCount = 1,
 		.viewMask = 0,
 		.colorAttachmentCount = 3,
@@ -182,15 +259,15 @@ void icpGBufferPass::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = (float)m_rhi->GetSwapChainExtent().width;
-	viewport.height = (float)m_rhi->GetSwapChainExtent().height;
+	viewport.width = (float)m_pDevice->GetSwapChainExtent().width;
+	viewport.height = (float)m_pDevice->GetSwapChainExtent().height;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
-	scissor.extent = m_rhi->GetSwapChainExtent();
+	scissor.extent = m_pDevice->GetSwapChainExtent();
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	auto mgr = m_pSceneRenderer.lock();
@@ -225,19 +302,19 @@ void icpGBufferPass::SetupMaskedMeshPipeline()
 
 	std::vector<VkPipelineColorBlendAttachmentState> attBlendStates(GBUFFER_RT_COUNT, attBlendState);
 
-	maskedMeshPipeline.m_pipeline = GraphicsPipelineBuilder(m_rhi)
+	maskedMeshPipeline.m_pipeline = GraphicsPipelineBuilder(m_pDevice)
 		.SetVertexShader((g_system_container.m_configSystem->m_shaderFolderPath / "MaskedMesh.vert.spv").string())
 		.SetFragmentShader((g_system_container.m_configSystem->m_shaderFolderPath / "MaskedMesh.frag.spv").string())
 		.SetVertexInput({ icpVertex::getBindingDescription() }, icpVertex::getAttributeDescription())
 		.SetInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 		.SetPipelineLayout(dsLayouts, 0, {})
-		.SetViewport({ 0.f, 0.f, static_cast<float>(m_rhi->GetSwapChainExtent().width), static_cast<float>(m_rhi->GetSwapChainExtent().height), 0.f, 1.f })
-		.SetScissor({ { 0,0 }, m_rhi->GetSwapChainExtent() })
+		.SetViewport({ 0.f, 0.f, static_cast<float>(m_pDevice->GetSwapChainExtent().width), static_cast<float>(m_pDevice->GetSwapChainExtent().height), 0.f, 1.f })
+		.SetScissor({ { 0,0 }, m_pDevice->GetSwapChainExtent() })
 		.SetRasterizer(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE)
 		.SetMultisampling(VK_SAMPLE_COUNT_1_BIT)
 		.SetDepthStencilState(VK_TRUE, VK_TRUE, VK_FALSE, VK_FALSE, VK_COMPARE_OP_LESS)
 		.SetColorBlendState(attBlendStates)
-		.SetRenderingCreateInfo(colorFormats, m_rhi->GetDepthFormat(), VK_FORMAT_UNDEFINED)
+		.SetRenderingCreateInfo(colorFormats, m_pDevice->GetDepthFormat(), VK_FORMAT_UNDEFINED)
 		.Build(maskedMeshPipeline.m_pipelineLayout);
 }
 

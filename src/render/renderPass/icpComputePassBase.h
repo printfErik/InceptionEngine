@@ -38,7 +38,7 @@ public:
 	std::vector<VkDescriptorSetLayout> dsLayouts;
 protected:
 	std::weak_ptr<icpSceneRenderer> m_pSceneRenderer;
-	std::shared_ptr<icpGPUDevice> m_rhi = nullptr;
+	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
 };
 
 INCEPTION_END_NAMESPACE

@@ -20,6 +20,9 @@ public:
 	void UpdateRenderPassCB(uint32_t curFrame) override;
 
 	void AllocatedRenderPassDescriptorSets() override {}
+	void BeginRenderingCreateInfo(VkCommandBuffer cmdBuf, uint32_t imageIndex) override;
+
+	void SetupPassOutput() override;
 private:
 
 	//void UpdateGlobalBuffers(uint32_t curFrame);

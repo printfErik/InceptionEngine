@@ -43,17 +43,11 @@ private:
 
 	void ResetThenBeginCommandBuffer();
 
-
-
 	void EndDeferredRenderPass();
 	void EndRecordingCommandBuffer();
 
 	void SubmitCommandList();
 	void Present(uint32_t imageIndex);
-
-	icpTextureRenderResourceInfo GBufferA;
-	icpTextureRenderResourceInfo GBufferB;
-	icpTextureRenderResourceInfo GBufferC;
 
 	std::vector<VkFramebuffer> m_vDeferredFrameBuffers;
 

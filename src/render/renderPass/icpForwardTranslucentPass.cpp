@@ -14,12 +14,12 @@ icpForwardTranslucentPass::~icpForwardTranslucentPass()
 
 void icpForwardTranslucentPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
-	m_rhi = initInfo.device;
+	m_pDevice = initInfo.device;
 	m_pSceneRenderer = initInfo.sceneRenderer;
 
 	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
 		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.Build(m_rhi->GetLogicalDevice())
+		.Build(m_pDevice->GetLogicalDevice())
 	);
 
 	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
@@ -32,7 +32,7 @@ void icpForwardTranslucentPass::InitializeRenderPass(RenderPassInitInfo initInfo
 		.SetDescriptorSetBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.SetDescriptorSetBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.SetDescriptorSetBinding(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.Build(m_rhi->GetLogicalDevice())
+		.Build(m_pDevice->GetLogicalDevice())
 	);
 
 	auto sceneRenderer = m_pSceneRenderer.lock();
@@ -55,19 +55,19 @@ void icpForwardTranslucentPass::SetupPipeline()
 	attBlendState.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
 	attBlendState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
 
-	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_rhi)
+	m_pipelineInfo.m_pipeline = GraphicsPipelineBuilder(m_pDevice)
 		.SetVertexShader((g_system_container.m_configSystem->m_shaderFolderPath / "Translucent.vert.spv").string())
 		.SetFragmentShader((g_system_container.m_configSystem->m_shaderFolderPath / "Translucent.frag.spv").string())
 		.SetVertexInput({ icpVertex::getBindingDescription() }, icpVertex::getAttributeDescription())
 		.SetInputAssembly(VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 		.SetPipelineLayout(dsLayouts, 0, {})
-		.SetViewport({ 0.f, 0.f, static_cast<float>(m_rhi->GetSwapChainExtent().width), static_cast<float>(m_rhi->GetSwapChainExtent().height), 0.f, 1.f })
-		.SetScissor({ { 0,0 }, m_rhi->GetSwapChainExtent() })
+		.SetViewport({ 0.f, 0.f, static_cast<float>(m_pDevice->GetSwapChainExtent().width), static_cast<float>(m_pDevice->GetSwapChainExtent().height), 0.f, 1.f })
+		.SetScissor({ { 0,0 }, m_pDevice->GetSwapChainExtent() })
 		.SetRasterizer(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_FALSE)
 		.SetMultisampling(VK_SAMPLE_COUNT_1_BIT)
 		.SetDepthStencilState(VK_TRUE, VK_FALSE, VK_FALSE, VK_FALSE, VK_COMPARE_OP_LESS)
 		.SetColorBlendState({ attBlendState })
-		.SetRenderingCreateInfo({m_rhi->GetSwapChainImageFormat()}, m_rhi->GetDepthFormat(), VK_FORMAT_UNDEFINED)
+		.SetRenderingCreateInfo({m_pDevice->GetSwapChainImageFormat()}, m_pDevice->GetDepthFormat(), VK_FORMAT_UNDEFINED)
 		.Build(m_pipelineInfo.m_pipelineLayout);
 }
 
@@ -83,15 +83,15 @@ void icpForwardTranslucentPass::RecordCommandBuffer(VkCommandBuffer commandBuffe
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = (float)m_rhi->GetSwapChainExtent().width;
-	viewport.height = (float)m_rhi->GetSwapChainExtent().height;
+	viewport.width = (float)m_pDevice->GetSwapChainExtent().width;
+	viewport.height = (float)m_pDevice->GetSwapChainExtent().height;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
-	scissor.extent = m_rhi->GetSwapChainExtent();
+	scissor.extent = m_pDevice->GetSwapChainExtent();
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	auto mgr = m_pSceneRenderer.lock();
@@ -138,6 +138,50 @@ void icpForwardTranslucentPass::Cleanup()
 void icpForwardTranslucentPass::UpdateRenderPassCB(uint32_t curFrame)
 {
 	
+}
+
+void icpForwardTranslucentPass::BeginRenderingCreateInfo(VkCommandBuffer cmdBuf, uint32_t imageIndex)
+{
+	VkRenderingAttachmentInfo GBufferAAttachment = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+		.pNext = nullptr,
+		.imageView = m_pSceneRenderer.lock()->GetGBufferARenderResource().m_texImageViews[0],
+		.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		.resolveMode = VK_RESOLVE_MODE_NONE,
+		.resolveImageView = VK_NULL_HANDLE,
+		.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.clearValue = (VkClearValue) {.color = {{0.0f, 0.0f, 0.0f, 1.0f}} },
+	};
+
+	VkRenderingAttachmentInfo depthAttachment = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+		.pNext = nullptr,
+		.imageView = m_pDevice->GetDepthImageView(),
+		.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		.resolveMode = VK_RESOLVE_MODE_NONE,
+		.resolveImageView = VK_NULL_HANDLE,
+		.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.clearValue = (VkClearValue) {.depthStencil = {1.0f, 0} },
+	};
+
+	VkRenderingInfo renderingInfo = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.renderArea = {.offset = {0,0}, .extent = m_pDevice->GetSwapChainExtent() },
+		.layerCount = 1,
+		.viewMask = 0,
+		.colorAttachmentCount = 3,
+		.pColorAttachments = colorAttachments.data(),
+		.pDepthAttachment = &depthAttachment,
+		.pStencilAttachment = nullptr,
+	};
+
+	vkCmdBeginRendering(cmdBuf, &renderingInfo);
 }
 
 
