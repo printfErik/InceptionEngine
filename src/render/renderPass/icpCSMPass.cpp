@@ -42,7 +42,7 @@ void icpCSMPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 	CreateCSMRenderPass();
 	CreateCSMFrameBuffer();
 
-	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
+	AddPassInputLayout(DescriptorSetLayoutBuilder()
 		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
 		.Build(m_pDevice->GetLogicalDevice())
 	);

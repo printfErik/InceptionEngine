@@ -27,9 +27,12 @@ public:
 	void UpdateRenderPassCB(uint32_t curFrame) override;
 	void BeginRenderingCreateInfo(VkCommandBuffer cmdBuf, uint32_t imageIndex) override;
 	void SetupPassOutput() override;
-private:
 
 	icpTextureRenderResourceInfo LightingPassRT;
+
+private:
+
+	
 	std::vector<VkDescriptorSet> CompositePassDSs;
 };
 

@@ -69,10 +69,6 @@ public:
 	// Deferred
 	virtual VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) = 0;
 
-	virtual icpTextureRenderResourceInfo& GetGBufferARenderResource() = 0;
-	virtual icpTextureRenderResourceInfo& GetGBufferBRenderResource() = 0;
-	virtual icpTextureRenderResourceInfo& GetGBufferCRenderResource() = 0;
-
 	std::shared_ptr<icpRenderPassBase> AccessRenderPass(eRenderPass passType);
 
 	void CreateSceneCB();

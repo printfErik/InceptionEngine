@@ -1,4 +1,6 @@
 #include "icpForwardTranslucentPass.h"
+
+#include "icpDeferredCompositePass.h"
 #include "../../core/icpConfigSystem.h"
 #include "../RHI/icpGraphicsPipelineBuilder.h"
 #include "../icpSceneRenderer.h"
@@ -17,12 +19,12 @@ void icpForwardTranslucentPass::InitializeRenderPass(RenderPassInitInfo initInfo
 	m_pDevice = initInfo.device;
 	m_pSceneRenderer = initInfo.sceneRenderer;
 
-	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
+	AddPassInputLayout(DescriptorSetLayoutBuilder()
 		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
 		.Build(m_pDevice->GetLogicalDevice())
 	);
 
-	AddRenderpassInputLayout(DescriptorSetLayoutBuilder()
+	AddPassInputLayout(DescriptorSetLayoutBuilder()
 		.SetDescriptorSetBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.SetDescriptorSetBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.SetDescriptorSetBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -36,7 +38,7 @@ void icpForwardTranslucentPass::InitializeRenderPass(RenderPassInitInfo initInfo
 	);
 
 	auto sceneRenderer = m_pSceneRenderer.lock();
-	AddRenderpassInputLayout(sceneRenderer->GetSceneDSLayout());
+	AddPassInputLayout(sceneRenderer->GetSceneDSLayout());
 
 	SetupPipeline();
 }
@@ -142,10 +144,12 @@ void icpForwardTranslucentPass::UpdateRenderPassCB(uint32_t curFrame)
 
 void icpForwardTranslucentPass::BeginRenderingCreateInfo(VkCommandBuffer cmdBuf, uint32_t imageIndex)
 {
-	VkRenderingAttachmentInfo GBufferAAttachment = {
+	auto lightingPass = std::static_pointer_cast<icpDeferredCompositePass>(m_renderPassDependencies[0].lock());
+
+	VkRenderingAttachmentInfo finalColorAAttachment = {
 		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 		.pNext = nullptr,
-		.imageView = m_pSceneRenderer.lock()->GetGBufferARenderResource().m_texImageViews[0],
+		.imageView = lightingPass->LightingPassRT.m_texImageViews[0],
 		.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		.resolveMode = VK_RESOLVE_MODE_NONE,
 		.resolveImageView = VK_NULL_HANDLE,
@@ -175,8 +179,8 @@ void icpForwardTranslucentPass::BeginRenderingCreateInfo(VkCommandBuffer cmdBuf,
 		.renderArea = {.offset = {0,0}, .extent = m_pDevice->GetSwapChainExtent() },
 		.layerCount = 1,
 		.viewMask = 0,
-		.colorAttachmentCount = 3,
-		.pColorAttachments = colorAttachments.data(),
+		.colorAttachmentCount = 1,
+		.pColorAttachments = &finalColorAAttachment,
 		.pDepthAttachment = &depthAttachment,
 		.pStencilAttachment = nullptr,
 	};

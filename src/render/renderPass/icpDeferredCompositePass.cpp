@@ -109,6 +109,7 @@ void icpDeferredCompositePass::BeginRenderingCreateInfo(VkCommandBuffer cmdBuf, 
 
 void icpDeferredCompositePass::SetupPassOutput()
 {
+	
 	icpVulkanUtility::CreateGPUImage(
 		(float)m_pDevice->GetSwapChainExtent().width,
 		(float)m_pDevice->GetSwapChainExtent().height,
@@ -132,7 +133,7 @@ void icpDeferredCompositePass::SetupPassOutput()
 		1,
 		m_pDevice->GetLogicalDevice()
 	);
-
+	
 }
 
 void icpDeferredCompositePass::InitializeRenderPass(RenderPassInitInfo initInfo)

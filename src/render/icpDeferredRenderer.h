@@ -26,21 +26,12 @@ public:
 
 	VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) override;
 
-	icpTextureRenderResourceInfo& GetGBufferARenderResource() override;
-	icpTextureRenderResourceInfo& GetGBufferBRenderResource() override;
-	icpTextureRenderResourceInfo& GetGBufferCRenderResource() override;
-
 	void RecreateSwapChain();
 	void CleanupSwapChain();
 
 	void AllocateCommandBuffers();
 	
 private:
-
-	void CreateGBufferAttachments();
-	void CreateDeferredFrameBuffer();
-	//void CreateDeferredRenderPass();
-
 	void ResetThenBeginCommandBuffer();
 
 	void EndDeferredRenderPass();
@@ -48,8 +39,6 @@ private:
 
 	void SubmitCommandList();
 	void Present(uint32_t imageIndex);
-
-	std::vector<VkFramebuffer> m_vDeferredFrameBuffers;
 
 	std::vector<VkCommandBuffer> m_vDeferredCommandBuffers;
 };

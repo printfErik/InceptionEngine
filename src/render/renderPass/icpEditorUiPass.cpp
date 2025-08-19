@@ -22,7 +22,7 @@ icpEditorUiPass::~icpEditorUiPass()
 void icpEditorUiPass::InitializeRenderPass(RenderPassInitInfo initInfo)
 {
 	m_pDevice = initInfo.device;
-	m_editorUI = initInfo.editorUi;
+	m_editorUI = std::make_shared<icpEditorUI>();
 	m_pSceneRenderer = initInfo.sceneRenderer;
 
 	SetupPipeline();

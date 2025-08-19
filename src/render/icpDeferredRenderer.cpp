@@ -27,13 +27,8 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 
 	AllocateCommandBuffers();
 
-	CreateGBufferAttachments();
-	CreateDeferredRenderPass();
-	CreateDeferredFrameBuffer();
-
 	icpRenderPassBase::RenderPassInitInfo csmPassCreateInfo;
 	csmPassCreateInfo.device = m_pDevice;
-	csmPassCreateInfo.passType = eRenderPass::CSM_PASS;
 	csmPassCreateInfo.sceneRenderer = shared_from_this();
 	std::shared_ptr<icpRenderPassBase> cmsPass = std::make_shared<icpCSMPass>();
 	cmsPass->InitializeRenderPass(csmPassCreateInfo);
@@ -42,7 +37,6 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 
 	icpRenderPassBase::RenderPassInitInfo gbufferPassCreateInfo;
 	gbufferPassCreateInfo.device = m_pDevice;
-	gbufferPassCreateInfo.passType = eRenderPass::GBUFFER_PASS;
 	gbufferPassCreateInfo.sceneRenderer = shared_from_this();
 	std::shared_ptr<icpRenderPassBase> gbufferPass = std::make_shared<icpGBufferPass>();
 	gbufferPass->InitializeRenderPass(gbufferPassCreateInfo);
@@ -51,7 +45,6 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 
 	icpRenderPassBase::RenderPassInitInfo deferredCompositePassCreateInfo;
 	deferredCompositePassCreateInfo.device = m_pDevice;
-	deferredCompositePassCreateInfo.passType = eRenderPass::DEFERRED_COMPOSITION_PASS;
 	deferredCompositePassCreateInfo.sceneRenderer = shared_from_this();
 	std::shared_ptr<icpRenderPassBase> deferredCompositePass = std::make_shared<icpDeferredCompositePass>();
 	deferredCompositePass->InitializeRenderPass(deferredCompositePassCreateInfo);
@@ -60,7 +53,6 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 
 	icpRenderPassBase::RenderPassInitInfo translucentPassCreateInfo;
 	translucentPassCreateInfo.device = m_pDevice;
-	translucentPassCreateInfo.passType = eRenderPass::TRANSLUCENT_PASS;
 	translucentPassCreateInfo.sceneRenderer = shared_from_this();
 	std::shared_ptr<icpRenderPassBase> translucentPass = std::make_shared<icpForwardTranslucentPass>();
 	translucentPass->InitializeRenderPass(translucentPassCreateInfo);
@@ -69,8 +61,6 @@ bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
 
 	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
 	editorUIInfo.device = m_pDevice;
-	editorUIInfo.passType = eRenderPass::EDITOR_UI_PASS;
-	editorUIInfo.editorUi = std::make_shared<icpEditorUI>();
 	editorUIInfo.sceneRenderer = shared_from_this();
 	std::shared_ptr<icpRenderPassBase> editorUIPass = std::make_shared<icpEditorUiPass>();
 	editorUIPass->InitializeRenderPass(editorUIInfo);
@@ -90,11 +80,7 @@ VkCommandBuffer icpDeferredRenderer::GetDeferredCommandBuffer(uint32_t curFrame)
 	return m_vDeferredCommandBuffers[curFrame];
 }
 
-void icpDeferredRenderer::CreateGBufferAttachments()
-{
-	
-}
-
+/*
 void icpDeferredRenderer::CreateDeferredRenderPass()
 {
 	std::array<VkAttachmentDescription, 5> attachments{};
@@ -252,7 +238,7 @@ void icpDeferredRenderer::CreateDeferredFrameBuffer()
 		}
 	}
 }
-
+*/
 void icpDeferredRenderer::Render()
 {
 	m_pDevice->WaitForFence(m_currentFrame);
@@ -285,8 +271,6 @@ void icpDeferredRenderer::Render()
 		CSMPass->RenderPushConstant(index, m_currentFrame, i, result);
 		CSMPass->EndCSMRenderPass(m_vDeferredCommandBuffers[m_currentFrame]);
 	}
-
-	BeginDeferredRenderingInfo(m_vDeferredCommandBuffers[m_currentFrame], index);
 
 	m_renderPasses[eRenderPass::GBUFFER_PASS]->Render(index, m_currentFrame, result);
 	m_renderPasses[eRenderPass::DEFERRED_COMPOSITION_PASS]->Render(index, m_currentFrame, result);
@@ -328,25 +312,11 @@ void icpDeferredRenderer::RecreateSwapChain()
 	m_pDevice->CreateSwapChain();
 	m_pDevice->CreateSwapChainImageViews();
 	m_pDevice->CreateDepthResources();
-
-	CreateGBufferAttachments();
-	CreateDeferredFrameBuffer();
 }
 
 void icpDeferredRenderer::CleanupSwapChain()
 {
-	for (auto framebuffer : m_vDeferredFrameBuffers)
-	{
-		vkDestroyFramebuffer(m_pDevice->GetLogicalDevice(), framebuffer, nullptr);
-	}
-
-	vmaDestroyImage(m_pDevice->GetVmaAllocator(), GBufferA.m_texImage, GBufferA.m_texBufferAllocation);
-	vmaDestroyImage(m_pDevice->GetVmaAllocator(), GBufferB.m_texImage, GBufferB.m_texBufferAllocation);
-	vmaDestroyImage(m_pDevice->GetVmaAllocator(), GBufferC.m_texImage, GBufferC.m_texBufferAllocation);
-
-	vkDestroyImageView(m_pDevice->GetLogicalDevice(), GBufferA.m_texImageViews[0], nullptr);
-	vkDestroyImageView(m_pDevice->GetLogicalDevice(), GBufferB.m_texImageViews[0], nullptr);
-	vkDestroyImageView(m_pDevice->GetLogicalDevice(), GBufferC.m_texImageViews[0], nullptr);
+	
 }
 
 void icpDeferredRenderer::AllocateCommandBuffers()
@@ -365,22 +335,6 @@ void icpDeferredRenderer::AllocateCommandBuffers()
 	}
 }
 
-icpTextureRenderResourceInfo& icpDeferredRenderer::GetGBufferARenderResource()
-{
-	return GBufferA;
-}
-
-icpTextureRenderResourceInfo& icpDeferredRenderer::GetGBufferBRenderResource()
-{
-	return GBufferB;
-}
-
-icpTextureRenderResourceInfo& icpDeferredRenderer::GetGBufferCRenderResource()
-{
-	return GBufferC;
-}
-
-
 void icpDeferredRenderer::ResetThenBeginCommandBuffer()
 {
 	vkResetCommandBuffer(m_vDeferredCommandBuffers[m_currentFrame], 0);
@@ -392,7 +346,6 @@ void icpDeferredRenderer::ResetThenBeginCommandBuffer()
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
 }
-
 
 void icpDeferredRenderer::EndDeferredRenderPass()
 {

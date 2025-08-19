@@ -18,7 +18,7 @@ public:
 	{
 		std::shared_ptr<icpGPUDevice> device = nullptr;
 		std::weak_ptr<icpSceneRenderer> sceneRenderer;
-		std::vector<icpRenderPassBase> renderPassDependencies;
+		std::vector<std::weak_ptr<icpRenderPassBase>> renderPassDependencies;
 	};
 
 	struct RenderPipelineInfo
@@ -51,6 +51,8 @@ public:
 protected:
 	std::weak_ptr<icpSceneRenderer> m_pSceneRenderer;
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
+
+	std::vector<std::weak_ptr<icpRenderPassBase>> m_renderPassDependencies;
 };
 
 INCEPTION_END_NAMESPACE
