@@ -807,6 +807,11 @@ VkQueue& icpVkGPUDevice::GetGraphicsQueue()
 	return m_graphicsQueue;
 }
 
+VkQueue& icpVkGPUDevice::GetComputeQueue()
+{
+	return m_computeQueue;
+}
+
 VkQueue& icpVkGPUDevice::GetPresentQueue()
 {
 	return m_presentQueue;
@@ -839,6 +844,11 @@ VkSwapchainKHR& icpVkGPUDevice::GetSwapChain()
 VkCommandPool& icpVkGPUDevice::GetGraphicsCommandPool()
 {
 	return m_graphicsCommandPool;
+}
+
+VkCommandPool& icpVkGPUDevice::GetComputeCommandPool()
+{
+	return m_computeCommandPool;
 }
 
 VkExtent2D& icpVkGPUDevice::GetSwapChainExtent()

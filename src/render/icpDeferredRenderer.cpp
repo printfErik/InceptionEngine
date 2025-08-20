@@ -261,23 +261,28 @@ void icpDeferredRenderer::Render()
 	UpdateCSMProjViewMat(m_currentFrame);
 	g_system_container.m_renderSystem->m_shadowManager->UpdateCascadeShadowMapCB(m_currentFrame);
 
-	ResetThenBeginCommandBuffer();
+	BeginCommandBuffer(m_gBufferCommandBuffers[m_currentFrame]);
 
 	auto CSMPass = std::dynamic_pointer_cast<icpCSMPass>(m_renderPasses[eRenderPass::CSM_PASS]);
 
 	for (uint32_t i = 0; i < s_csmCascadeCount; i++)
 	{
-		CSMPass->BeginCSMRenderPass(m_currentFrame, i, m_vDeferredCommandBuffers[m_currentFrame]);
+		CSMPass->BeginCSMRenderPass(m_currentFrame, i, m_gBufferCommandBuffers[m_currentFrame]);
 		CSMPass->RenderPushConstant(index, m_currentFrame, i, result);
-		CSMPass->EndCSMRenderPass(m_vDeferredCommandBuffers[m_currentFrame]);
+		CSMPass->EndCSMRenderPass(m_gBufferCommandBuffers[m_currentFrame]);
 	}
 
 	m_renderPasses[eRenderPass::GBUFFER_PASS]->Render(index, m_currentFrame, result);
+	EndRecordingCommandBuffer(m_gBufferCommandBuffers[m_currentFrame]);
+
+	BeginCommandBuffer(m_AOCommandBuffers[m_currentFrame]);
+	m_renderPasses[eRenderPass::GTAP_PASS]->Dispatch();
+	EndRecordingCommandBuffer(m_AOCommandBuffers[m_currentFrame]);
+
+	BeginCommandBuffer(m_LightingCommandBuffers[m_currentFrame]);
 	m_renderPasses[eRenderPass::DEFERRED_COMPOSITION_PASS]->Render(index, m_currentFrame, result);
 	m_renderPasses[eRenderPass::EDITOR_UI_PASS]->Render(index, m_currentFrame, result);
-
-	EndDeferredRenderPass();
-	EndRecordingCommandBuffer();
+	BeginCommandBuffer(m_LightingCommandBuffers[m_currentFrame]);
 
 	SubmitCommandList();
 
@@ -321,41 +326,53 @@ void icpDeferredRenderer::CleanupSwapChain()
 
 void icpDeferredRenderer::AllocateCommandBuffers()
 {
-	m_vDeferredCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	m_gBufferCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkCommandBufferAllocateInfo gAllocInfo{};
 	gAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	gAllocInfo.commandPool = m_pDevice->GetGraphicsCommandPool();
-	gAllocInfo.commandBufferCount = (uint32_t)m_vDeferredCommandBuffers.size();
+	gAllocInfo.commandBufferCount = (uint32_t)m_gBufferCommandBuffers.size();
 	gAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-	if (vkAllocateCommandBuffers(m_pDevice->GetLogicalDevice(), &gAllocInfo, m_vDeferredCommandBuffers.data()) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(m_pDevice->GetLogicalDevice(), &gAllocInfo, m_gBufferCommandBuffers.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate graphics command buffer!");
+	}
+
+	m_AOCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	gAllocInfo.commandPool = m_pDevice->GetComputeCommandPool();
+
+	if (vkAllocateCommandBuffers(m_pDevice->GetLogicalDevice(), &gAllocInfo, m_AOCommandBuffers.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate graphics command buffer!");
+	}
+
+	m_LightingCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	gAllocInfo.commandPool = m_pDevice->GetGraphicsCommandPool();
+
+	if (vkAllocateCommandBuffers(m_pDevice->GetLogicalDevice(), &gAllocInfo, m_LightingCommandBuffers.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate graphics command buffer!");
 	}
 }
 
-void icpDeferredRenderer::ResetThenBeginCommandBuffer()
+void icpDeferredRenderer::BeginCommandBuffer(VkCommandBuffer cb)
 {
-	vkResetCommandBuffer(m_vDeferredCommandBuffers[m_currentFrame], 0);
+	//vkResetCommandBuffer(cb, 0);
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-	if (vkBeginCommandBuffer(m_vDeferredCommandBuffers[m_currentFrame], &beginInfo) != VK_SUCCESS) {
+	if (vkBeginCommandBuffer(cb, &beginInfo) != VK_SUCCESS) 
+	{
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
 }
 
-void icpDeferredRenderer::EndDeferredRenderPass()
-{
-	vkCmdEndRenderPass(m_vDeferredCommandBuffers[m_currentFrame]);
-}
 
-
-void icpDeferredRenderer::EndRecordingCommandBuffer()
+void icpDeferredRenderer::EndRecordingCommandBuffer(VkCommandBuffer cb)
 {
-	if (vkEndCommandBuffer(m_vDeferredCommandBuffers[m_currentFrame]) != VK_SUCCESS)
+	if (vkEndCommandBuffer(cb) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to record command buffer!");
 	}
@@ -377,7 +394,7 @@ void icpDeferredRenderer::SubmitCommandList()
 	submitInfo.pSignalSemaphores = &m_pDevice->GetRenderFinishedForPresentationSemaphores()[m_currentFrame];
 
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_vDeferredCommandBuffers[m_currentFrame];
+	submitInfo.pCommandBuffers = &m_gBufferCommandBuffers[m_currentFrame];
 
 	auto& fences = m_pDevice->GetInFlightFences();
 

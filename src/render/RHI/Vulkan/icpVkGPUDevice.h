@@ -58,6 +58,9 @@ public:
 	VkCommandPool& GetGraphicsCommandPool() override;
 	VkQueue& GetGraphicsQueue() override;
 
+	VkCommandPool& GetComputeCommandPool() override;
+	VkQueue& GetComputeQueue() override;
+
 	VkQueue& GetPresentQueue() override;
 
 	VkSwapchainKHR& GetSwapChain() override;
@@ -147,8 +150,6 @@ public:
 
 	VkImageView m_depthImageView;
 
-	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
-	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;
 	std::vector<VkFence> m_inFlightFences;
 
 	VkDescriptorPool m_descriptorPool{ VK_NULL_HANDLE };

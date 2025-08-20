@@ -30,6 +30,7 @@ void icpDeferredCompositePass::Cleanup()
 void icpDeferredCompositePass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
 	auto mgr = m_pSceneRenderer.lock();
+	BeginRenderingCreateInfo(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex);
 	RecordCommandBuffer(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
 }
 

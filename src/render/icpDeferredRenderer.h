@@ -32,15 +32,18 @@ public:
 	void AllocateCommandBuffers();
 	
 private:
-	void ResetThenBeginCommandBuffer();
-
-	void EndDeferredRenderPass();
-	void EndRecordingCommandBuffer();
+	void BeginCommandBuffer(VkCommandBuffer cb);
+	void EndRecordingCommandBuffer(VkCommandBuffer cb);
 
 	void SubmitCommandList();
 	void Present(uint32_t imageIndex);
 
-	std::vector<VkCommandBuffer> m_vDeferredCommandBuffers;
+	std::vector<VkCommandBuffer> m_gBufferCommandBuffers;
+	std::vector<VkCommandBuffer> m_AOCommandBuffers;
+	std::vector<VkCommandBuffer> m_LightingCommandBuffers;
+
+	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
+	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;
 };
 
 

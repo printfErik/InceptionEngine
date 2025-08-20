@@ -52,9 +52,11 @@ public:
 	virtual VkFormat GetDepthFormat() = 0;
 	virtual VmaAllocator& GetVmaAllocator() = 0;
 	virtual VkQueue& GetGraphicsQueue() = 0;
+	virtual VkQueue& GetComputeQueue() = 0;
 	virtual VkQueue& GetPresentQueue() = 0;
 	virtual VkQueue& GetTransferQueue() = 0;
 	virtual VkCommandPool& GetGraphicsCommandPool() = 0;
+	virtual VkCommandPool& GetComputeCommandPool() = 0;
 	virtual VkCommandPool& GetTransferCommandPool() = 0;
 	virtual VkDescriptorPool& GetDescriptorPool() = 0;
 	virtual VkInstance& GetInstance() = 0;

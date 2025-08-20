@@ -175,6 +175,7 @@ void icpGBufferPass::SetupPassOutput()
 void icpGBufferPass::Render(uint32_t frameBufferIndex, uint32_t currentFrame, VkResult acquireImageResult)
 {
 	auto mgr = m_pSceneRenderer.lock();
+	BeginRenderingCreateInfo(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex);
 	RecordCommandBuffer(mgr->GetDeferredCommandBuffer(currentFrame), frameBufferIndex, currentFrame);
 }
 
@@ -183,7 +184,7 @@ void icpGBufferPass::BeginRenderingCreateInfo(VkCommandBuffer cmdBuf, uint32_t i
 	VkRenderingAttachmentInfo GBufferAAttachment = {
 		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 		.pNext = nullptr,
-		.imageView = m_pSceneRenderer.lock()->GetGBufferARenderResource().m_texImageViews[0],
+		.imageView = GBufferA.m_texImageViews[0],
 		.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		.resolveMode = VK_RESOLVE_MODE_NONE,
 		.resolveImageView = VK_NULL_HANDLE,
@@ -196,7 +197,7 @@ void icpGBufferPass::BeginRenderingCreateInfo(VkCommandBuffer cmdBuf, uint32_t i
 	VkRenderingAttachmentInfo GBufferBAttachment = {
 		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 		.pNext = nullptr,
-		.imageView = m_pSceneRenderer.lock()->GetGBufferBRenderResource().m_texImageViews[0],
+		.imageView = GBufferB.m_texImageViews[0],
 		.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		.resolveMode = VK_RESOLVE_MODE_NONE,
 		.resolveImageView = VK_NULL_HANDLE,
@@ -209,7 +210,7 @@ void icpGBufferPass::BeginRenderingCreateInfo(VkCommandBuffer cmdBuf, uint32_t i
 	VkRenderingAttachmentInfo GBufferCAttachment = {
 		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 		.pNext = nullptr,
-		.imageView = m_pSceneRenderer.lock()->GetGBufferCRenderResource().m_texImageViews[0],
+		.imageView = GBufferC.m_texImageViews[0],
 		.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		.resolveMode = VK_RESOLVE_MODE_NONE,
 		.resolveImageView = VK_NULL_HANDLE,
