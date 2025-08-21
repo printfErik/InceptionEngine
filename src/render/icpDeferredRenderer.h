@@ -42,6 +42,8 @@ private:
 	std::vector<VkCommandBuffer> m_AOCommandBuffers;
 	std::vector<VkCommandBuffer> m_LightingCommandBuffers;
 
+	std::vector<VkSemaphore> m_GBufferFinishSemaphores;
+	std::vector<VkSemaphore> m_GTAOFinishSemaphores;
 	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;
 };

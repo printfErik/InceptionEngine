@@ -80,6 +80,24 @@ VkCommandBuffer icpDeferredRenderer::GetDeferredCommandBuffer(uint32_t curFrame)
 	return m_vDeferredCommandBuffers[curFrame];
 }
 
+void icpDeferredRenderer::CreateSemaphores()
+{
+	m_imageAvailableForRenderingSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	m_renderFinishedForPresentationSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkSemaphoreCreateInfo semaphoreInfo{};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		if (vkCreateSemaphore(m_pDevice->GetLogicalDevice(), &semaphoreInfo, nullptr, &m_imageAvailableForRenderingSemaphores[i]) ||
+			vkCreateSemaphore(m_pDevice->GetLogicalDevice(), &semaphoreInfo, nullptr, &m_renderFinishedForPresentationSemaphores[i]))
+		{
+			throw std::runtime_error("failed to create sync objects!");
+		}
+	}
+}
+
 /*
 void icpDeferredRenderer::CreateDeferredRenderPass()
 {
@@ -382,7 +400,7 @@ void icpDeferredRenderer::SubmitCommandList()
 {
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	auto& semaphores = m_pDevice->GetImageAvailableForRenderingSemaphores();
+	auto& semaphores = m_GBufferFinishSemaphores;
 	auto waitSemaphore = semaphores[m_currentFrame];
 
 	VkPipelineStageFlags waitStage = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;

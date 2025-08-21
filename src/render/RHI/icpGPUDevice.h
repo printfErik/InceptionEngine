@@ -45,8 +45,6 @@ public:
 	virtual VkSwapchainKHR& GetSwapChain() = 0;
 	virtual VkImageView GetDepthImageView() = 0;
 	virtual QueueFamilyIndices& GetQueueFamilyIndices() = 0;
-	virtual std::vector<VkSemaphore>& GetImageAvailableForRenderingSemaphores() = 0;
-	virtual std::vector<VkSemaphore>& GetRenderFinishedForPresentationSemaphores() = 0;
 	virtual std::vector<VkFence>& GetInFlightFences() = 0;
 	virtual GLFWwindow* GetWindow() = 0;
 	virtual VkFormat GetDepthFormat() = 0;

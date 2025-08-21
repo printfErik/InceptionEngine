@@ -69,8 +69,6 @@ public:
 	std::vector<VkImage>& GetSwapChainImages() override;
 	VkFormat GetSwapChainImageFormat() override;
 
-	std::vector<VkSemaphore>& GetRenderFinishedForPresentationSemaphores() override;
-	std::vector<VkSemaphore>& GetImageAvailableForRenderingSemaphores() override;
 	std::vector<VkFence>& GetInFlightFences() override;
 
 	VkDescriptorPool& GetDescriptorPool() override;
@@ -92,7 +90,7 @@ private:
 	
 	void createCommandPools();
 
-	void createSyncObjects();
+	void createFence();
 
 	bool checkValidationLayerSupport();
 
