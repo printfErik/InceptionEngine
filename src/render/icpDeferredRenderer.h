@@ -24,21 +24,29 @@ public:
 	void Render() override;
 	void AllocateGlobalSceneDescriptorSets() override;
 
-	VkCommandBuffer GetDeferredCommandBuffer(uint32_t curFrame) override;
+	VkCommandBuffer GetGBufferCommandBuffer(uint32_t curFrame);
+	VkCommandBuffer GetGTAOCommandBuffer(uint32_t curFrame);
+	VkCommandBuffer GetLightingCommandBuffer(uint32_t curFrame);
 
 	void RecreateSwapChain();
 	void CleanupSwapChain();
 
 	void AllocateCommandBuffers();
+
+	void CreateSemaphores();
 	
 private:
 	void BeginCommandBuffer(VkCommandBuffer cb);
 	void EndRecordingCommandBuffer(VkCommandBuffer cb);
 
-	void SubmitCommandList();
+	void SubmitCommandList(
+		VkCommandBuffer cmdBuffer,
+		VkSemaphore waitSemaphore,
+		VkPipelineStageFlags waitStage,
+		VkSemaphore signalSemaphore);
 	void Present(uint32_t imageIndex);
 
-	std::vector<VkCommandBuffer> m_gBufferCommandBuffers;
+	std::vector<VkCommandBuffer> m_GBufferCommandBuffers;
 	std::vector<VkCommandBuffer> m_AOCommandBuffers;
 	std::vector<VkCommandBuffer> m_LightingCommandBuffers;
 

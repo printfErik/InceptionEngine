@@ -75,13 +75,25 @@ void icpDeferredRenderer::Cleanup()
 	icpSceneRenderer::Cleanup();
 }
 
-VkCommandBuffer icpDeferredRenderer::GetDeferredCommandBuffer(uint32_t curFrame)
+VkCommandBuffer icpDeferredRenderer::GetGBufferCommandBuffer(uint32_t curFrame)
 {
-	return m_vDeferredCommandBuffers[curFrame];
+	return m_GBufferCommandBuffers[curFrame];
+}
+
+VkCommandBuffer icpDeferredRenderer::GetGTAOCommandBuffer(uint32_t curFrame)
+{
+	return m_AOCommandBuffers[curFrame];
+}
+
+VkCommandBuffer icpDeferredRenderer::GetLightingCommandBuffer(uint32_t curFrame)
+{
+	return m_LightingCommandBuffers[curFrame];
 }
 
 void icpDeferredRenderer::CreateSemaphores()
 {
+	m_GBufferFinishSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	m_GTAOFinishSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	m_imageAvailableForRenderingSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	m_renderFinishedForPresentationSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -90,7 +102,9 @@ void icpDeferredRenderer::CreateSemaphores()
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		if (vkCreateSemaphore(m_pDevice->GetLogicalDevice(), &semaphoreInfo, nullptr, &m_imageAvailableForRenderingSemaphores[i]) ||
+		if (vkCreateSemaphore(m_pDevice->GetLogicalDevice(), &semaphoreInfo, nullptr, &m_GBufferFinishSemaphores[i]) ||
+			vkCreateSemaphore(m_pDevice->GetLogicalDevice(), &semaphoreInfo, nullptr, &m_GTAOFinishSemaphores[i]) ||
+			vkCreateSemaphore(m_pDevice->GetLogicalDevice(), &semaphoreInfo, nullptr, &m_imageAvailableForRenderingSemaphores[i]) ||
 			vkCreateSemaphore(m_pDevice->GetLogicalDevice(), &semaphoreInfo, nullptr, &m_renderFinishedForPresentationSemaphores[i]))
 		{
 			throw std::runtime_error("failed to create sync objects!");
@@ -279,22 +293,24 @@ void icpDeferredRenderer::Render()
 	UpdateCSMProjViewMat(m_currentFrame);
 	g_system_container.m_renderSystem->m_shadowManager->UpdateCascadeShadowMapCB(m_currentFrame);
 
-	BeginCommandBuffer(m_gBufferCommandBuffers[m_currentFrame]);
+	BeginCommandBuffer(m_GBufferCommandBuffers[m_currentFrame]);
 
 	auto CSMPass = std::dynamic_pointer_cast<icpCSMPass>(m_renderPasses[eRenderPass::CSM_PASS]);
 
 	for (uint32_t i = 0; i < s_csmCascadeCount; i++)
 	{
-		CSMPass->BeginCSMRenderPass(m_currentFrame, i, m_gBufferCommandBuffers[m_currentFrame]);
+		CSMPass->BeginCSMRenderPass(m_currentFrame, i, m_GBufferCommandBuffers[m_currentFrame]);
 		CSMPass->RenderPushConstant(index, m_currentFrame, i, result);
-		CSMPass->EndCSMRenderPass(m_gBufferCommandBuffers[m_currentFrame]);
+		CSMPass->EndCSMRenderPass(m_GBufferCommandBuffers[m_currentFrame]);
 	}
 
 	m_renderPasses[eRenderPass::GBUFFER_PASS]->Render(index, m_currentFrame, result);
-	EndRecordingCommandBuffer(m_gBufferCommandBuffers[m_currentFrame]);
+	EndRecordingCommandBuffer(m_GBufferCommandBuffers[m_currentFrame]);
+
+	SubmitCommandList();
 
 	BeginCommandBuffer(m_AOCommandBuffers[m_currentFrame]);
-	m_renderPasses[eRenderPass::GTAP_PASS]->Dispatch();
+	m_renderPasses[eRenderPass::GTAP_PASS]->Dispatch(index, m_currentFrame, result);
 	EndRecordingCommandBuffer(m_AOCommandBuffers[m_currentFrame]);
 
 	BeginCommandBuffer(m_LightingCommandBuffers[m_currentFrame]);
@@ -344,15 +360,15 @@ void icpDeferredRenderer::CleanupSwapChain()
 
 void icpDeferredRenderer::AllocateCommandBuffers()
 {
-	m_gBufferCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	m_GBufferCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkCommandBufferAllocateInfo gAllocInfo{};
 	gAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	gAllocInfo.commandPool = m_pDevice->GetGraphicsCommandPool();
-	gAllocInfo.commandBufferCount = (uint32_t)m_gBufferCommandBuffers.size();
+	gAllocInfo.commandBufferCount = (uint32_t)m_GBufferCommandBuffers.size();
 	gAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-	if (vkAllocateCommandBuffers(m_pDevice->GetLogicalDevice(), &gAllocInfo, m_gBufferCommandBuffers.data()) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(m_pDevice->GetLogicalDevice(), &gAllocInfo, m_GBufferCommandBuffers.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate graphics command buffer!");
 	}
@@ -376,7 +392,7 @@ void icpDeferredRenderer::AllocateCommandBuffers()
 
 void icpDeferredRenderer::BeginCommandBuffer(VkCommandBuffer cb)
 {
-	//vkResetCommandBuffer(cb, 0);
+	vkResetCommandBuffer(cb, 0);
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -396,23 +412,40 @@ void icpDeferredRenderer::EndRecordingCommandBuffer(VkCommandBuffer cb)
 	}
 }
 
-void icpDeferredRenderer::SubmitCommandList()
+void icpDeferredRenderer::SubmitCommandList(
+	VkCommandBuffer cmdBuffer, 
+	VkSemaphore waitSemaphore,
+	VkPipelineStageFlags waitStage, 
+	VkSemaphore signalSemaphore)
 {
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	auto& semaphores = m_GBufferFinishSemaphores;
-	auto waitSemaphore = semaphores[m_currentFrame];
 
-	VkPipelineStageFlags waitStage = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = &waitSemaphore;
-	submitInfo.pWaitDstStageMask = &waitStage;
+	if (waitSemaphore != VK_NULL_HANDLE)
+	{
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &waitSemaphore;
+	}
+	else
+	{
+		submitInfo.waitSemaphoreCount = 0;
+	}
 
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &m_pDevice->GetRenderFinishedForPresentationSemaphores()[m_currentFrame];
+	VkPipelineStageFlags waitStage_ = waitStage;
+	submitInfo.pWaitDstStageMask = &waitStage_;
+
+	if (signalSemaphore != VK_NULL_HANDLE)
+	{
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &signalSemaphore;
+	}
+	else
+	{
+		submitInfo.signalSemaphoreCount = 0;
+	}
 
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_gBufferCommandBuffers[m_currentFrame];
+	submitInfo.pCommandBuffers = &cmdBuffer;
 
 	auto& fences = m_pDevice->GetInFlightFences();
 
