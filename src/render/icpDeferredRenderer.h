@@ -34,6 +34,8 @@ public:
 	void AllocateCommandBuffers();
 
 	void CreateSemaphores();
+
+	void ImageBarrier()£»
 	
 private:
 	void BeginCommandBuffer(VkCommandBuffer cb);

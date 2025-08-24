@@ -307,6 +307,8 @@ void icpDeferredRenderer::Render()
 	m_renderPasses[eRenderPass::GBUFFER_PASS]->Render(index, m_currentFrame, result);
 	EndRecordingCommandBuffer(m_GBufferCommandBuffers[m_currentFrame]);
 
+
+
 	SubmitCommandList();
 
 	BeginCommandBuffer(m_AOCommandBuffers[m_currentFrame]);
@@ -481,5 +483,27 @@ void icpDeferredRenderer::Present(uint32_t imageIndex)
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 }
+
+void icpDeferredRenderer::ImageBarrier()
+{
+	VkImageMemoryBarrier release{};
+	release.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	release.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	release.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	release.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	release.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	release.srcQueueFamilyIndex = graphicsFamilyIndex;
+	release.dstQueueFamilyIndex = computeFamilyIndex;
+	release.image = aoImage;
+	release.subresourceRange = { ... };
+
+	vkCmdPipelineBarrier(
+		gfxCmdBuf,
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+		0, 0, nullptr, 0, nullptr, 1, &release
+	);
+}
+
 
 INCEPTION_END_NAMESPACE
