@@ -46,7 +46,7 @@ bool icpVkGPUDevice::Initialize(std::shared_ptr<icpWindowSystem> window_system)
 	CreateDepthResources();
 
 	createDescriptorPools();
-	createSyncObjects();
+	createFence();
 
 	return true;
 }

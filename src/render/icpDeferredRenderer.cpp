@@ -484,24 +484,30 @@ void icpDeferredRenderer::Present(uint32_t imageIndex)
 	}
 }
 
-void icpDeferredRenderer::ImageBarrier()
+void icpDeferredRenderer::ImageBarrier(
+	VkCommandBuffer cmdBuf,
+	VkAccessFlags srcAccess, VkAccessFlags dstAccess,
+	VkImageLayout oldLayout, VkImageLayout newLayout,
+	uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex,
+	VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+	VkImage image, const VkImageSubresourceRange& subresourceRange)
 {
-	VkImageMemoryBarrier release{};
-	release.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	release.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	release.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-	release.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	release.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-	release.srcQueueFamilyIndex = graphicsFamilyIndex;
-	release.dstQueueFamilyIndex = computeFamilyIndex;
-	release.image = aoImage;
-	release.subresourceRange = { ... };
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.srcAccessMask = srcAccess;
+	barrier.dstAccessMask = dstAccess;
+	barrier.oldLayout = oldLayout;
+	barrier.newLayout = newLayout;
+	barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+	barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
+	barrier.image = image;
+	barrier.subresourceRange = subresourceRange;
 
 	vkCmdPipelineBarrier(
-		gfxCmdBuf,
-		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-		0, 0, nullptr, 0, nullptr, 1, &release
+		cmdBuf,
+		srcStage,
+		dstStage,
+		0, 0, nullptr, 0, nullptr, 1, &barrier
 	);
 }
 

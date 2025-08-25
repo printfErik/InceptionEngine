@@ -35,7 +35,14 @@ public:
 
 	void CreateSemaphores();
 
-	void ImageBarrier()£»
+	void ImageBarrier(
+		VkCommandBuffer cmdBuf,
+		VkAccessFlags srcAccess, VkAccessFlags dstAccess,
+		VkImageLayout oldLayout, VkImageLayout newLayout,
+		uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex,
+		VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+		VkImage image, const VkImageSubresourceRange& subresourceRange
+	);
 	
 private:
 	void BeginCommandBuffer(VkCommandBuffer cb);
