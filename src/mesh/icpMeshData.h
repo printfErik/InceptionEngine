@@ -5,8 +5,8 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
-#include <vulkan/vulkan.hpp>
 #include <array>
+#include "../render/RHI/icpGPUDevice.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
@@ -31,9 +31,7 @@ struct icpVertex
 	glm::vec3 normal;
 	glm::vec2 texCoord;
 
-	static VkVertexInputBindingDescription getBindingDescription();
-
-	static std::vector<VkVertexInputAttributeDescription> getAttributeDescription();
+	static std::vector<icpVertexAttributeDesc> getAttributeDescription();
 
 	bool operator==(const icpVertex& v1) const
 	{

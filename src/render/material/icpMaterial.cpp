@@ -1,15 +1,17 @@
 #include "icpMaterial.h"
 
 #include "icpTextureRenderResourceManager.h"
-#include "../RHI/Vulkan/icpVkGPUDevice.h"
-#include "../RHI/Vulkan/icpVulkanUtility.h"
 #include "../icpRenderSystem.h"
 #include "../../core/icpSystemContainer.h"
 #include "../../resource/icpResourceSystem.h"
 #include "../../core/icpLogSystem.h"
 #include "../../mesh/icpMeshResource.h"
 #include "../../core/icpConfigSystem.h"
-#include "../renderPass/icpRenderPassBase.h"
+#if defined(INCEPTION_RENDER_BACKEND_D3D12)
+#include "../RHI/D3D12/icpD3D12GPUDevice.h"
+#endif
+
+#include <cstring>
 
 INCEPTION_BEGIN_NAMESPACE
 
@@ -22,29 +24,19 @@ void icpMaterialInstance::CreateUniformBuffers()
 {
 	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 
-	uint64_t UBOSize = sizeof(PBRShaderMaterial);
+	uint64_t UBOSize = ComputeUBOSize();
 
 	if (UBOSize > 0)
 	{
 		MaterialUBOs.resize(MAX_FRAMES_IN_FLIGHT);
 
-		VkSharingMode mode = vulkanRHI->GetQueueFamilyIndices().m_graphicsFamily.value() == vulkanRHI->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
-
-		auto& indicesVec = vulkanRHI->GetQueueFamilyIndicesVector();
-
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			icpVulkanUtility::CreateGPUBuffer(
-				UBOSize,
-				mode,
-				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				vulkanRHI->GetVmaAllocator(),
-				MaterialUBOs[i].bufferAllocation,
-				MaterialUBOs[i].buffer,
-				indicesVec.size(),
-				indicesVec.data()
-			);
-
+			icpRHIBufferDesc desc{};
+			desc.size = UBOSize;
+			desc.usage = icpBufferUsage::UNIFORM;
+			desc.debugName = "MaterialCB";
+			MaterialUBOs[i].buffer = vulkanRHI->CreateBuffer(desc);
 			MaterialUBOs[i].offset = 0;
 			MaterialUBOs[i].range = UBOSize;
 		}
@@ -53,22 +45,25 @@ void icpMaterialInstance::CreateUniformBuffers()
 
 void icpMaterialInstance::AllocateMaterialDescriptorSets()
 {
-	auto pGPUDevice = g_system_container.m_renderSystem->GetGPUDevice();
-
-	auto& layout = g_system_container.m_renderSystem->GetSceneRenderer()
-		->AccessRenderPass(eRenderPass::GBUFFER_PASS)
-		->dsLayouts[1];
-
-	MaterialDSs = DescriptorSetBuilder(8u)
-		.SetUniformBuffer(0, MaterialUBOs)
-		.SetCombinedImageSampler(1, GetTextureRenderResourceByID("baseColorTexture"))
-		.SetCombinedImageSampler(2, GetTextureRenderResourceByID("metallicRoughnessTexture"))
-		.SetCombinedImageSampler(3, GetTextureRenderResourceByID("metallicTexture"))
-		.SetCombinedImageSampler(4, GetTextureRenderResourceByID("roughnessTexture"))
-		.SetCombinedImageSampler(5, GetTextureRenderResourceByID("normalTexture"))
-		.SetCombinedImageSampler(6, GetTextureRenderResourceByID("occlusionTexture"))
-		.SetCombinedImageSampler(7, GetTextureRenderResourceByID("emissiveTexture"))
-		.Build(pGPUDevice->GetLogicalDevice(), pGPUDevice->GetDescriptorPool(), layout);
+#if defined(INCEPTION_RENDER_BACKEND_D3D12)
+	auto pGPUDevice = std::dynamic_pointer_cast<icpD3D12GPUDevice>(g_system_container.m_renderSystem->GetGPUDevice());
+	std::vector<std::shared_ptr<icpRHITexture>> textures;
+	textures.push_back(GetTextureRenderResourceByID("baseColorTexture").m_texture);
+	textures.push_back(GetTextureRenderResourceByID("metallicRoughnessTexture").m_texture);
+	textures.push_back(GetTextureRenderResourceByID("metallicTexture").m_texture);
+	textures.push_back(GetTextureRenderResourceByID("roughnessTexture").m_texture);
+	textures.push_back(GetTextureRenderResourceByID("normalTexture").m_texture);
+	textures.push_back(GetTextureRenderResourceByID("occlusionTexture").m_texture);
+	textures.push_back(GetTextureRenderResourceByID("emissiveTexture").m_texture);
+	for (auto& texture : textures)
+	{
+		if (!texture)
+		{
+			texture = GetTextureRenderResourceByID("empty2D001").m_texture;
+		}
+	}
+	m_srvTableGpuHandle = pGPUDevice->CreateTextureSRVTable(textures).ptr;
+#endif
 }
 
 

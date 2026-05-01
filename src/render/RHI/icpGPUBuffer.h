@@ -1,16 +1,13 @@
 #pragma once
 
 #include "../../core/icpMacros.h"
-#include <vulkan/vulkan.h>
-
-#include "vk_mem_alloc.h"
+#include "icpGPUDevice.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
 struct icpBufferRenderResource
 {
-	VkBuffer buffer{ VK_NULL_HANDLE };
-	VmaAllocation bufferAllocation{ VK_NULL_HANDLE };
+	std::shared_ptr<icpRHIBuffer> buffer = nullptr;
 	uint64_t range = 0;
 	uint64_t offset = 0;
 };

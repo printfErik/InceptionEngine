@@ -83,7 +83,10 @@ void icpCameraSystem::UpdateCameraCB(perFrameCB& CBPerFrame, float aspectRatio)
 
 	CBPerFrame.view = g_system_container.m_cameraSystem->getCameraViewMatrix(camera);
 	CBPerFrame.projection = glm::perspective(camera->m_fov, aspectRatio, camera->m_near, camera->m_far);
+#if !defined(INCEPTION_RENDER_BACKEND_D3D12)
 	CBPerFrame.projection[1][1] *= -1;
+#endif
+	CBPerFrame.invViewProjection = glm::inverse(CBPerFrame.projection * CBPerFrame.view);
 
 	CBPerFrame.camPos = camera->m_position;
 }

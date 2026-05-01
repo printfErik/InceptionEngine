@@ -5,8 +5,6 @@
 #include "icpMeshData.h"
 
 #include "../scene/icpComponent.h"
-#include <vulkan/vulkan.hpp>
-#include <vk_mem_alloc.h>
 #include "../render/material/icpMaterial.h"
 #include "icpMeshRendererComponent.h"
 
@@ -45,8 +43,6 @@ public:
 
 	icpBufferRenderResource MeshVB;
 	icpBufferRenderResource MeshIB;
-
-	std::vector<VkDescriptorSet> MeshDSs;
 
 	std::vector<icpVertex> m_vertices;
 	std::vector<uint32_t> m_vertexIndices;

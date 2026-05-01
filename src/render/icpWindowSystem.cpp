@@ -3,6 +3,8 @@
 #include "icpRenderSystem.h"
 #include "icpCameraSystem.h"
 
+#include <stdexcept>
+
 INCEPTION_BEGIN_NAMESPACE
 
 icpWindowSystem::icpWindowSystem()

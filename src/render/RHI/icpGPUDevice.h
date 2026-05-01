@@ -1,77 +1,244 @@
 #pragma once
+
 #include "../../core/icpMacros.h"
 #include "../icpWindowSystem.h"
-#include <vk_mem_alloc.h>
+
+#include <cstdint>
+#include <filesystem>
+#include <memory>
+#include <vector>
 
 INCEPTION_BEGIN_NAMESPACE
 
-struct icpDescriptorSetCreation;
-
 static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 3;
 
-struct QueueFamilyIndices
+enum class icpFormat
 {
-	std::optional<uint32_t> m_graphicsFamily;
-	std::optional<uint32_t> m_presentFamily;
-	std::optional<uint32_t> m_transferFamily;
-	std::optional<uint32_t> m_computeFamily;
-
-	
-	bool isComplete() const
-	{
-		return m_graphicsFamily.has_value()
-			&& m_presentFamily.has_value()
-			&& m_transferFamily.has_value()
-			&& m_computeFamily.has_value();
-	}
-	
+	UNKNOWN = 0,
+	R8G8B8A8_UNORM,
+	R8G8B8A8_UNORM_SRGB,
+	R32G32_FLOAT,
+	R32G32B32_FLOAT,
+	R16G16B16A16_FLOAT,
+	R32_FLOAT,
+	D32_FLOAT,
+	D32_FLOAT_SRV,
 };
 
-class icpGPUDevice
+enum class icpBufferUsage : uint32_t
+{
+	NONE = 0,
+	VERTEX = 1 << 0,
+	INDEX = 1 << 1,
+	UNIFORM = 1 << 2,
+	UPLOAD = 1 << 3,
+};
+
+enum class icpTextureUsage : uint32_t
+{
+	NONE = 0,
+	SAMPLED = 1 << 0,
+	RENDER_TARGET = 1 << 1,
+	DEPTH_STENCIL = 1 << 2,
+	STORAGE = 1 << 3,
+};
+
+enum class icpResourceState
+{
+	UNKNOWN = 0,
+	COPY_DEST,
+	SHADER_RESOURCE,
+	RENDER_TARGET,
+	DEPTH_WRITE,
+	PRESENT,
+};
+
+enum class icpShaderStage : uint32_t
+{
+	VERTEX = 1 << 0,
+	PIXEL = 1 << 1,
+	COMPUTE = 1 << 2,
+	ALL = 0xFFFFFFFF,
+};
+
+enum class icpPrimitiveTopology
+{
+	TRIANGLE_LIST = 0,
+	TRIANGLE_STRIP,
+};
+
+enum class icpCullMode
+{
+	NONE = 0,
+	FRONT,
+	BACK,
+};
+
+enum class icpCompareOp
+{
+	ALWAYS = 0,
+	LESS,
+};
+
+#ifdef OPAQUE
+#undef OPAQUE
+#endif
+
+enum class icpBlendMode
+{
+	OPAQUE = 0,
+	MASKED,
+	TRANSLUCENT,
+};
+
+enum class icpPipelineKind
+{
+	GBUFFER = 0,
+	DEFERRED_COMPOSITE,
+};
+
+inline icpBufferUsage operator|(icpBufferUsage lhs, icpBufferUsage rhs)
+{
+	return static_cast<icpBufferUsage>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+
+inline bool HasUsage(icpBufferUsage value, icpBufferUsage flag)
+{
+	return (static_cast<uint32_t>(value) & static_cast<uint32_t>(flag)) != 0;
+}
+
+inline icpTextureUsage operator|(icpTextureUsage lhs, icpTextureUsage rhs)
+{
+	return static_cast<icpTextureUsage>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+
+inline bool HasUsage(icpTextureUsage value, icpTextureUsage flag)
+{
+	return (static_cast<uint32_t>(value) & static_cast<uint32_t>(flag)) != 0;
+}
+
+struct icpRHITextureDesc
+{
+	uint32_t width = 1;
+	uint32_t height = 1;
+	uint32_t mipLevels = 1;
+	uint32_t arraySize = 1;
+	icpFormat format = icpFormat::UNKNOWN;
+	icpTextureUsage usage = icpTextureUsage::SAMPLED;
+	icpResourceState initialState = icpResourceState::SHADER_RESOURCE;
+	const char* debugName = nullptr;
+};
+
+struct icpRHIBufferDesc
+{
+	uint64_t size = 0;
+	icpBufferUsage usage = icpBufferUsage::NONE;
+	const char* debugName = nullptr;
+};
+
+struct icpVertexAttributeDesc
+{
+	uint32_t location = 0;
+	icpFormat format = icpFormat::UNKNOWN;
+	uint32_t offset = 0;
+};
+
+struct icpGraphicsPipelineDesc
+{
+	icpPipelineKind kind = icpPipelineKind::GBUFFER;
+	std::filesystem::path vertexShader;
+	std::filesystem::path pixelShader;
+	std::vector<icpVertexAttributeDesc> vertexAttributes;
+	uint32_t vertexStride = 0;
+	std::vector<icpFormat> renderTargetFormats;
+	icpFormat depthFormat = icpFormat::UNKNOWN;
+	icpPrimitiveTopology topology = icpPrimitiveTopology::TRIANGLE_LIST;
+	icpCullMode cullMode = icpCullMode::BACK;
+	icpCompareOp depthCompare = icpCompareOp::LESS;
+	bool depthTestEnable = true;
+	bool depthWriteEnable = true;
+	icpBlendMode blendMode = icpBlendMode::OPAQUE;
+};
+
+class icpRHIBuffer
 {
 public:
-	icpGPUDevice() = default;
-
-	virtual	~icpGPUDevice() = 0;
-
-	virtual bool Initialize(std::shared_ptr<icpWindowSystem> window_system) = 0;
-
-	virtual VkDevice& GetLogicalDevice() = 0;
-	virtual VkPhysicalDevice& GetPhysicalDevice() = 0;
-	virtual VkFormat GetSwapChainImageFormat() = 0;
-	virtual VkExtent2D& GetSwapChainExtent() = 0;
-	virtual std::vector<VkImageView>& GetSwapChainImageViews() = 0;
-	virtual std::vector<VkImage>& GetSwapChainImages() = 0;
-	virtual VkSwapchainKHR& GetSwapChain() = 0;
-	virtual VkImageView GetDepthImageView() = 0;
-	virtual QueueFamilyIndices& GetQueueFamilyIndices() = 0;
-	virtual std::vector<VkFence>& GetInFlightFences() = 0;
-	virtual GLFWwindow* GetWindow() = 0;
-	virtual VkFormat GetDepthFormat() = 0;
-	virtual VmaAllocator& GetVmaAllocator() = 0;
-	virtual VkQueue& GetGraphicsQueue() = 0;
-	virtual VkQueue& GetComputeQueue() = 0;
-	virtual VkQueue& GetPresentQueue() = 0;
-	virtual VkQueue& GetTransferQueue() = 0;
-	virtual VkCommandPool& GetGraphicsCommandPool() = 0;
-	virtual VkCommandPool& GetComputeCommandPool() = 0;
-	virtual VkCommandPool& GetTransferCommandPool() = 0;
-	virtual VkDescriptorPool& GetDescriptorPool() = 0;
-	virtual VkInstance& GetInstance() = 0;
-	virtual std::vector<uint32_t>& GetQueueFamilyIndicesVector() = 0;
-
-	virtual void WaitForFence(uint32_t _currentFrame) = 0;
-	virtual uint32_t AcquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result) = 0;
-
-	virtual void CleanUpSwapChain() = 0;
-	virtual void CreateSwapChain() = 0;
-	virtual void CreateSwapChainImageViews() = 0;
-	virtual void CreateDepthResources() = 0;
-
-	bool m_framebufferResized = false;
-	GLFWwindow* m_window{ VK_NULL_HANDLE };
+	virtual ~icpRHIBuffer() = default;
+	virtual void* Map() = 0;
+	virtual void Unmap() = 0;
+	virtual uint64_t GetGPUAddress() const = 0;
+	virtual uint64_t GetSize() const = 0;
 };
 
-inline icpGPUDevice::~icpGPUDevice() = default;
+class icpRHITexture
+{
+public:
+	virtual ~icpRHITexture() = default;
+	icpFormat m_format = icpFormat::UNKNOWN;
+	icpResourceState m_state = icpResourceState::UNKNOWN;
+	uint32_t m_width = 0;
+	uint32_t m_height = 0;
+};
+
+class icpRHISampler
+{
+public:
+	virtual ~icpRHISampler() = default;
+};
+
+class icpRHIBindingLayout
+{
+public:
+	virtual ~icpRHIBindingLayout() = default;
+};
+
+class icpRHIBindingSet
+{
+public:
+	virtual ~icpRHIBindingSet() = default;
+};
+
+class icpRHIPipeline
+{
+public:
+	virtual ~icpRHIPipeline() = default;
+};
+
+class icpRHICommandList
+{
+public:
+	virtual ~icpRHICommandList() = default;
+};
+
+class icpRHIDevice
+{
+public:
+	virtual ~icpRHIDevice() = default;
+
+	virtual bool Initialize(std::shared_ptr<icpWindowSystem> windowSystem) = 0;
+	virtual void WaitIdle() = 0;
+	virtual void BeginFrame() = 0;
+	virtual void EndFrame() = 0;
+	virtual void ResizeSwapchain() = 0;
+
+	virtual std::shared_ptr<icpRHIBuffer> CreateBuffer(
+		const icpRHIBufferDesc& desc,
+		const void* initialData = nullptr) = 0;
+	virtual std::shared_ptr<icpRHITexture> CreateTexture(
+		const icpRHITextureDesc& desc,
+		const void* initialData = nullptr,
+		size_t initialDataSize = 0) = 0;
+	virtual std::shared_ptr<icpRHISampler> CreateSampler() = 0;
+	virtual std::shared_ptr<icpRHIPipeline> CreateGraphicsPipeline(
+		const icpGraphicsPipelineDesc& desc) = 0;
+
+	virtual uint32_t GetCurrentFrameIndex() const = 0;
+	virtual uint32_t GetBackBufferWidth() const = 0;
+	virtual uint32_t GetBackBufferHeight() const = 0;
+
+	bool m_framebufferResized = false;
+};
+
+using icpGPUDevice = icpRHIDevice;
 
 INCEPTION_END_NAMESPACE

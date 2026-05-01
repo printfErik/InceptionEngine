@@ -3,10 +3,8 @@
 #include <map>
 
 #include "../../core/icpMacros.h"
-#include <vulkan/vulkan.hpp>
 
 #include <glm/vec4.hpp>
-#include <vk_mem_alloc.h>
 
 #include "icpTextureRenderResourceManager.h"
 #include "../RHI/icpGPUBuffer.h"
@@ -44,6 +42,10 @@ enum class eMaterialShadingModel
 	SHADING_MODEL_COUNT
 };
 
+#ifdef OPAQUE
+#undef OPAQUE
+#endif
+
 enum class eMaterialBlendMode
 {
 	OPAQUE = 0, 
@@ -73,8 +75,8 @@ public:
 	eMaterialShadingModel m_shadingModel = eMaterialShadingModel::SHADING_MODEL_COUNT;
 	eMaterialBlendMode m_blendMode = eMaterialBlendMode::OPAQUE;
 
-	std::vector<VkDescriptorSet> MaterialDSs;
 	std::vector<icpBufferRenderResource> MaterialUBOs;
+	uint64_t m_srvTableGpuHandle = 0;
 
 	bool m_bRenderResourcesReady = false;
 };

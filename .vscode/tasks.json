@@ -1,0 +1,46 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CMake: configure D3D12 Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "windows-d3d12-debug"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: build D3D12 Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "windows-d3d12-debug"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "CMake: configure+build D3D12 Debug",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "CMake: configure D3D12 Debug",
+        "CMake: build D3D12 Debug"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: build D3D12 Release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "windows-d3d12-release"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

@@ -1,14 +1,19 @@
 #include "icpRenderSystem.h"
 
+#if defined(INCEPTION_RENDER_BACKEND_D3D12)
+#include "RHI/D3D12/icpD3D12GPUDevice.h"
+#include "icpD3D12DeferredRenderer.h"
+#else
 #include "icpDeferredRenderer.h"
 #include "RHI/Vulkan/icpVkGPUDevice.h"
+#include "shadow/icpShadowManager.h"
+#endif
 #include "../core/icpSystemContainer.h"
 #include "../scene/icpSceneSystem.h"
 #include "../scene/icpXFormComponent.h"
 #include "../mesh/icpPrimitiveRendererComponent.h"
 #include "light/icpLightComponent.h"
 #include "material/icpTextureRenderResourceManager.h"
-#include "shadow/icpShadowManager.h"
 
 INCEPTION_BEGIN_NAMESPACE
 icpRenderSystem::icpRenderSystem()
@@ -23,6 +28,13 @@ icpRenderSystem::~icpRenderSystem()
 
 bool icpRenderSystem::initializeRenderSystem()
 {
+#if defined(INCEPTION_RENDER_BACKEND_D3D12)
+	m_pGPUDevice = std::make_shared<icpD3D12GPUDevice>();
+	m_pGPUDevice->Initialize(g_system_container.m_windowSystem);
+
+	m_pSceneRenderer = std::make_shared<icpD3D12DeferredRenderer>();
+	m_pSceneRenderer->Initialize(m_pGPUDevice);
+#else
 	m_pGPUDevice = std::make_shared<icpVkGPUDevice>();
 	m_pGPUDevice->Initialize(g_system_container.m_windowSystem);
 
@@ -35,6 +47,7 @@ bool icpRenderSystem::initializeRenderSystem()
 	m_pSceneRenderer->Initialize(m_pGPUDevice);
 
 	m_shadowManager->AllocateCSMDescriptorSet();
+#endif
 
 	m_textureRenderResourceManager = std::make_shared<icpTextureRenderResourceManager>(m_pGPUDevice);
 	m_textureRenderResourceManager->InitializeEmptyTexture();

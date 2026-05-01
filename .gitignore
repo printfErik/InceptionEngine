@@ -4,3 +4,4 @@ build/
 install/
 CMakeFiles/
 shaders/spv
+shaders/dxil

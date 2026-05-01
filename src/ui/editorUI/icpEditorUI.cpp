@@ -8,6 +8,8 @@
 #include "../../scene/icpXFormComponent.h"
 #include "../../render/icpRenderSystem.h"
 
+#include <cstring>
+
 INCEPTION_BEGIN_NAMESPACE
 
 icpEditorUI::icpEditorUI()

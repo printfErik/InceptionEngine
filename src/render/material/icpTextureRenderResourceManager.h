@@ -4,17 +4,11 @@
 
 #include "../../core/icpMacros.h"
 #include "../../resource/icpResourceSystem.h"
-#include "../../core/icpSystemContainer.h"
-
-#include <vulkan/vulkan.hpp>
-
-#include <vk_mem_alloc.h>
 #include "../RHI/icpGPUDevice.h"
 
 INCEPTION_BEGIN_NAMESPACE
 
 class icpImageResource;
-class icpVkGPUDevice;
 
 enum class eTextureRenderResourceState
 {
@@ -26,21 +20,13 @@ enum class eTextureRenderResourceState
 
 struct icpTextureRenderResourceInfo
 {
-	VkImage m_texImage{ VK_NULL_HANDLE };
-	VmaAllocation m_texBufferAllocation{ VK_NULL_HANDLE };
-	VkSampler m_texSampler{ VK_NULL_HANDLE };
-	std::vector<VkImageView> m_texImageViews;
-
-	VkImageLayout m_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+	std::shared_ptr<icpRHITexture> m_texture = nullptr;
+	std::shared_ptr<icpRHISampler> m_sampler = nullptr;
+	icpResourceState m_state = icpResourceState::UNKNOWN;
 	std::shared_ptr<icpImageResource> m_texImageRes = nullptr;
 	std::string m_texId;
 
-	eTextureRenderResourceState m_state = eTextureRenderResourceState::UNINITIALIZED;
-
-	icpTextureRenderResourceInfo()
-	{
-		m_texImageViews.resize(1);
-	}
+	eTextureRenderResourceState m_stateCPU = eTextureRenderResourceState::UNINITIALIZED;
 };
 
 class icpTextureRenderResourceManager

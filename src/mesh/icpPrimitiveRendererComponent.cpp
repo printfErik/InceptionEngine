@@ -2,12 +2,11 @@
 #include "../core/icpSystemContainer.h"
 #include "../core/icpLogSystem.h"
 #include "../render/icpRenderSystem.h"
-#include "../render/RHI/Vulkan/icpVulkanUtility.h"
 #include "../mesh/icpMeshData.h"
-#include <vk_mem_alloc.h>
-#include "../render/RHI/icpDescriptorSet.h"
 #include "../render/RHI/icpGPUBuffer.h"
-#include "../render/renderPass/icpRenderPassBase.h"
+
+#include <cmath>
+#include <cstring>
 
 INCEPTION_BEGIN_NAMESPACE
 void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
@@ -76,26 +75,22 @@ void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
 		m_vertices.assign(sphereVertices.begin(), sphereVertices.end());
 		std::vector<uint32_t> sphereIndex;
 
-		bool oddRow = false;
 		for (unsigned int y = 0; y < Y_SEGMENTS; ++y)
 		{
-			if (!oddRow) // even rows: y == 0, y == 2; and so on
+			for (unsigned int x = 0; x < X_SEGMENTS; ++x)
 			{
-				for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
-				{
-					sphereIndex.push_back(y * (X_SEGMENTS + 1) + x);
-					sphereIndex.push_back((y + 1) * (X_SEGMENTS + 1) + x);
-				}
+				const uint32_t i0 = y * (X_SEGMENTS + 1) + x;
+				const uint32_t i1 = (y + 1) * (X_SEGMENTS + 1) + x;
+				const uint32_t i2 = (y + 1) * (X_SEGMENTS + 1) + x + 1;
+				const uint32_t i3 = y * (X_SEGMENTS + 1) + x + 1;
+
+				sphereIndex.push_back(i0);
+				sphereIndex.push_back(i1);
+				sphereIndex.push_back(i2);
+				sphereIndex.push_back(i0);
+				sphereIndex.push_back(i2);
+				sphereIndex.push_back(i3);
 			}
-			else
-			{
-				for (int x = X_SEGMENTS; x >= 0; --x)
-				{
-					sphereIndex.push_back((y + 1) * (X_SEGMENTS + 1) + x);
-					sphereIndex.push_back(y * (X_SEGMENTS + 1) + x);
-				}
-			}
-			oddRow = !oddRow;
 		}
 		m_vertexIndices.assign(sphereIndex.begin(), sphereIndex.end());
 	}
@@ -110,106 +105,28 @@ void icpPrimitiveRendererComponent::FillInPrimitiveData(const glm::vec3& color)
 
 void icpPrimitiveRendererComponent::CreateVertexBuffers()
 {
-	auto gpuDevice = g_system_container.m_renderSystem->GetGPUDevice();
-
+	auto rhi = g_system_container.m_renderSystem->GetGPUDevice();
 	auto bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
-
-	VkBuffer stagingBuffer;
-	VmaAllocation stagingBufferAllocation;
-
-	VkSharingMode mode = 
-		gpuDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == gpuDevice->GetQueueFamilyIndices().m_transferFamily.value()
-			? VK_SHARING_MODE_EXCLUSIVE
-			: VK_SHARING_MODE_CONCURRENT;
-
-	auto& queueIndices = gpuDevice->GetQueueFamilyIndicesVector();
-
-	icpVulkanUtility::CreateGPUBuffer(
-		bufferSize,
-		mode,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		gpuDevice->GetVmaAllocator(),
-		stagingBufferAllocation,
-		stagingBuffer,
-		queueIndices.size(),
-		queueIndices.data()
-	);
-
-	void* data;
-	vmaMapMemory(gpuDevice->GetVmaAllocator(), stagingBufferAllocation, &data);
-	memcpy(data, m_vertices.data(), (size_t)bufferSize);
-	vmaUnmapMemory(gpuDevice->GetVmaAllocator(), stagingBufferAllocation);
-
-	icpVulkanUtility::CreateGPUBuffer(
-		bufferSize,
-		mode,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		gpuDevice->GetVmaAllocator(),
-		MeshVB.bufferAllocation,
-		MeshVB.buffer,
-		queueIndices.size(),
-		queueIndices.data()
-	);
-
-	icpVulkanUtility::copyBuffer(stagingBuffer,
-		MeshVB.buffer,
-		bufferSize,
-		gpuDevice->GetLogicalDevice(),
-		gpuDevice->GetTransferCommandPool(),
-		gpuDevice->GetTransferQueue()
-	);
-
-	vmaDestroyBuffer(gpuDevice->GetVmaAllocator(), stagingBuffer, stagingBufferAllocation);
-	
+	icpRHIBufferDesc desc{};
+	desc.size = bufferSize;
+	desc.usage = icpBufferUsage::VERTEX | icpBufferUsage::UPLOAD;
+	desc.debugName = "PrimitiveVB";
+	MeshVB.buffer = rhi->CreateBuffer(desc, m_vertices.data());
+	MeshVB.range = bufferSize;
+	MeshVB.offset = 0u;
 }
 
 void icpPrimitiveRendererComponent::CreateIndexBuffers()
 {
-	auto gpuDevice = g_system_container.m_renderSystem->GetGPUDevice();
-	VkDeviceSize bufferSize = sizeof(m_vertexIndices[0]) * m_vertexIndices.size();
-
-	VkBuffer stagingBuffer{ VK_NULL_HANDLE };
-	VmaAllocation stagingBufferAllocation{ VK_NULL_HANDLE };
-
-	VkSharingMode mode = gpuDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == gpuDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
-	auto& queueIndices = gpuDevice->GetQueueFamilyIndicesVector();
-
-	icpVulkanUtility::CreateGPUBuffer(
-		bufferSize,
-		mode,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		gpuDevice->GetVmaAllocator(),
-		stagingBufferAllocation,
-		stagingBuffer,
-		queueIndices.size(),
-		queueIndices.data()
-	);
-
-	void* data;
-	vmaMapMemory(gpuDevice->GetVmaAllocator(), stagingBufferAllocation, &data);
-	memcpy(data, m_vertexIndices.data(), (size_t)bufferSize);
-	vmaUnmapMemory(gpuDevice->GetVmaAllocator(), stagingBufferAllocation);
-
-	icpVulkanUtility::CreateGPUBuffer(
-		bufferSize,
-		mode,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		gpuDevice->GetVmaAllocator(),
-		MeshIB.bufferAllocation,
-		MeshIB.buffer,
-		queueIndices.size(),
-		queueIndices.data()
-	);
-
-	icpVulkanUtility::copyBuffer(stagingBuffer,
-		MeshIB.buffer,
-		bufferSize,
-		gpuDevice->GetLogicalDevice(),
-		gpuDevice->GetTransferCommandPool(),
-		gpuDevice->GetTransferQueue()
-	);
-
-	vmaDestroyBuffer(gpuDevice->GetVmaAllocator(), stagingBuffer, stagingBufferAllocation);
+	auto rhi = g_system_container.m_renderSystem->GetGPUDevice();
+	auto bufferSize = sizeof(m_vertexIndices[0]) * m_vertexIndices.size();
+	icpRHIBufferDesc desc{};
+	desc.size = bufferSize;
+	desc.usage = icpBufferUsage::INDEX | icpBufferUsage::UPLOAD;
+	desc.debugName = "PrimitiveIB";
+	MeshIB.buffer = rhi->CreateBuffer(desc, m_vertexIndices.data());
+	MeshIB.range = bufferSize;
+	MeshIB.offset = 0u;
 }
 
 
@@ -220,22 +137,13 @@ void icpPrimitiveRendererComponent::CreateUniformBuffers()
 
 	MeshUBOs.resize(MAX_FRAMES_IN_FLIGHT);
 
-	VkSharingMode mode = gpuDevice->GetQueueFamilyIndices().m_graphicsFamily.value() == gpuDevice->GetQueueFamilyIndices().m_transferFamily.value() ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
-	auto& queueIndices = gpuDevice->GetQueueFamilyIndicesVector();
-
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		icpVulkanUtility::CreateGPUBuffer(
-			bufferSize,
-			mode,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			gpuDevice->GetVmaAllocator(),
-			MeshUBOs[i].bufferAllocation,
-			MeshUBOs[i].buffer,
-			queueIndices.size(),
-			queueIndices.data()
-		);
-
+		icpRHIBufferDesc desc{};
+		desc.size = bufferSize;
+		desc.usage = icpBufferUsage::UNIFORM;
+		desc.debugName = "PrimitiveCB";
+		MeshUBOs[i].buffer = gpuDevice->CreateBuffer(desc);
 		MeshUBOs[i].range = bufferSize;
 		MeshUBOs[i].offset = 0u;
 	}
@@ -243,15 +151,6 @@ void icpPrimitiveRendererComponent::CreateUniformBuffers()
 
 void icpPrimitiveRendererComponent::AllocateMeshDescriptorSets()
 {
-	auto pGPUDevice = g_system_container.m_renderSystem->GetGPUDevice();
-
-	auto& layout = g_system_container.m_renderSystem->GetSceneRenderer()
-		->AccessRenderPass(eRenderPass::GBUFFER_PASS)
-		->dsLayouts[0];
-
-	MeshDSs = DescriptorSetBuilder(1u)
-		.SetUniformBuffer(0, MeshUBOs)
-		.Build(pGPUDevice->GetLogicalDevice(), pGPUDevice->GetDescriptorPool(), layout);
 }
 
 std::shared_ptr<icpMaterialTemplate> icpPrimitiveRendererComponent::AddMaterial(eMaterialShadingModel shading_model)
@@ -265,24 +164,20 @@ std::shared_ptr<icpMaterialTemplate> icpPrimitiveRendererComponent::AddMaterial(
 
 void icpPrimitiveRendererComponent::UploadMeshCB(const UBOMeshRenderResource& ubo)
 {
-	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 	auto curFrame = g_system_container.m_renderSystem->GetSceneRenderer()->GetCurrentFrame();
 
-	void* data;
-	vmaMapMemory(vulkanRHI->GetVmaAllocator(), MeshUBOs[curFrame].bufferAllocation, &data);
+	void* data = MeshUBOs[curFrame].buffer->Map();
 	memcpy(data, &ubo, sizeof(UBOMeshRenderResource));
-	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), MeshUBOs[curFrame].bufferAllocation);
+	MeshUBOs[curFrame].buffer->Unmap();
 }
 
 void icpPrimitiveRendererComponent::UploadMaterialCB()
 {
-	auto vulkanRHI = g_system_container.m_renderSystem->GetGPUDevice();
 	auto curFrame = g_system_container.m_renderSystem->GetSceneRenderer()->GetCurrentFrame();
 
-	void* materialData;
-	vmaMapMemory(vulkanRHI->GetVmaAllocator(), m_pMaterial->MaterialUBOs[curFrame].bufferAllocation, &materialData);
+	void* materialData = m_pMaterial->MaterialUBOs[curFrame].buffer->Map();
 	memcpy(materialData, m_pMaterial->CheckMaterialDataCache(), sizeof(PBRShaderMaterial));
-	vmaUnmapMemory(vulkanRHI->GetVmaAllocator(), m_pMaterial->MaterialUBOs[curFrame].bufferAllocation);
+	m_pMaterial->MaterialUBOs[curFrame].buffer->Unmap();
 }
 
 

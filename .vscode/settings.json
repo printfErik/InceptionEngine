@@ -1,0 +1,17 @@
+{
+  "cmake.useCMakePresets": "always",
+  "cmake.configurePreset": "windows-d3d12-clang-ninja-debug",
+  "cmake.buildPreset": "windows-d3d12-clang-ninja-debug",
+  "cmake.buildBeforeRun": true,
+  "cmake.debugConfig": {
+    "cwd": "${workspaceFolder}"
+  },
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "clangd.path": "C:/VisualStudio2022/VC/Tools/Llvm/x64/bin/clangd.exe",
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}/build/windows-d3d12-clang-ninja-debug",
+    "--query-driver=C:/VisualStudio2022/VC/Tools/Llvm/x64/bin/clang.exe,C:/VisualStudio2022/VC/Tools/Llvm/x64/bin/clang++.exe",
+    "--background-index"
+  ]
+}

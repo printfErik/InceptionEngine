@@ -376,7 +376,7 @@ void icpSceneSystem::LoadDefaultScene()
 		auto sphereEntity = CreateEntity("Sphere", nullptr);
 
 		auto&& xform = sphereEntity->accessComponent<icpXFormComponent>();
-		xform.m_translation = glm::vec3(0.f, 3.f, 0.f);
+		xform.m_translation = glm::vec3(0.f, 0.f, 0.f);
 		xform.m_scale = glm::vec3(1.f, 1.f, 1.f);
 
 		auto&& sphere = sphereEntity->installComponent<icpPrimitiveRendererComponent>();

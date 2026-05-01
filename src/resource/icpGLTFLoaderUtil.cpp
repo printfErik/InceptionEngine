@@ -241,44 +241,44 @@ void icpGLTFLoaderUtil::LoadGLTFVertexBuffer(
 	}
 }
 
-VkSamplerAddressMode getVkWrapMode(int32_t wrapMode)
+icpSamplerAddressMode getSamplerWrapMode(int32_t wrapMode)
 {
 	switch (wrapMode)
 	{
 	case -1:
 	case 10497:
-		return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		return icpSamplerAddressMode::REPEAT;
 	case 33071:
-		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		return icpSamplerAddressMode::CLAMP_TO_EDGE;
 	case 33648:
-		return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+		return icpSamplerAddressMode::MIRRORED_REPEAT;
 	}
 
-	ICP_LOG_ERROR("Unknown wrap mode for getVkWrapMode: ", wrapMode);
-	return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	ICP_LOG_ERROR("Unknown wrap mode for getSamplerWrapMode: ", wrapMode);
+	return icpSamplerAddressMode::REPEAT;
 }
 
-VkFilter getVkFilterMode(int32_t filterMode)
+icpSamplerFilter getSamplerFilterMode(int32_t filterMode)
 {
 	switch (filterMode)
 	{
 	case -1:
 	case 9728:
-		return VK_FILTER_NEAREST;
+		return icpSamplerFilter::NEAREST;
 	case 9729:
-		return VK_FILTER_LINEAR;
+		return icpSamplerFilter::LINEAR;
 	case 9984:
-		return VK_FILTER_NEAREST;
+		return icpSamplerFilter::NEAREST;
 	case 9985:
-		return VK_FILTER_NEAREST;
+		return icpSamplerFilter::NEAREST;
 	case 9986:
-		return VK_FILTER_LINEAR;
+		return icpSamplerFilter::LINEAR;
 	case 9987:
-		return VK_FILTER_LINEAR;
+		return icpSamplerFilter::LINEAR;
 	}
 
-	ICP_LOG_ERROR("Unknown filter mode for getVkFilterMode: ", filterMode);
-	return VK_FILTER_NEAREST;
+	ICP_LOG_ERROR("Unknown filter mode for getSamplerFilterMode: ", filterMode);
+	return icpSamplerFilter::NEAREST;
 }
 
 void icpGLTFLoaderUtil::LoadGLTFTextureSamplers(tinygltf::Model& gltfModel, std::vector<icpSamplerResource>& samplers)
@@ -287,10 +287,10 @@ void icpGLTFLoaderUtil::LoadGLTFTextureSamplers(tinygltf::Model& gltfModel, std:
 	{
 		icpSamplerResource textureSampler;
 
-		textureSampler.minFilter = getVkFilterMode(sampler.minFilter);
-		textureSampler.magFilter = getVkFilterMode(sampler.magFilter);
-		textureSampler.addressModeU = getVkWrapMode(sampler.wrapS);
-		textureSampler.addressModeV = getVkWrapMode(sampler.wrapT);
+		textureSampler.minFilter = getSamplerFilterMode(sampler.minFilter);
+		textureSampler.magFilter = getSamplerFilterMode(sampler.magFilter);
+		textureSampler.addressModeU = getSamplerWrapMode(sampler.wrapS);
+		textureSampler.addressModeV = getSamplerWrapMode(sampler.wrapT);
 		textureSampler.addressModeW = textureSampler.addressModeV;
 
 		samplers.push_back(textureSampler);
@@ -307,11 +307,11 @@ void icpGLTFLoaderUtil::LoadGLTFTextures(tinygltf::Model& gltfModel, const std::
 		if (tex.sampler == -1) 
 		{
 			// No sampler specified, use a default one
-			textureSampler.magFilter = VK_FILTER_LINEAR;
-			textureSampler.minFilter = VK_FILTER_LINEAR;
-			textureSampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-			textureSampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-			textureSampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+			textureSampler.magFilter = icpSamplerFilter::LINEAR;
+			textureSampler.minFilter = icpSamplerFilter::LINEAR;
+			textureSampler.addressModeU = icpSamplerAddressMode::REPEAT;
+			textureSampler.addressModeV = icpSamplerAddressMode::REPEAT;
+			textureSampler.addressModeW = icpSamplerAddressMode::REPEAT;
 		}
 		else 
 		{

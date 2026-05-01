@@ -1,8 +1,13 @@
 #pragma once
 #include "../core/icpMacros.h"
+#include <array>
 #include <iostream>
 
+#if defined(INCEPTION_RENDER_BACKEND_D3D12)
+#define GLFW_INCLUDE_NONE
+#else
 #define GLFW_INCLUDE_VULKAN
+#endif
 #include "GLFW/glfw3.h"
 
 #define GLM_FORCE_RADIANS
