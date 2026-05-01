@@ -16,11 +16,27 @@ if(INCEPTION_RENDER_BACKEND STREQUAL "D3D12")
     file(MAKE_DIRECTORY "${DXIL_OUTPUT_DIR}")
 
     set(HLSL_OUTPUTS
+        "${DXIL_OUTPUT_DIR}/CSMVS.cso"
+        "${DXIL_OUTPUT_DIR}/CSMPS.cso"
         "${DXIL_OUTPUT_DIR}/GBufferVS.cso"
         "${DXIL_OUTPUT_DIR}/GBufferPS.cso"
         "${DXIL_OUTPUT_DIR}/DeferredCompositeVS.cso"
         "${DXIL_OUTPUT_DIR}/DeferredCompositePS.cso"
+        "${DXIL_OUTPUT_DIR}/GTAOCS.cso"
+        "${DXIL_OUTPUT_DIR}/TranslucentVS.cso"
+        "${DXIL_OUTPUT_DIR}/TranslucentPS.cso"
     )
+
+    add_custom_command(
+        OUTPUT "${DXIL_OUTPUT_DIR}/CSMVS.cso"
+        COMMAND ${DXC_EXECUTABLE} -T vs_6_0 -E VSMain "${SHADER_DIR}/hlsl/CSM.hlsl" -Fo "${DXIL_OUTPUT_DIR}/CSMVS.cso"
+        DEPENDS "${SHADER_DIR}/hlsl/CSM.hlsl"
+        VERBATIM)
+    add_custom_command(
+        OUTPUT "${DXIL_OUTPUT_DIR}/CSMPS.cso"
+        COMMAND ${DXC_EXECUTABLE} -T ps_6_0 -E PSMain "${SHADER_DIR}/hlsl/CSM.hlsl" -Fo "${DXIL_OUTPUT_DIR}/CSMPS.cso"
+        DEPENDS "${SHADER_DIR}/hlsl/CSM.hlsl"
+        VERBATIM)
 
     add_custom_command(
         OUTPUT "${DXIL_OUTPUT_DIR}/GBufferVS.cso"
@@ -41,6 +57,21 @@ if(INCEPTION_RENDER_BACKEND STREQUAL "D3D12")
         OUTPUT "${DXIL_OUTPUT_DIR}/DeferredCompositePS.cso"
         COMMAND ${DXC_EXECUTABLE} -T ps_6_0 -E PSMain "${SHADER_DIR}/hlsl/DeferredComposite.hlsl" -Fo "${DXIL_OUTPUT_DIR}/DeferredCompositePS.cso"
         DEPENDS "${SHADER_DIR}/hlsl/DeferredComposite.hlsl" "${SHADER_DIR}/hlsl/Lighting.hlsli"
+        VERBATIM)
+    add_custom_command(
+        OUTPUT "${DXIL_OUTPUT_DIR}/GTAOCS.cso"
+        COMMAND ${DXC_EXECUTABLE} -T cs_6_0 -E CSMain "${SHADER_DIR}/hlsl/GTAO.hlsl" -Fo "${DXIL_OUTPUT_DIR}/GTAOCS.cso"
+        DEPENDS "${SHADER_DIR}/hlsl/GTAO.hlsl"
+        VERBATIM)
+    add_custom_command(
+        OUTPUT "${DXIL_OUTPUT_DIR}/TranslucentVS.cso"
+        COMMAND ${DXC_EXECUTABLE} -T vs_6_0 -E VSMain "${SHADER_DIR}/hlsl/Translucent.hlsl" -Fo "${DXIL_OUTPUT_DIR}/TranslucentVS.cso"
+        DEPENDS "${SHADER_DIR}/hlsl/Translucent.hlsl" "${SHADER_DIR}/hlsl/Lighting.hlsli"
+        VERBATIM)
+    add_custom_command(
+        OUTPUT "${DXIL_OUTPUT_DIR}/TranslucentPS.cso"
+        COMMAND ${DXC_EXECUTABLE} -T ps_6_0 -E PSMain "${SHADER_DIR}/hlsl/Translucent.hlsl" -Fo "${DXIL_OUTPUT_DIR}/TranslucentPS.cso"
+        DEPENDS "${SHADER_DIR}/hlsl/Translucent.hlsl" "${SHADER_DIR}/hlsl/Lighting.hlsli"
         VERBATIM)
 
     add_custom_target(ShadersDXIL ALL DEPENDS ${HLSL_OUTPUTS})

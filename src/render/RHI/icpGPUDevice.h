@@ -21,6 +21,7 @@ enum class icpFormat
 	R32G32B32_FLOAT,
 	R16G16B16A16_FLOAT,
 	R32_FLOAT,
+	R8_UNORM,
 	D32_FLOAT,
 	D32_FLOAT_SRV,
 };
@@ -48,8 +49,11 @@ enum class icpResourceState
 	UNKNOWN = 0,
 	COPY_DEST,
 	SHADER_RESOURCE,
+	NON_PIXEL_SHADER_RESOURCE,
+	UNORDERED_ACCESS,
 	RENDER_TARGET,
 	DEPTH_WRITE,
+	DEPTH_READ,
 	PRESENT,
 };
 
@@ -95,6 +99,16 @@ enum class icpPipelineKind
 {
 	GBUFFER = 0,
 	DEFERRED_COMPOSITE,
+	CSM,
+	GTAO,
+	FORWARD_TRANSLUCENT,
+};
+
+enum class icpQueueType
+{
+	GRAPHICS = 0,
+	COMPUTE,
+	COPY,
 };
 
 inline icpBufferUsage operator|(icpBufferUsage lhs, icpBufferUsage rhs)
@@ -160,6 +174,12 @@ struct icpGraphicsPipelineDesc
 	icpBlendMode blendMode = icpBlendMode::OPAQUE;
 };
 
+struct icpComputePipelineDesc
+{
+	icpPipelineKind kind = icpPipelineKind::GTAO;
+	std::filesystem::path computeShader;
+};
+
 class icpRHIBuffer
 {
 public:
@@ -208,6 +228,7 @@ class icpRHICommandList
 {
 public:
 	virtual ~icpRHICommandList() = default;
+	virtual icpQueueType GetQueueType() const { return icpQueueType::GRAPHICS; }
 };
 
 class icpRHIDevice
@@ -231,6 +252,22 @@ public:
 	virtual std::shared_ptr<icpRHISampler> CreateSampler() = 0;
 	virtual std::shared_ptr<icpRHIPipeline> CreateGraphicsPipeline(
 		const icpGraphicsPipelineDesc& desc) = 0;
+	virtual std::shared_ptr<icpRHIPipeline> CreateComputePipeline(
+		const icpComputePipelineDesc& desc)
+	{
+		(void)desc;
+		return nullptr;
+	}
+
+	virtual bool SupportsAsyncCompute() const { return false; }
+	virtual std::shared_ptr<icpRHICommandList> BeginAsyncCompute() { return nullptr; }
+	virtual uint64_t EndAsyncCompute(std::shared_ptr<icpRHICommandList> commandList)
+	{
+		(void)commandList;
+		return 0;
+	}
+	virtual void SubmitGraphicsWorkBeforeAsyncCompute() {}
+	virtual void WaitForAsyncCompute(uint64_t fenceValue) { (void)fenceValue; }
 
 	virtual uint32_t GetCurrentFrameIndex() const = 0;
 	virtual uint32_t GetBackBufferWidth() const = 0;

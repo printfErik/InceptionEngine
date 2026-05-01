@@ -4,7 +4,9 @@ file(GLOB imgui_sources CONFIGURE_DEPENDS  "${imgui_SOURCE_DIR_}/*.cpp")
 if(INCEPTION_RENDER_BACKEND STREQUAL "D3D12")
 	file(GLOB imgui_impl CONFIGURE_DEPENDS
 	"${imgui_SOURCE_DIR_}/backends/imgui_impl_glfw.cpp"
-	"${imgui_SOURCE_DIR_}/backends/imgui_impl_glfw.h")
+	"${imgui_SOURCE_DIR_}/backends/imgui_impl_glfw.h"
+	"${imgui_SOURCE_DIR_}/backends/imgui_impl_dx12.cpp"
+	"${imgui_SOURCE_DIR_}/backends/imgui_impl_dx12.h")
 else()
 	file(GLOB imgui_impl CONFIGURE_DEPENDS
 	"${imgui_SOURCE_DIR_}/backends/imgui_impl_glfw.cpp"
@@ -16,7 +18,7 @@ add_library(imgui STATIC ${imgui_sources} ${imgui_impl})
 target_include_directories(imgui PUBLIC $<BUILD_INTERFACE:${imgui_SOURCE_DIR_}>)
 
 if(INCEPTION_RENDER_BACKEND STREQUAL "D3D12")
-	target_link_libraries(imgui PUBLIC glfw)
+	target_link_libraries(imgui PUBLIC glfw d3d12 dxgi dxguid)
 else()
 	find_package(Vulkan REQUIRED)
 	target_include_directories(imgui PUBLIC $<BUILD_INTERFACE:${Vulkan_INCLUDE_DIRS}/vulkan>)

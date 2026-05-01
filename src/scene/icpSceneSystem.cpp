@@ -7,6 +7,7 @@
 #include "../mesh/icpMeshResource.h"
 #include "../resource/icpResourceSystem.h"
 #include "../core/icpSystemContainer.h"
+#include "../core/icpConfigSystem.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -313,6 +314,13 @@ void icpSceneSystem::createMeshEntityFromResource(std::shared_ptr<icpResourceBas
 
 void icpSceneSystem::LoadDefaultScene()
 {
+	{
+		const auto sponzaPath =
+			g_system_container.m_configSystem->m_configFilePath.parent_path().parent_path() /
+			"resources" / "gltfs" / "glTF" / "Sponza.gltf";
+		g_system_container.m_resourceSystem->LoadGLTFResource(sponzaPath);
+	}
+
 	/*
 	// plane
 	{
@@ -376,7 +384,7 @@ void icpSceneSystem::LoadDefaultScene()
 		auto sphereEntity = CreateEntity("Sphere", nullptr);
 
 		auto&& xform = sphereEntity->accessComponent<icpXFormComponent>();
-		xform.m_translation = glm::vec3(0.f, 0.f, 0.f);
+		xform.m_translation = glm::vec3(2.f, 1.f, 0.f);
 		xform.m_scale = glm::vec3(1.f, 1.f, 1.f);
 
 		auto&& sphere = sphereEntity->installComponent<icpPrimitiveRendererComponent>();

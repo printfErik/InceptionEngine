@@ -1,5 +1,7 @@
 #pragma pack_matrix(column_major)
 
+#include "Lighting.hlsli"
+
 struct DirectionalLightRenderResource
 {
 	float4 direction;
@@ -68,7 +70,6 @@ struct VSInput
 struct VSOutput
 {
 	float4 position : SV_POSITION;
-	float3 color : COLOR0;
 	float2 texCoord : TEXCOORD0;
 	float3 normal : NORMAL0;
 	float3 worldPos : TEXCOORD1;
@@ -80,7 +81,6 @@ VSOutput VSMain(VSInput input)
 	float4 world = mul(modelMatrix, float4(input.position, 1.0f));
 	output.worldPos = world.xyz;
 	output.normal = normalize(mul((float3x3)normalMatrix, input.normal));
-	output.color = input.color;
 	output.texCoord = input.texCoord;
 	output.position = mul(projMatrix, mul(viewMatrix, world));
 	return output;
@@ -100,47 +100,39 @@ float3 GetNormalFromMap(VSOutput input)
 	return normalize(mul(tangentNormal, tbn));
 }
 
-struct PSOutput
+float4 PSMain(VSOutput input) : SV_Target0
 {
-	float4 gbufferA : SV_Target0;
-	float4 gbufferB : SV_Target1;
-	float4 gbufferC : SV_Target2;
-};
-
-PSOutput PSMain(VSOutput input)
-{
-	PSOutput output;
-	float4 baseColorSample = colorTextureSet > -1.0f
+	float4 baseSample = colorTextureSet > -1.0f
 		? BaseColorSampler.Sample(LinearSampler, input.texCoord) * baseColorFactor
 		: baseColorFactor;
-	if (alphaMask > 0.5f && baseColorSample.a < alphaMaskCutoff)
-	{
-		discard;
-	}
-	float3 baseColor = colorTextureSet > -1.0f
-		? pow(baseColorSample.rgb, 2.2f)
-		: baseColorSample.rgb;
+	float3 baseColor = colorTextureSet > -1.0f ? pow(baseSample.rgb, 2.2f) : baseSample.rgb;
+	float alpha = saturate(baseSample.a);
 
 	float metallic = PhysicalDescriptorTextureSet > -1.0f
 		? MetallicRoughnessSampler.Sample(LinearSampler, input.texCoord).g * metallicFactor
-		: metallicTextureSet > -1.0f
-			? MetallicSampler.Sample(LinearSampler, input.texCoord).r * metallicFactor
-			: metallicFactor;
-
+		: metallicFactor;
 	float roughness = PhysicalDescriptorTextureSet > -1.0f
 		? MetallicRoughnessSampler.Sample(LinearSampler, input.texCoord).b * roughnessFactor
-		: roughnessTextureSet > -1.0f
-			? RoughnessSampler.Sample(LinearSampler, input.texCoord).r * roughnessFactor
-			: roughnessFactor;
-
+		: roughnessFactor;
 	float3 normal = normalTextureSet > -1.0f ? GetNormalFromMap(input) : normalize(input.normal);
 	float ao = occlusionTextureSet > -1.0f ? AoSampler.Sample(LinearSampler, input.texCoord).r : 1.0f;
 	float3 emissive = emissiveTextureSet > -1.0f
 		? pow(EmissiveSampler.Sample(LinearSampler, input.texCoord).rgb, 2.2f) * emissiveFactor.rgb
 		: emissiveFactor.rgb;
 
-	output.gbufferA = float4(baseColor, metallic);
-	output.gbufferB = float4(normal, roughness);
-	output.gbufferC = float4(emissive, ao);
-	return output;
+	float3 viewDir = normalize(cameraPos - input.worldPos);
+	float3 lightDir = -normalize(directionalLit.direction.xyz);
+	float3 halfDir = normalize(viewDir + lightDir);
+	float ndotl = max(dot(normal, lightDir), 0.0f);
+	float ndotv = max(dot(normal, viewDir), 0.0f);
+	float vdoth = max(dot(viewDir, halfDir), 0.0f);
+	float3 f0 = lerp(float3(0.04f, 0.04f, 0.04f), baseColor, metallic);
+	float3 fresnel = FresnelSchlick(vdoth, f0);
+	float ndf = DistributionGGX(normal, halfDir, max(roughness, 0.04f));
+	float geometry = GeometrySmith(normal, viewDir, lightDir, max(roughness, 0.04f));
+	float3 specular = (ndf * geometry * fresnel) / max(4.0f * ndotv * ndotl, 0.0001f);
+	float3 diffuse = (1.0f - fresnel) * baseColor * (1.0f - metallic) / PI;
+	float3 color = (diffuse + specular) * directionalLit.color.rgb * ndotl * ao + emissive;
+	color = pow(max(color, 0.0f), 1.0f / 2.2f);
+	return float4(color, alpha);
 }

@@ -7,6 +7,7 @@
 #include "../../scene/icpEntityDataComponent.h"
 #include "../../scene/icpXFormComponent.h"
 #include "../../render/icpRenderSystem.h"
+#include "../../render/icpCameraSystem.h"
 
 #include <cstring>
 
@@ -122,6 +123,22 @@ void icpEditorUI::showEditorDockingSpaceUI()
 
 		if (ImGui::BeginMenu("Debug Tool"))
 		{
+			if (ImGui::TreeNode("Camera"))
+			{
+				auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
+				ImGui::SliderFloat("Move Scale", &camera->m_cameraMoveScale, 0.1f, 50.0f, "%.2f");
+				ImGui::Text("Move Speed %.4f", camera->m_cameraSpeed * camera->m_cameraMoveScale);
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Rendering"))
+			{
+				if (auto renderer = g_system_container.m_renderSystem->GetSceneRenderer())
+				{
+					ImGui::Checkbox("GTAO", &renderer->m_enableGTAO);
+				}
+				ImGui::TreePop();
+			}
+
 			if (ImGui::TreeNode("Save files"))
 			{
 				static char buf1[64] = "";
@@ -301,6 +318,22 @@ void icpEditorUI::showEditorUI()
 
 		if (ImGui::BeginMenu("Debug Tool"))
 		{
+			if (ImGui::TreeNode("Camera"))
+			{
+				auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
+				ImGui::SliderFloat("Move Scale", &camera->m_cameraMoveScale, 0.1f, 50.0f, "%.2f");
+				ImGui::Text("Move Speed %.4f", camera->m_cameraSpeed * camera->m_cameraMoveScale);
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Rendering"))
+			{
+				if (auto renderer = g_system_container.m_renderSystem->GetSceneRenderer())
+				{
+					ImGui::Checkbox("GTAO", &renderer->m_enableGTAO);
+				}
+				ImGui::TreePop();
+			}
+
 			if (ImGui::TreeNode("Save files"))
 			{
 				static char buf1[64] = "";

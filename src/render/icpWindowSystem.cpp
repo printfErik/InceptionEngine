@@ -182,31 +182,32 @@ void icpWindowSystem::handleKeyEvent()
 {
 	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
 	auto cameraRotation = glm::conjugate(camera->m_rotation) ;
+	const float cameraSpeed = camera->m_cameraSpeed * camera->m_cameraMoveScale;
 	glm::vec3 cameraOffset = glm::vec3(0.f);
 
 	if(m_command & (unsigned int)eEditorCommand::CAMERA_FORWARD)
 	{
-		cameraOffset -= cameraRotation * glm::vec3(0.f, 0.f, camera->m_cameraSpeed);
+		cameraOffset -= cameraRotation * glm::vec3(0.f, 0.f, cameraSpeed);
 	}
 	if (m_command & (unsigned int)eEditorCommand::CMAERA_BACK)
 	{
-		cameraOffset += cameraRotation * glm::vec3(0.f, 0.f, camera->m_cameraSpeed);
+		cameraOffset += cameraRotation * glm::vec3(0.f, 0.f, cameraSpeed);
 	}
 	if (m_command & (unsigned int)eEditorCommand::CAMERA_RIGHT)
 	{
-		cameraOffset += cameraRotation * glm::vec3(camera->m_cameraSpeed, 0.f, 0.f);
+		cameraOffset += cameraRotation * glm::vec3(cameraSpeed, 0.f, 0.f);
 	}
 	if (m_command & (unsigned int)eEditorCommand::CAMERA_LEFT)
 	{
-		cameraOffset -= cameraRotation * glm::vec3(camera->m_cameraSpeed, 0.f, 0.f);
+		cameraOffset -= cameraRotation * glm::vec3(cameraSpeed, 0.f, 0.f);
 	}
 	if (m_command & (unsigned int)eEditorCommand::CAMERA_UP)
 	{
-		cameraOffset += cameraRotation * glm::vec3(0.f, camera->m_cameraSpeed, 0.f);
+		cameraOffset += cameraRotation * glm::vec3(0.f, cameraSpeed, 0.f);
 	}
 	if (m_command & (unsigned int)eEditorCommand::CAMERA_DOWN)
 	{
-		cameraOffset += cameraRotation * glm::vec3(0.f, -camera->m_cameraSpeed, 0.f);
+		cameraOffset += cameraRotation * glm::vec3(0.f, -cameraSpeed, 0.f);
 	}
 
 	if (cameraOffset != glm::vec3(0.f))

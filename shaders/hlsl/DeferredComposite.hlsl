@@ -27,10 +27,22 @@ cbuffer PerFrameCB : register(b0, space2)
 	PointLightRenderResource pointLight[4];
 };
 
+cbuffer CSMCB : register(b0, space3)
+{
+	float4 cascadeSplits;
+	float4x4 lightViewProj[4];
+	float4 renderOptions;
+};
+
 Texture2D GBufferA : register(t0, space0);
 Texture2D GBufferB : register(t1, space0);
 Texture2D GBufferC : register(t2, space0);
 Texture2D DepthTex : register(t3, space0);
+Texture2D ShadowMap0 : register(t4, space0);
+Texture2D ShadowMap1 : register(t5, space0);
+Texture2D ShadowMap2 : register(t6, space0);
+Texture2D ShadowMap3 : register(t7, space0);
+Texture2D GTAOTex : register(t8, space0);
 SamplerState LinearSampler : register(s0, space0);
 
 struct VSOutput
@@ -56,6 +68,50 @@ float3 ReconstructWorldPosition(float2 uv, float depth)
 	return world.xyz / world.w;
 }
 
+float SampleShadowMap(uint cascadeIndex, float2 uv)
+{
+	if (cascadeIndex == 0) return ShadowMap0.SampleLevel(LinearSampler, uv, 0).r;
+	if (cascadeIndex == 1) return ShadowMap1.SampleLevel(LinearSampler, uv, 0).r;
+	if (cascadeIndex == 2) return ShadowMap2.SampleLevel(LinearSampler, uv, 0).r;
+	return ShadowMap3.SampleLevel(LinearSampler, uv, 0).r;
+}
+
+float ComputeShadow(float3 worldPos, float3 normal, float3 lightDir)
+{
+	float viewDepth = abs(mul(viewMatrix, float4(worldPos, 1.0f)).z);
+	uint cascadeIndex = 0;
+	if (viewDepth > cascadeSplits.x) cascadeIndex = 1;
+	if (viewDepth > cascadeSplits.y) cascadeIndex = 2;
+	if (viewDepth > cascadeSplits.z) cascadeIndex = 3;
+
+	float4 lightClip = mul(lightViewProj[cascadeIndex], float4(worldPos, 1.0f));
+	float3 shadowCoord = lightClip.xyz / lightClip.w;
+	float2 uv = float2(shadowCoord.x * 0.5f + 0.5f, 0.5f - shadowCoord.y * 0.5f);
+
+	if (shadowCoord.z <= 0.0f || shadowCoord.z >= 1.0f || any(uv < 0.0f) || any(uv > 1.0f))
+	{
+		return 1.0f;
+	}
+
+	float bias = max(0.0008f * (1.0f - dot(normal, lightDir)), 0.0002f);
+	float2 texelSize;
+	uint width;
+	uint height;
+	ShadowMap0.GetDimensions(width, height);
+	texelSize = 1.0f / float2(width, height);
+
+	float lit = 0.0f;
+	for (int y = -1; y <= 1; ++y)
+	{
+		for (int x = -1; x <= 1; ++x)
+		{
+			float closestDepth = SampleShadowMap(cascadeIndex, uv + float2(x, y) * texelSize);
+			lit += (shadowCoord.z - bias) <= closestDepth ? 1.0f : 0.0f;
+		}
+	}
+	return lit / 9.0f;
+}
+
 float4 PSMain(VSOutput input) : SV_Target0
 {
 	float4 gbufferA = GBufferA.Sample(LinearSampler, input.texCoord);
@@ -68,13 +124,15 @@ float4 PSMain(VSOutput input) : SV_Target0
 	float3 normal = normalize(gbufferB.rgb);
 	float perceptualRoughness = max(gbufferB.a, 0.04f);
 	float3 emissive = gbufferC.rgb;
-	float ao = gbufferC.a;
+	float gtao = renderOptions.x > 0.5f ? GTAOTex.Sample(LinearSampler, input.texCoord).r : 1.0f;
+	float ao = gbufferC.a * gtao;
 	float3 worldPos = ReconstructWorldPosition(input.texCoord, depth);
 
 	float3 f0 = lerp(float3(0.04f, 0.04f, 0.04f), baseColor, metallic);
 	float3 viewDir = normalize(cameraPos - worldPos);
 	float3 lightDir = -normalize(directionalLit.direction.xyz);
 	float3 halfDir = normalize(viewDir + lightDir);
+	float shadowFactor = ComputeShadow(worldPos, normal, lightDir);
 
 	float ndotl = max(dot(normal, lightDir), 0.0f);
 	float ndotv = max(dot(normal, viewDir), 0.0f);
@@ -88,7 +146,7 @@ float4 PSMain(VSOutput input) : SV_Target0
 	float3 diffuseColor = baseColor * (1.0f - metallic);
 	float3 diffuse = (1.0f - fresnel) * diffuseColor / PI;
 	float3 radiance = directionalLit.color.rgb;
-	float3 color = (diffuse + specular) * radiance * ndotl * ao;
+	float3 color = (diffuse + specular) * radiance * ndotl * ao * shadowFactor;
 	color += 0.03f * baseColor * ao + emissive;
 	color = pow(max(color, 0.0f), 1.0f / 2.2f);
 	return float4(color, 1.0f);

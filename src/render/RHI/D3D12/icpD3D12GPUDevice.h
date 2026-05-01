@@ -38,11 +38,16 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_resource;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtv{};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_dsv{};
+	D3D12_CPU_DESCRIPTOR_HANDLE m_readOnlyDsv{};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_srvCpu{};
 	D3D12_GPU_DESCRIPTOR_HANDLE m_srvGpu{};
+	D3D12_CPU_DESCRIPTOR_HANDLE m_uavCpu{};
+	D3D12_GPU_DESCRIPTOR_HANDLE m_uavGpu{};
 	bool m_hasRTV = false;
 	bool m_hasDSV = false;
+	bool m_hasReadOnlyDSV = false;
 	bool m_hasSRV = false;
+	bool m_hasUAV = false;
 };
 
 class icpD3D12Sampler : public icpRHISampler
@@ -55,6 +60,23 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
 	icpPipelineKind m_kind = icpPipelineKind::GBUFFER;
+};
+
+class icpD3D12CommandList : public icpRHICommandList
+{
+public:
+	icpD3D12CommandList(icpQueueType queueType, ID3D12GraphicsCommandList* commandList)
+		: m_queueType(queueType)
+		, m_commandList(commandList)
+	{
+	}
+
+	icpQueueType GetQueueType() const override { return m_queueType; }
+	ID3D12GraphicsCommandList* GetNative() const { return m_commandList; }
+
+private:
+	icpQueueType m_queueType = icpQueueType::GRAPHICS;
+	ID3D12GraphicsCommandList* m_commandList = nullptr;
 };
 
 class icpD3D12GPUDevice : public icpRHIDevice
@@ -79,6 +101,14 @@ public:
 	std::shared_ptr<icpRHISampler> CreateSampler() override;
 	std::shared_ptr<icpRHIPipeline> CreateGraphicsPipeline(
 		const icpGraphicsPipelineDesc& desc) override;
+	std::shared_ptr<icpRHIPipeline> CreateComputePipeline(
+		const icpComputePipelineDesc& desc) override;
+
+	bool SupportsAsyncCompute() const override;
+	std::shared_ptr<icpRHICommandList> BeginAsyncCompute() override;
+	uint64_t EndAsyncCompute(std::shared_ptr<icpRHICommandList> commandList) override;
+	void SubmitGraphicsWorkBeforeAsyncCompute() override;
+	void WaitForAsyncCompute(uint64_t fenceValue) override;
 
 	uint32_t GetCurrentFrameIndex() const override;
 	uint32_t GetBackBufferWidth() const override;
@@ -98,6 +128,7 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE CreateTextureSRVTable(const std::vector<std::shared_ptr<icpRHITexture>>& textures);
 
 	void TransitionResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
+	void TransitionResource(ID3D12GraphicsCommandList* cmd, ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
 	void ExecuteImmediate(const std::function<void(ID3D12GraphicsCommandList*)>& record);
 
 	DXGI_FORMAT ToDXGIFormat(icpFormat format, bool srv = false) const;
@@ -122,10 +153,15 @@ private:
 	Microsoft::WRL::ComPtr<IDXGIAdapter1> m_adapter;
 	Microsoft::WRL::ComPtr<ID3D12Device> m_device;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_graphicsQueue;
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_computeQueue;
 	Microsoft::WRL::ComPtr<IDXGISwapChain3> m_swapchain;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocators[MAX_FRAMES_IN_FLIGHT];
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_graphicsContinuationAllocators[MAX_FRAMES_IN_FLIGHT];
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_computeCommandAllocators[MAX_FRAMES_IN_FLIGHT];
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_computeCommandList;
 	Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
+	Microsoft::WRL::ComPtr<ID3D12Fence> m_asyncFence;
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_dsvHeap;
@@ -136,6 +172,7 @@ private:
 
 	HANDLE m_fenceEvent = nullptr;
 	uint64_t m_fenceValues[MAX_FRAMES_IN_FLIGHT]{};
+	uint64_t m_asyncFenceValue = 0;
 	uint32_t m_currentFrame = 0;
 
 	uint32_t m_backBufferWidth = 1;

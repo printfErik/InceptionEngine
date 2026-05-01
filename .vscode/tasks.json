@@ -41,6 +41,19 @@
         "windows-d3d12-release"
       ],
       "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Shaders: compile D3D12",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "New-Item -ItemType Directory -Force -Path shaders/dxil | Out-Null; dxc -T vs_6_0 -E VSMain shaders/hlsl/CSM.hlsl -Fo shaders/dxil/CSMVS.cso; dxc -T ps_6_0 -E PSMain shaders/hlsl/CSM.hlsl -Fo shaders/dxil/CSMPS.cso; dxc -T vs_6_0 -E VSMain shaders/hlsl/GBuffer.hlsl -Fo shaders/dxil/GBufferVS.cso; dxc -T ps_6_0 -E PSMain shaders/hlsl/GBuffer.hlsl -Fo shaders/dxil/GBufferPS.cso; dxc -T vs_6_0 -E VSMain shaders/hlsl/DeferredComposite.hlsl -Fo shaders/dxil/DeferredCompositeVS.cso; dxc -T ps_6_0 -E PSMain shaders/hlsl/DeferredComposite.hlsl -Fo shaders/dxil/DeferredCompositePS.cso; dxc -T cs_6_0 -E CSMain shaders/hlsl/GTAO.hlsl -Fo shaders/dxil/GTAOCS.cso; dxc -T vs_6_0 -E VSMain shaders/hlsl/Translucent.hlsl -Fo shaders/dxil/TranslucentVS.cso; dxc -T ps_6_0 -E PSMain shaders/hlsl/Translucent.hlsl -Fo shaders/dxil/TranslucentPS.cso"
+      ],
+      "problemMatcher": []
     }
   ]
 }

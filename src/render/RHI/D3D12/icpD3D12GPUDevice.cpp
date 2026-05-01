@@ -142,13 +142,21 @@ void icpD3D12GPUDevice::CreateCommandObjects()
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_graphicsQueue)), "failed to create d3d12 queue");
 
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_computeQueue)), "failed to create d3d12 compute queue");
+
 	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 	{
 		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocators[i])), "failed to create command allocator");
+		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_graphicsContinuationAllocators[i])), "failed to create continuation command allocator");
+		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS(&m_computeCommandAllocators[i])), "failed to create compute command allocator");
 	}
 
 	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocators[0].Get(), nullptr, IID_PPV_ARGS(&m_commandList)), "failed to create command list");
 	ThrowIfFailed(m_commandList->Close(), "failed to close initial command list");
+
+	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_computeCommandAllocators[0].Get(), nullptr, IID_PPV_ARGS(&m_computeCommandList)), "failed to create compute command list");
+	ThrowIfFailed(m_computeCommandList->Close(), "failed to close initial compute command list");
 }
 
 void icpD3D12GPUDevice::CreateDescriptorHeaps()
@@ -214,6 +222,7 @@ void icpD3D12GPUDevice::CreateBackBufferRTVs()
 void icpD3D12GPUDevice::CreateFenceObjects()
 {
 	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)), "failed to create fence");
+	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_asyncFence)), "failed to create async compute fence");
 	m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (!m_fenceEvent)
 	{
@@ -269,6 +278,14 @@ void icpD3D12GPUDevice::WaitIdle()
 	ThrowIfFailed(m_graphicsQueue->Signal(m_fence.Get(), fenceValue), "failed to signal idle fence");
 	ThrowIfFailed(m_fence->SetEventOnCompletion(fenceValue, m_fenceEvent), "failed to set idle fence");
 	WaitForSingleObject(m_fenceEvent, INFINITE);
+
+	if (m_computeQueue && m_asyncFence)
+	{
+		const uint64_t asyncFenceValue = ++m_asyncFenceValue;
+		ThrowIfFailed(m_computeQueue->Signal(m_asyncFence.Get(), asyncFenceValue), "failed to signal compute idle fence");
+		ThrowIfFailed(m_asyncFence->SetEventOnCompletion(asyncFenceValue, m_fenceEvent), "failed to set compute idle fence");
+		WaitForSingleObject(m_fenceEvent, INFINITE);
+	}
 }
 
 void icpD3D12GPUDevice::ReleaseSwapchainResources()
@@ -364,6 +381,10 @@ std::shared_ptr<icpRHITexture> icpD3D12GPUDevice::CreateTexture(const icpRHIText
 	{
 		resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 	}
+	if (HasUsage(desc.usage, icpTextureUsage::STORAGE))
+	{
+		resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	}
 
 	D3D12_HEAP_PROPERTIES heapProps{};
 	heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -411,6 +432,11 @@ std::shared_ptr<icpRHITexture> icpD3D12GPUDevice::CreateTexture(const icpRHIText
 		texture->m_dsv = AllocateDSV();
 		m_device->CreateDepthStencilView(texture->m_resource.Get(), &dsvDesc, texture->m_dsv);
 		texture->m_hasDSV = true;
+
+		dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
+		texture->m_readOnlyDsv = AllocateDSV();
+		m_device->CreateDepthStencilView(texture->m_resource.Get(), &dsvDesc, texture->m_readOnlyDsv);
+		texture->m_hasReadOnlyDSV = true;
 	}
 
 	if (HasUsage(desc.usage, icpTextureUsage::SAMPLED))
@@ -425,6 +451,18 @@ std::shared_ptr<icpRHITexture> icpD3D12GPUDevice::CreateTexture(const icpRHIText
 		texture->m_srvCpu = cpu;
 		texture->m_srvGpu = gpu;
 		texture->m_hasSRV = true;
+	}
+
+	if (HasUsage(desc.usage, icpTextureUsage::STORAGE))
+	{
+		auto [cpu, gpu] = AllocateSRV();
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc{};
+		uavDesc.Format = ToDXGIFormat(desc.format, true);
+		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+		m_device->CreateUnorderedAccessView(texture->m_resource.Get(), nullptr, &uavDesc, cpu);
+		texture->m_uavCpu = cpu;
+		texture->m_uavGpu = gpu;
+		texture->m_hasUAV = true;
 	}
 
 	if (initialData && initialDataSize > 0)
@@ -505,7 +543,7 @@ std::shared_ptr<icpRHIPipeline> icpD3D12GPUDevice::CreateGraphicsPipeline(const 
 	D3D12_DESCRIPTOR_RANGE ranges[2]{};
 	std::vector<D3D12_ROOT_PARAMETER> params;
 
-	if (desc.kind == icpPipelineKind::GBUFFER)
+	if (desc.kind == icpPipelineKind::GBUFFER || desc.kind == icpPipelineKind::FORWARD_TRANSLUCENT)
 	{
 		params.resize(4);
 		params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -530,11 +568,11 @@ std::shared_ptr<icpRHIPipeline> icpD3D12GPUDevice::CreateGraphicsPipeline(const 
 		params[3].Descriptor.RegisterSpace = 2;
 		params[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	}
-	else
+	else if (desc.kind == icpPipelineKind::DEFERRED_COMPOSITE)
 	{
-		params.resize(2);
+		params.resize(3);
 		ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		ranges[0].NumDescriptors = 4;
+		ranges[0].NumDescriptors = 9;
 		ranges[0].BaseShaderRegister = 0;
 		ranges[0].RegisterSpace = 0;
 		ranges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -546,6 +584,31 @@ std::shared_ptr<icpRHIPipeline> icpD3D12GPUDevice::CreateGraphicsPipeline(const 
 		params[1].Descriptor.ShaderRegister = 0;
 		params[1].Descriptor.RegisterSpace = 2;
 		params[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		params[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		params[2].Descriptor.ShaderRegister = 0;
+		params[2].Descriptor.RegisterSpace = 3;
+		params[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	}
+	else if (desc.kind == icpPipelineKind::CSM)
+	{
+		params.resize(3);
+		params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		params[0].Descriptor.ShaderRegister = 0;
+		params[0].Descriptor.RegisterSpace = 0;
+		params[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+		params[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		params[1].Descriptor.ShaderRegister = 0;
+		params[1].Descriptor.RegisterSpace = 3;
+		params[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+		params[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+		params[2].Constants.ShaderRegister = 1;
+		params[2].Constants.RegisterSpace = 3;
+		params[2].Constants.Num32BitValues = 1;
+		params[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	}
+	else
+	{
+		throw std::runtime_error("unsupported graphics pipeline kind");
 	}
 
 	D3D12_STATIC_SAMPLER_DESC sampler{};
@@ -615,9 +678,9 @@ std::shared_ptr<icpRHIPipeline> icpD3D12GPUDevice::CreateGraphicsPipeline(const 
 	psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 	psoDesc.RasterizerState.CullMode = desc.cullMode == icpCullMode::NONE ? D3D12_CULL_MODE_NONE : desc.cullMode == icpCullMode::FRONT ? D3D12_CULL_MODE_FRONT : D3D12_CULL_MODE_BACK;
 	psoDesc.RasterizerState.FrontCounterClockwise = FALSE;
-	psoDesc.RasterizerState.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
-	psoDesc.RasterizerState.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
-	psoDesc.RasterizerState.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+	psoDesc.RasterizerState.DepthBias = desc.kind == icpPipelineKind::CSM ? 1000 : D3D12_DEFAULT_DEPTH_BIAS;
+	psoDesc.RasterizerState.DepthBiasClamp = 0.0f;
+	psoDesc.RasterizerState.SlopeScaledDepthBias = desc.kind == icpPipelineKind::CSM ? 1.5f : D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
 	psoDesc.RasterizerState.DepthClipEnable = TRUE;
 	psoDesc.RasterizerState.MultisampleEnable = FALSE;
 	psoDesc.RasterizerState.AntialiasedLineEnable = FALSE;
@@ -640,8 +703,79 @@ std::shared_ptr<icpRHIPipeline> icpD3D12GPUDevice::CreateGraphicsPipeline(const 
 	{
 		rtBlend = defaultBlend;
 	}
+	if (desc.blendMode == icpBlendMode::TRANSLUCENT)
+	{
+		auto& rtBlend = psoDesc.BlendState.RenderTarget[0];
+		rtBlend.BlendEnable = TRUE;
+		rtBlend.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+		rtBlend.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+		rtBlend.BlendOp = D3D12_BLEND_OP_ADD;
+		rtBlend.SrcBlendAlpha = D3D12_BLEND_ONE;
+		rtBlend.DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+		rtBlend.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	}
 
 	ThrowIfFailed(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipeline->m_pipelineState)), "failed to create graphics pipeline");
+	return pipeline;
+}
+
+std::shared_ptr<icpRHIPipeline> icpD3D12GPUDevice::CreateComputePipeline(const icpComputePipelineDesc& desc)
+{
+	auto pipeline = std::make_shared<icpD3D12Pipeline>();
+	pipeline->m_kind = desc.kind;
+
+	D3D12_DESCRIPTOR_RANGE ranges[2]{};
+	ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	ranges[0].NumDescriptors = 2;
+	ranges[0].BaseShaderRegister = 0;
+	ranges[0].RegisterSpace = 0;
+	ranges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+	ranges[1].NumDescriptors = 1;
+	ranges[1].BaseShaderRegister = 0;
+	ranges[1].RegisterSpace = 0;
+	ranges[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	D3D12_ROOT_PARAMETER params[3]{};
+	params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	params[0].DescriptorTable.NumDescriptorRanges = 1;
+	params[0].DescriptorTable.pDescriptorRanges = &ranges[0];
+	params[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	params[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	params[1].DescriptorTable.NumDescriptorRanges = 1;
+	params[1].DescriptorTable.pDescriptorRanges = &ranges[1];
+	params[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	params[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	params[2].Descriptor.ShaderRegister = 0;
+	params[2].Descriptor.RegisterSpace = 2;
+	params[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	D3D12_STATIC_SAMPLER_DESC sampler{};
+	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler.ShaderRegister = 0;
+	sampler.RegisterSpace = 0;
+	sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	sampler.MaxLOD = D3D12_FLOAT32_MAX;
+
+	D3D12_ROOT_SIGNATURE_DESC rootDesc{};
+	rootDesc.NumParameters = static_cast<UINT>(sizeof(params) / sizeof(params[0]));
+	rootDesc.pParameters = params;
+	rootDesc.NumStaticSamplers = 1;
+	rootDesc.pStaticSamplers = &sampler;
+
+	Microsoft::WRL::ComPtr<ID3DBlob> signature;
+	Microsoft::WRL::ComPtr<ID3DBlob> error;
+	ThrowIfFailed(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error), "failed to serialize compute root signature");
+	ThrowIfFailed(m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&pipeline->m_rootSignature)), "failed to create compute root signature");
+
+	const auto cs = ReadBinaryFile(desc.computeShader);
+	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc{};
+	psoDesc.pRootSignature = pipeline->m_rootSignature.Get();
+	psoDesc.CS = { cs.data(), cs.size() };
+	ThrowIfFailed(m_device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&pipeline->m_pipelineState)), "failed to create compute pipeline");
 	return pipeline;
 }
 
@@ -680,6 +814,54 @@ std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> icpD3D12GPUD
 	return { cpu, gpu };
 }
 
+bool icpD3D12GPUDevice::SupportsAsyncCompute() const
+{
+	return m_computeQueue.Get() != nullptr;
+}
+
+void icpD3D12GPUDevice::SubmitGraphicsWorkBeforeAsyncCompute()
+{
+	ThrowIfFailed(m_commandList->Close(), "failed to close graphics list before async compute");
+	ID3D12CommandList* lists[] = { m_commandList.Get() };
+	m_graphicsQueue->ExecuteCommandLists(1, lists);
+
+	const uint64_t fenceValue = ++m_asyncFenceValue;
+	ThrowIfFailed(m_graphicsQueue->Signal(m_asyncFence.Get(), fenceValue), "failed to signal graphics-to-compute fence");
+	ThrowIfFailed(m_computeQueue->Wait(m_asyncFence.Get(), fenceValue), "failed to make compute queue wait for graphics");
+
+	ThrowIfFailed(m_graphicsContinuationAllocators[m_currentFrame]->Reset(), "failed to reset graphics continuation allocator");
+	ThrowIfFailed(m_commandList->Reset(m_graphicsContinuationAllocators[m_currentFrame].Get(), nullptr), "failed to reset graphics continuation command list");
+}
+
+std::shared_ptr<icpRHICommandList> icpD3D12GPUDevice::BeginAsyncCompute()
+{
+	ThrowIfFailed(m_computeCommandAllocators[m_currentFrame]->Reset(), "failed to reset compute command allocator");
+	ThrowIfFailed(m_computeCommandList->Reset(m_computeCommandAllocators[m_currentFrame].Get(), nullptr), "failed to reset compute command list");
+	ID3D12DescriptorHeap* heaps[] = { m_srvHeap.Get() };
+	m_computeCommandList->SetDescriptorHeaps(1, heaps);
+	return std::make_shared<icpD3D12CommandList>(icpQueueType::COMPUTE, m_computeCommandList.Get());
+}
+
+uint64_t icpD3D12GPUDevice::EndAsyncCompute(std::shared_ptr<icpRHICommandList> commandList)
+{
+	(void)commandList;
+	ThrowIfFailed(m_computeCommandList->Close(), "failed to close compute command list");
+	ID3D12CommandList* lists[] = { m_computeCommandList.Get() };
+	m_computeQueue->ExecuteCommandLists(1, lists);
+	const uint64_t fenceValue = ++m_asyncFenceValue;
+	ThrowIfFailed(m_computeQueue->Signal(m_asyncFence.Get(), fenceValue), "failed to signal async compute fence");
+	return fenceValue;
+}
+
+void icpD3D12GPUDevice::WaitForAsyncCompute(uint64_t fenceValue)
+{
+	if (fenceValue == 0)
+	{
+		return;
+	}
+	ThrowIfFailed(m_graphicsQueue->Wait(m_asyncFence.Get(), fenceValue), "failed to make graphics queue wait for async compute");
+}
+
 D3D12_GPU_DESCRIPTOR_HANDLE icpD3D12GPUDevice::CreateTextureSRVTable(const std::vector<std::shared_ptr<icpRHITexture>>& textures)
 {
 	auto [cpuStart, gpuStart] = AllocateSRV();
@@ -701,6 +883,11 @@ D3D12_GPU_DESCRIPTOR_HANDLE icpD3D12GPUDevice::CreateTextureSRVTable(const std::
 
 void icpD3D12GPUDevice::TransitionResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after)
 {
+	TransitionResource(m_commandList.Get(), resource, before, after);
+}
+
+void icpD3D12GPUDevice::TransitionResource(ID3D12GraphicsCommandList* cmd, ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after)
+{
 	if (before == after)
 	{
 		return;
@@ -711,7 +898,7 @@ void icpD3D12GPUDevice::TransitionResource(ID3D12Resource* resource, D3D12_RESOU
 	barrier.Transition.StateBefore = before;
 	barrier.Transition.StateAfter = after;
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	m_commandList->ResourceBarrier(1, &barrier);
+	cmd->ResourceBarrier(1, &barrier);
 }
 
 void icpD3D12GPUDevice::ExecuteImmediate(const std::function<void(ID3D12GraphicsCommandList*)>& record)
@@ -740,6 +927,7 @@ DXGI_FORMAT icpD3D12GPUDevice::ToDXGIFormat(icpFormat format, bool srv) const
 	case icpFormat::R32G32_FLOAT: return DXGI_FORMAT_R32G32_FLOAT;
 	case icpFormat::R32G32B32_FLOAT: return DXGI_FORMAT_R32G32B32_FLOAT;
 	case icpFormat::R16G16B16A16_FLOAT: return DXGI_FORMAT_R16G16B16A16_FLOAT;
+	case icpFormat::R8_UNORM: return DXGI_FORMAT_R8_UNORM;
 	case icpFormat::R32_FLOAT:
 	case icpFormat::D32_FLOAT_SRV: return DXGI_FORMAT_R32_FLOAT;
 	case icpFormat::D32_FLOAT: return srv ? DXGI_FORMAT_R32_FLOAT : DXGI_FORMAT_D32_FLOAT;
@@ -753,8 +941,11 @@ D3D12_RESOURCE_STATES icpD3D12GPUDevice::ToD3D12State(icpResourceState state) co
 	{
 	case icpResourceState::COPY_DEST: return D3D12_RESOURCE_STATE_COPY_DEST;
 	case icpResourceState::SHADER_RESOURCE: return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	case icpResourceState::NON_PIXEL_SHADER_RESOURCE: return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+	case icpResourceState::UNORDERED_ACCESS: return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 	case icpResourceState::RENDER_TARGET: return D3D12_RESOURCE_STATE_RENDER_TARGET;
 	case icpResourceState::DEPTH_WRITE: return D3D12_RESOURCE_STATE_DEPTH_WRITE;
+	case icpResourceState::DEPTH_READ: return D3D12_RESOURCE_STATE_DEPTH_READ;
 	case icpResourceState::PRESENT: return D3D12_RESOURCE_STATE_PRESENT;
 	default: return D3D12_RESOURCE_STATE_COMMON;
 	}

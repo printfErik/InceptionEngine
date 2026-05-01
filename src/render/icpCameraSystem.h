@@ -23,8 +23,9 @@ public:
 	glm::vec3 m_position;
 	glm::qua<float> m_rotation;
 	glm::mat4 m_viewMatrix;
-	float m_cameraSpeed;
-	float m_cameraRotationSpeed;
+	float m_cameraSpeed = 0.01f;
+	float m_cameraMoveScale = 5.0f;
+	float m_cameraRotationSpeed = 0.f;
 	glm::vec3 m_viewDir;
 	glm::vec3 m_upDir;
 

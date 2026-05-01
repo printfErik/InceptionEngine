@@ -67,6 +67,7 @@ public:
 	uint32_t GetCurrentFrame() const { return m_currentFrame; }
 
 	std::vector<icpBufferRenderResource> SceneUBOs;
+	bool m_enableGTAO = true;
 
 protected:
 	std::shared_ptr<icpGPUDevice> m_pDevice = nullptr;
