@@ -7,7 +7,6 @@
 
 INCEPTION_BEGIN_NAMESPACE
 
-class icpShadowManager;
 class icpPrimitiveRendererComponent;
 
 class icpRenderSystem
@@ -30,7 +29,6 @@ public:
 	std::shared_ptr<icpMaterialSubSystem> GetMaterialSubSystem();
 	std::shared_ptr<icpTextureRenderResourceManager> GetTextureRenderResourceManager();
 
-	std::shared_ptr<icpShadowManager> m_shadowManager = nullptr;
 private:
 	std::shared_ptr<icpGPUDevice> m_pGPUDevice = nullptr;
 	std::shared_ptr<icpSceneRenderer> m_pSceneRenderer = nullptr;

@@ -7,7 +7,7 @@
       "command": "cmake",
       "args": [
         "--preset",
-        "windows-d3d12-debug"
+        "windows-d3d12-clang-ninja-debug"
       ],
       "problemMatcher": []
     },
@@ -18,7 +18,7 @@
       "args": [
         "--build",
         "--preset",
-        "windows-d3d12-debug"
+        "windows-d3d12-clang-ninja-debug"
       ],
       "problemMatcher": "$msCompile"
     },
@@ -32,26 +32,92 @@
       "problemMatcher": []
     },
     {
+      "label": "CMake: configure D3D12 Release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "windows-d3d12-clang-ninja-release"
+      ],
+      "problemMatcher": []
+    },
+    {
       "label": "CMake: build D3D12 Release",
       "type": "shell",
       "command": "cmake",
       "args": [
         "--build",
         "--preset",
-        "windows-d3d12-release"
+        "windows-d3d12-clang-ninja-release"
       ],
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "Shaders: compile D3D12",
+      "label": "CMake: configure+build D3D12 Release",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "CMake: configure D3D12 Release",
+        "CMake: build D3D12 Release"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: configure Vulkan Debug",
       "type": "shell",
-      "command": "powershell",
+      "command": "cmake",
       "args": [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-Command",
-        "New-Item -ItemType Directory -Force -Path shaders/dxil | Out-Null; dxc -T vs_6_0 -E VSMain shaders/hlsl/CSM.hlsl -Fo shaders/dxil/CSMVS.cso; dxc -T ps_6_0 -E PSMain shaders/hlsl/CSM.hlsl -Fo shaders/dxil/CSMPS.cso; dxc -T vs_6_0 -E VSMain shaders/hlsl/GBuffer.hlsl -Fo shaders/dxil/GBufferVS.cso; dxc -T ps_6_0 -E PSMain shaders/hlsl/GBuffer.hlsl -Fo shaders/dxil/GBufferPS.cso; dxc -T vs_6_0 -E VSMain shaders/hlsl/DeferredComposite.hlsl -Fo shaders/dxil/DeferredCompositeVS.cso; dxc -T ps_6_0 -E PSMain shaders/hlsl/DeferredComposite.hlsl -Fo shaders/dxil/DeferredCompositePS.cso; dxc -T cs_6_0 -E CSMain shaders/hlsl/GTAO.hlsl -Fo shaders/dxil/GTAOCS.cso; dxc -T vs_6_0 -E VSMain shaders/hlsl/Translucent.hlsl -Fo shaders/dxil/TranslucentVS.cso; dxc -T ps_6_0 -E PSMain shaders/hlsl/Translucent.hlsl -Fo shaders/dxil/TranslucentPS.cso"
+        "--preset",
+        "windows-vulkan-clang-ninja-debug"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: build Vulkan Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "windows-vulkan-clang-ninja-debug"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "CMake: configure+build Vulkan Debug",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "CMake: configure Vulkan Debug",
+        "CMake: build Vulkan Debug"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: configure Vulkan Release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "windows-vulkan-clang-ninja-release"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: build Vulkan Release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "windows-vulkan-clang-ninja-release"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "CMake: configure+build Vulkan Release",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "CMake: configure Vulkan Release",
+        "CMake: build Vulkan Release"
       ],
       "problemMatcher": []
     }

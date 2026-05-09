@@ -76,7 +76,7 @@ public:
 	eMaterialBlendMode m_blendMode = eMaterialBlendMode::OPAQUE;
 
 	std::vector<icpBufferRenderResource> MaterialUBOs;
-	uint64_t m_srvTableGpuHandle = 0;
+	std::shared_ptr<icpRHIBindingSet> m_textureBindingSet = nullptr;
 
 	bool m_bRenderResourcesReady = false;
 };

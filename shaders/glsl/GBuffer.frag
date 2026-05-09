@@ -17,13 +17,13 @@ layout(std140, set = 1, binding = 0) uniform UBOPerMaterial
 	float alphaMaskCutoff;
 } uboPerMaterial;
 
-layout(set = 1, binding = 1) uniform sampler2D BaseColorSampler;
-layout(set = 1, binding = 2) uniform sampler2D MetallicRoughnessSampler;
-layout(set = 1, binding = 3) uniform sampler2D MetallicSampler;
-layout(set = 1, binding = 4) uniform sampler2D RoughnessSampler;
-layout(set = 1, binding = 5) uniform sampler2D NormalSampler;
-layout(set = 1, binding = 6) uniform sampler2D AoSampler;
-layout(set = 1, binding = 7) uniform sampler2D EmissiveSampler;
+layout(set = 2, binding = 0) uniform sampler2D BaseColorSampler;
+layout(set = 2, binding = 1) uniform sampler2D MetallicRoughnessSampler;
+layout(set = 2, binding = 2) uniform sampler2D MetallicSampler;
+layout(set = 2, binding = 3) uniform sampler2D RoughnessSampler;
+layout(set = 2, binding = 4) uniform sampler2D NormalSampler;
+layout(set = 2, binding = 5) uniform sampler2D AoSampler;
+layout(set = 2, binding = 6) uniform sampler2D EmissiveSampler;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;
@@ -53,9 +53,16 @@ vec3 getNormalFromMap()
 
 void main() 
 {   
-    vec3 BaseColor = uboPerMaterial.colorTextureSet > -1 ? 
-        pow(texture(BaseColorSampler, fragTexCoord).rgb, vec3(2.2)) * uboPerMaterial.baseColorFactor.rgb : 
-        uboPerMaterial.baseColorFactor.rgb;
+    vec4 baseColorSample = uboPerMaterial.colorTextureSet > -1 ?
+        texture(BaseColorSampler, fragTexCoord) * uboPerMaterial.baseColorFactor :
+        uboPerMaterial.baseColorFactor;
+    if (uboPerMaterial.alphaMask > 0.5 && baseColorSample.a < uboPerMaterial.alphaMaskCutoff)
+    {
+        discard;
+    }
+    vec3 BaseColor = uboPerMaterial.colorTextureSet > -1 ?
+        pow(baseColorSample.rgb, vec3(2.2)) :
+        baseColorSample.rgb;
 
     float Metallic = uboPerMaterial.PhysicalDescriptorTextureSet > -1 ?
         texture(MetallicRoughnessSampler, fragTexCoord).g * uboPerMaterial.metallicFactor :

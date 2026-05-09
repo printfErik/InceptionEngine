@@ -1,7 +1,22 @@
 #version 450
 
 #include "Lighting.h"
-#include "PerFrameGlobalUBO.h"
+
+#define max_point_light_count 4
+
+struct DirectionalLightRenderResource
+{
+    vec4 direction;
+    vec4 color;
+};
+
+struct PointLightRenderResource
+{
+    mat4 viewMatrices[6];
+    vec4 color;
+    vec3 position;
+    float padding;
+};
 
 layout(std140, set = 1, binding = 0) uniform UBOPerMaterial
 {
@@ -20,22 +35,23 @@ layout(std140, set = 1, binding = 0) uniform UBOPerMaterial
 	float alphaMaskCutoff;
 } uboPerMaterial;
 
-layout(set = 1, binding = 1) uniform sampler2D BaseColorSampler;
-layout(set = 1, binding = 2) uniform sampler2D MetallicRoughnessSampler;
-layout(set = 1, binding = 3) uniform sampler2D MetallicSampler;
-layout(set = 1, binding = 4) uniform sampler2D RoughnessSampler;
-layout(set = 1, binding = 5) uniform sampler2D NormalSampler;
-layout(set = 1, binding = 6) uniform sampler2D AoSampler;
-layout(set = 1, binding = 7) uniform sampler2D EmissiveSampler;
+layout(set = 2, binding = 0) uniform sampler2D BaseColorSampler;
+layout(set = 2, binding = 1) uniform sampler2D MetallicRoughnessSampler;
+layout(set = 2, binding = 2) uniform sampler2D MetallicSampler;
+layout(set = 2, binding = 3) uniform sampler2D RoughnessSampler;
+layout(set = 2, binding = 4) uniform sampler2D NormalSampler;
+layout(set = 2, binding = 5) uniform sampler2D AoSampler;
+layout(set = 2, binding = 6) uniform sampler2D EmissiveSampler;
 
-layout(std140, set = 2, binding = 0) uniform PerFrameCB
+layout(std140, set = 3, binding = 0) uniform PerFrameCB
 {
     mat4 viewMatrix;
     mat4 projMatrix;
+    mat4 invViewProjection;
     vec3 cameraPos;
     float pointLightNumber;
-    float spotLightNumber;
     DirectionalLightRenderResource directionalLit;
+    PointLightRenderResource pointLight[max_point_light_count];
 } uboPerFrame;
 
 layout(location = 0) in vec3 fragColor;
@@ -83,6 +99,7 @@ void main()
         uboPerMaterial.roughnessTextureSet > -1 ? 
             texture(RoughnessSampler, fragTexCoord).r * uboPerMaterial.roughnessFactor :
             uboPerMaterial.roughnessFactor;
+    PerceptualRoughness = max(PerceptualRoughness, 0.04);
     
     //float AlphaRoughness = PerceptualRoughness * PerceptualRoughness;
 
@@ -91,7 +108,7 @@ void main()
 
     vec3 N = uboPerMaterial.normalTextureSet > -1 ? getNormalFromMap() : normalize(fragNormal);
     vec3 V = normalize(uboPerFrame.cameraPos - worldPos);
-    vec3 L = normalize(uboPerFrame.directionalLit.direction.xyz);
+    vec3 L = -normalize(uboPerFrame.directionalLit.direction.xyz);
     vec3 H = normalize(V + L);
 
     float NdotL = max(dot(N, L), 0.0);
@@ -111,7 +128,7 @@ void main()
     vec3 DiffuseColor = BaseColor * (vec3(1.0) - F0) * (1.0 - Metallic);
     vec3 DiffuseContrib = (vec3(1.0) - F) * DiffuseColor / PI;
     
-    vec3 radiance = uboPerFrame.directionalLit.ambient.xyz;
+    vec3 radiance = uboPerFrame.directionalLit.color.xyz;
     vec3 Lo = (DiffuseContrib + SpecularContrib) * radiance * NdotL;
 
     // if AO texture exists

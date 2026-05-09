@@ -1,5 +1,19 @@
 #version 450
-#include "PerFrameGlobalUBO.h"
+#define max_point_light_count 4
+
+struct DirectionalLightRenderResource
+{
+    vec4 direction;
+    vec4 color;
+};
+
+struct PointLightRenderResource
+{
+    mat4 viewMatrices[6];
+    vec4 color;
+    vec3 position;
+    float padding;
+};
 
 layout(set = 0, binding = 0) uniform UBOMeshRenderResource
 {
@@ -7,14 +21,15 @@ layout(set = 0, binding = 0) uniform UBOMeshRenderResource
     mat4 normalMatrix;
 } uboPerMesh;
 
-layout(set = 2, binding = 0) uniform PerFrameCB
+layout(set = 3, binding = 0) uniform PerFrameCB
 {
     mat4 viewMatrix;
     mat4 projMatrix;
+    mat4 invViewProjection;
     vec3 cameraPos;
     float pointLightNumber;
-    float spotLightNumber;
     DirectionalLightRenderResource directionalLit;
+    PointLightRenderResource pointLight[max_point_light_count];
 } uboPerFrame;
 
 layout(location = 0) in vec3 inPosition;

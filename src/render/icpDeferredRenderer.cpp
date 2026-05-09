@@ -1,515 +1,656 @@
 #include "icpDeferredRenderer.h"
 
-#include "RHI/Vulkan/icpVulkanUtility.h"
+#include "../core/icpConfigSystem.h"
+#include "../core/icpSystemContainer.h"
+#include "../mesh/icpMeshRendererComponent.h"
+#include "../mesh/icpPrimitiveRendererComponent.h"
+#include "../scene/icpSceneSystem.h"
+#include "../scene/icpXFormComponent.h"
 #include "../ui/editorUI/icpEditorUI.h"
-#include "renderPass/icpCSMPass.h"
-#include "renderPass/icpDeferredCompositePass.h"
-#include "renderPass/icpEditorUiPass.h"
-#include "renderPass/icpGBufferPass.h"
-#include "shadow/icpShadowManager.h"
-#include "../render/icpRenderSystem.h"
-#include "renderPass/icpForwardTranslucentPass.h"
+#include "icpCameraSystem.h"
+#include "light/icpLightSystem.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <imgui.h>
 
 INCEPTION_BEGIN_NAMESPACE
-	icpDeferredRenderer::~icpDeferredRenderer()
+
+namespace
+{
+static glm::mat4 MakeDeferredOrtho(float left, float right, float bottom, float top, float nearPlane, float farPlane)
+{
+	return glm::orthoLH_ZO(left, right, bottom, top, nearPlane, farPlane);
+}
+}
+
+icpDeferredRenderer::~icpDeferredRenderer()
 {
 	Cleanup();
 }
 
-
-bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> vulkanRHI)
+bool icpDeferredRenderer::Initialize(std::shared_ptr<icpGPUDevice> rhi)
 {
-	m_pDevice = vulkanRHI;
-
+	m_pDevice = rhi;
 	CreateSceneCB();
-	CreateGlobalSceneDescriptorSetLayout();
-	AllocateGlobalSceneDescriptorSets();
-
-	AllocateCommandBuffers();
-
-	icpRenderPassBase::RenderPassInitInfo csmPassCreateInfo;
-	csmPassCreateInfo.device = m_pDevice;
-	csmPassCreateInfo.sceneRenderer = shared_from_this();
-	std::shared_ptr<icpRenderPassBase> cmsPass = std::make_shared<icpCSMPass>();
-	cmsPass->InitializeRenderPass(csmPassCreateInfo);
-
-	m_renderPasses[eRenderPass::CSM_PASS] = cmsPass;
-
-	icpRenderPassBase::RenderPassInitInfo gbufferPassCreateInfo;
-	gbufferPassCreateInfo.device = m_pDevice;
-	gbufferPassCreateInfo.sceneRenderer = shared_from_this();
-	std::shared_ptr<icpRenderPassBase> gbufferPass = std::make_shared<icpGBufferPass>();
-	gbufferPass->InitializeRenderPass(gbufferPassCreateInfo);
-
-	m_renderPasses[eRenderPass::GBUFFER_PASS] = gbufferPass;
-
-	icpRenderPassBase::RenderPassInitInfo deferredCompositePassCreateInfo;
-	deferredCompositePassCreateInfo.device = m_pDevice;
-	deferredCompositePassCreateInfo.sceneRenderer = shared_from_this();
-	std::shared_ptr<icpRenderPassBase> deferredCompositePass = std::make_shared<icpDeferredCompositePass>();
-	deferredCompositePass->InitializeRenderPass(deferredCompositePassCreateInfo);
-
-	m_renderPasses[eRenderPass::DEFERRED_COMPOSITION_PASS] = deferredCompositePass;
-
-	icpRenderPassBase::RenderPassInitInfo translucentPassCreateInfo;
-	translucentPassCreateInfo.device = m_pDevice;
-	translucentPassCreateInfo.sceneRenderer = shared_from_this();
-	std::shared_ptr<icpRenderPassBase> translucentPass = std::make_shared<icpForwardTranslucentPass>();
-	translucentPass->InitializeRenderPass(translucentPassCreateInfo);
-
-	m_renderPasses[eRenderPass::TRANSLUCENT_PASS] = translucentPass;
-
-	icpRenderPassBase::RenderPassInitInfo editorUIInfo;
-	editorUIInfo.device = m_pDevice;
-	editorUIInfo.sceneRenderer = shared_from_this();
-	std::shared_ptr<icpRenderPassBase> editorUIPass = std::make_shared<icpEditorUiPass>();
-	editorUIPass->InitializeRenderPass(editorUIInfo);
-
-	m_renderPasses[eRenderPass::EDITOR_UI_PASS] = editorUIPass;
-	
+	CreateCSMCB();
+	CreateCSMResources();
+	CreateRenderTargets();
+	CreatePipelines();
+	InitializeImGui();
 	return true;
 }
 
 void icpDeferredRenderer::Cleanup()
 {
-	icpSceneRenderer::Cleanup();
-}
-
-VkCommandBuffer icpDeferredRenderer::GetGBufferCommandBuffer(uint32_t curFrame)
-{
-	return m_GBufferCommandBuffers[curFrame];
-}
-
-VkCommandBuffer icpDeferredRenderer::GetGTAOCommandBuffer(uint32_t curFrame)
-{
-	return m_AOCommandBuffers[curFrame];
-}
-
-VkCommandBuffer icpDeferredRenderer::GetLightingCommandBuffer(uint32_t curFrame)
-{
-	return m_LightingCommandBuffers[curFrame];
-}
-
-void icpDeferredRenderer::CreateSemaphores()
-{
-	m_GBufferFinishSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	m_GTAOFinishSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	m_imageAvailableForRenderingSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	m_renderFinishedForPresentationSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-
-	VkSemaphoreCreateInfo semaphoreInfo{};
-	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	ShutdownImGui();
+	m_gbufferPipeline.reset();
+	m_compositePipeline.reset();
+	m_csmPipeline.reset();
+	m_gtaoPipeline.reset();
+	m_translucentPipeline.reset();
+	m_gbufferA.reset();
+	m_gbufferB.reset();
+	m_gbufferC.reset();
+	m_depth.reset();
+	m_gtao.reset();
+	m_compositeBindingSet.reset();
+	m_gtaoInputBindingSet.reset();
+	m_gtaoOutputBindingSet.reset();
+	for (auto& shadowMap : m_shadowMaps)
 	{
-		if (vkCreateSemaphore(m_pDevice->GetLogicalDevice(), &semaphoreInfo, nullptr, &m_GBufferFinishSemaphores[i]) ||
-			vkCreateSemaphore(m_pDevice->GetLogicalDevice(), &semaphoreInfo, nullptr, &m_GTAOFinishSemaphores[i]) ||
-			vkCreateSemaphore(m_pDevice->GetLogicalDevice(), &semaphoreInfo, nullptr, &m_imageAvailableForRenderingSemaphores[i]) ||
-			vkCreateSemaphore(m_pDevice->GetLogicalDevice(), &semaphoreInfo, nullptr, &m_renderFinishedForPresentationSemaphores[i]))
-		{
-			throw std::runtime_error("failed to create sync objects!");
-		}
+		shadowMap.reset();
 	}
 }
 
-/*
-void icpDeferredRenderer::CreateDeferredRenderPass()
+void icpDeferredRenderer::CreateSceneCB()
 {
-	std::array<VkAttachmentDescription, 5> attachments{};
-	// Color attachment
-	attachments[0].format = m_pDevice->GetSwapChainImageFormat();
-	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	// Deferred attachments
-	// Position
-	attachments[1].format = VK_FORMAT_R16G16B16A16_SFLOAT;
-	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	// Normals
-	attachments[2].format = VK_FORMAT_R16G16B16A16_SFLOAT;
-	attachments[2].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[2].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	// Albedo
-	attachments[3].format = VK_FORMAT_R16G16B16A16_SFLOAT;
-	attachments[3].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[3].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[3].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[3].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	// Depth attachment
-	attachments[4].format = m_pDevice->GetDepthFormat();
-	attachments[4].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[4].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[4].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[4].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[4].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[4].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	// Two subpasses
-	std::array<VkSubpassDescription, 2> subpassDescriptions{};
-
-	// First subpass: Fill G-Buffer components
-	// ----------------------------------------------------------------------------------------
-
-	VkAttachmentReference colorReferences[3];
-	colorReferences[0] = { 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-	colorReferences[1] = { 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-	colorReferences[2] = { 3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-	VkAttachmentReference depthReference = { 4, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
-
-	subpassDescriptions[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpassDescriptions[0].colorAttachmentCount = 3;
-	subpassDescriptions[0].pColorAttachments = colorReferences;
-	subpassDescriptions[0].pDepthStencilAttachment = &depthReference;
-
-	// Second subpass: Final composition (using G-Buffer components)
-	// ----------------------------------------------------------------------------------------
-
-	VkAttachmentReference colorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-
-	VkAttachmentReference inputReferences[4];
-	inputReferences[0] = { 1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
-	inputReferences[1] = { 2, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
-	inputReferences[2] = { 3, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
-	inputReferences[3] = { 4, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
-
-	subpassDescriptions[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpassDescriptions[1].colorAttachmentCount = 1;
-	subpassDescriptions[1].pColorAttachments = &colorReference;
-	subpassDescriptions[1].inputAttachmentCount = 4;
-	subpassDescriptions[1].pInputAttachments = inputReferences;
-
-	std::array<VkSubpassDependency, 3> dependencies;
-
-	
-	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependencies[0].dstSubpass = 0;
-	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[0].srcAccessMask = 0;
-	dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-	// This dependency transitions the input attachment from color attachment to input attachment read
-	dependencies[1].srcSubpass = 0;
-	dependencies[1].dstSubpass = 1;
-	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-	dependencies[1].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-	dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-	dependencies[2].srcSubpass = 1;
-	dependencies[2].dstSubpass = VK_SUBPASS_EXTERNAL;
-	dependencies[2].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[2].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-	dependencies[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[2].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	dependencies[2].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-	VkRenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-	renderPassInfo.pAttachments = attachments.data();
-	renderPassInfo.subpassCount = static_cast<uint32_t>(subpassDescriptions.size());
-	renderPassInfo.pSubpasses = subpassDescriptions.data();
-	renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-	renderPassInfo.pDependencies = dependencies.data();
-
-	vkCreateRenderPass(m_pDevice->GetLogicalDevice(), &renderPassInfo, nullptr, &m_deferredRenderPass);
-}
-
-void icpDeferredRenderer::CreateDeferredFrameBuffer()
-{
-	auto& imageViews = m_pDevice->GetSwapChainImageViews();
-	m_vDeferredFrameBuffers.resize(imageViews.size());
-
-	for (size_t i = 0; i < imageViews.size(); i++)
+	SceneUBOs.resize(MAX_FRAMES_IN_FLIGHT);
+	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 	{
-		std::array<VkImageView, 5> attachments =
-		{
-			imageViews[i],
-			GBufferA.m_texImageViews[0],
-			GBufferB.m_texImageViews[0],
-			GBufferC.m_texImageViews[0],
-			m_pDevice->GetDepthImageView()
-		};
-
-		VkFramebufferCreateInfo framebufferInfo{};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = m_deferredRenderPass;
-		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-		framebufferInfo.pAttachments = attachments.data();
-		framebufferInfo.width = m_pDevice->GetSwapChainExtent().width;
-		framebufferInfo.height = m_pDevice->GetSwapChainExtent().height;
-		framebufferInfo.layers = 1;
-
-		if (vkCreateFramebuffer(m_pDevice->GetLogicalDevice(), &framebufferInfo, nullptr, &m_vDeferredFrameBuffers[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create framebuffer!");
-		}
+		icpRHIBufferDesc desc{};
+		desc.size = sizeof(perFrameCB);
+		desc.usage = icpBufferUsage::UNIFORM;
+		desc.debugName = "SceneCB";
+		SceneUBOs[i].buffer = m_pDevice->CreateBuffer(desc);
+		SceneUBOs[i].offset = 0;
+		SceneUBOs[i].range = desc.size;
 	}
 }
-*/
-void icpDeferredRenderer::Render()
+
+void icpDeferredRenderer::CreateCSMCB()
 {
-	m_pDevice->WaitForFence(m_currentFrame);
-
-	VkResult result;
-	auto index = m_pDevice->AcquireNextImageFromSwapchain(m_currentFrame, result);
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	m_csmUBOs.resize(MAX_FRAMES_IN_FLIGHT);
+	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 	{
-		RecreateSwapChain();
+		icpRHIBufferDesc desc{};
+		desc.size = sizeof(icpCSMCB);
+		desc.usage = icpBufferUsage::UNIFORM;
+		desc.debugName = "CSMCB";
+		m_csmUBOs[i].buffer = m_pDevice->CreateBuffer(desc);
+		m_csmUBOs[i].offset = 0;
+		m_csmUBOs[i].range = desc.size;
+	}
+}
+
+void icpDeferredRenderer::CreateCSMResources()
+{
+	for (auto& shadowMap : m_shadowMaps)
+	{
+		icpRHITextureDesc desc{};
+		desc.width = DEFERRED_CSM_RESOLUTION;
+		desc.height = DEFERRED_CSM_RESOLUTION;
+		desc.format = icpFormat::D32_FLOAT;
+		desc.usage = icpTextureUsage::DEPTH_STENCIL | icpTextureUsage::SAMPLED;
+		desc.initialState = icpResourceState::SHADER_RESOURCE;
+		desc.debugName = "CSMShadowMap";
+		shadowMap = m_pDevice->CreateTexture(desc);
+	}
+}
+
+void icpDeferredRenderer::CreateRenderTargets()
+{
+	icpRHITextureDesc rtDesc{};
+	rtDesc.width = m_pDevice->GetBackBufferWidth();
+	rtDesc.height = m_pDevice->GetBackBufferHeight();
+	rtDesc.format = icpFormat::R16G16B16A16_FLOAT;
+	rtDesc.usage = icpTextureUsage::RENDER_TARGET | icpTextureUsage::SAMPLED;
+	rtDesc.initialState = icpResourceState::RENDER_TARGET;
+
+	rtDesc.debugName = "GBufferA";
+	m_gbufferA = m_pDevice->CreateTexture(rtDesc);
+	rtDesc.debugName = "GBufferB";
+	m_gbufferB = m_pDevice->CreateTexture(rtDesc);
+	rtDesc.debugName = "GBufferC";
+	m_gbufferC = m_pDevice->CreateTexture(rtDesc);
+
+	icpRHITextureDesc depthDesc{};
+	depthDesc.width = m_pDevice->GetBackBufferWidth();
+	depthDesc.height = m_pDevice->GetBackBufferHeight();
+	depthDesc.format = icpFormat::D32_FLOAT;
+	depthDesc.usage = icpTextureUsage::DEPTH_STENCIL | icpTextureUsage::SAMPLED;
+	depthDesc.initialState = icpResourceState::DEPTH_WRITE;
+	depthDesc.debugName = "DeferredDepth";
+	m_depth = m_pDevice->CreateTexture(depthDesc);
+
+	icpRHITextureDesc gtaoDesc{};
+	gtaoDesc.width = m_pDevice->GetBackBufferWidth();
+	gtaoDesc.height = m_pDevice->GetBackBufferHeight();
+	gtaoDesc.format = icpFormat::R32_FLOAT;
+	gtaoDesc.usage = icpTextureUsage::SAMPLED | icpTextureUsage::STORAGE;
+	gtaoDesc.initialState = icpResourceState::SHADER_RESOURCE;
+	gtaoDesc.debugName = "GTAO";
+	m_gtao = m_pDevice->CreateTexture(gtaoDesc);
+
+	CreateBindingSets();
+	m_targetsValid = true;
+}
+
+void icpDeferredRenderer::CreateBindingSets()
+{
+	icpRHIBindingSetDesc compositeDesc{};
+	compositeDesc.debugName = "DeferredCompositeInputs";
+	compositeDesc.resources = {
+		{ m_gbufferA, icpRHIResourceViewType::SRV },
+		{ m_gbufferB, icpRHIResourceViewType::SRV },
+		{ m_gbufferC, icpRHIResourceViewType::SRV },
+		{ m_depth, icpRHIResourceViewType::SRV },
+	};
+	for (const auto& shadowMap : m_shadowMaps)
+	{
+		compositeDesc.resources.push_back({ shadowMap, icpRHIResourceViewType::SRV });
+	}
+	compositeDesc.resources.push_back({ m_gtao, icpRHIResourceViewType::SRV });
+	m_compositeBindingSet = m_pDevice->CreateBindingSet(compositeDesc);
+
+	icpRHIBindingSetDesc gtaoInputDesc{};
+	gtaoInputDesc.debugName = "GTAOInputs";
+	gtaoInputDesc.resources = {
+		{ m_gbufferB, icpRHIResourceViewType::SRV },
+		{ m_depth, icpRHIResourceViewType::SRV },
+	};
+	m_gtaoInputBindingSet = m_pDevice->CreateBindingSet(gtaoInputDesc);
+
+	icpRHIBindingSetDesc gtaoOutputDesc{};
+	gtaoOutputDesc.debugName = "GTAOOutput";
+	gtaoOutputDesc.resources = {
+		{ m_gtao, icpRHIResourceViewType::UAV },
+	};
+	m_gtaoOutputBindingSet = m_pDevice->CreateBindingSet(gtaoOutputDesc);
+}
+
+void icpDeferredRenderer::CreatePipelines()
+{
+	icpGraphicsPipelineDesc csmDesc{};
+	csmDesc.kind = icpPipelineKind::CSM;
+	csmDesc.vertexShader = g_system_container.m_configSystem->m_shaderFolderPath / "CSMVS.cso";
+	csmDesc.pixelShader = g_system_container.m_configSystem->m_shaderFolderPath / "CSMPS.cso";
+	csmDesc.vertexStride = sizeof(icpVertex);
+	csmDesc.vertexAttributes = icpVertex::getAttributeDescription();
+	csmDesc.depthFormat = icpFormat::D32_FLOAT;
+	csmDesc.depthTestEnable = true;
+	csmDesc.depthWriteEnable = true;
+	csmDesc.cullMode = icpCullMode::NONE;
+	m_csmPipeline = m_pDevice->CreateGraphicsPipeline(csmDesc);
+
+	icpGraphicsPipelineDesc gbufferDesc{};
+	gbufferDesc.kind = icpPipelineKind::GBUFFER;
+	gbufferDesc.vertexShader = g_system_container.m_configSystem->m_shaderFolderPath / "GBufferVS.cso";
+	gbufferDesc.pixelShader = g_system_container.m_configSystem->m_shaderFolderPath / "GBufferPS.cso";
+	gbufferDesc.vertexStride = sizeof(icpVertex);
+	gbufferDesc.vertexAttributes = icpVertex::getAttributeDescription();
+	gbufferDesc.renderTargetFormats = { icpFormat::R16G16B16A16_FLOAT, icpFormat::R16G16B16A16_FLOAT, icpFormat::R16G16B16A16_FLOAT };
+	gbufferDesc.depthFormat = icpFormat::D32_FLOAT;
+	gbufferDesc.depthTestEnable = true;
+	gbufferDesc.depthWriteEnable = true;
+	gbufferDesc.cullMode = icpCullMode::NONE;
+	m_gbufferPipeline = m_pDevice->CreateGraphicsPipeline(gbufferDesc);
+
+	icpGraphicsPipelineDesc compositeDesc{};
+	compositeDesc.kind = icpPipelineKind::DEFERRED_COMPOSITE;
+	compositeDesc.vertexShader = g_system_container.m_configSystem->m_shaderFolderPath / "DeferredCompositeVS.cso";
+	compositeDesc.pixelShader = g_system_container.m_configSystem->m_shaderFolderPath / "DeferredCompositePS.cso";
+	compositeDesc.renderTargetFormats = { icpFormat::R8G8B8A8_UNORM };
+	compositeDesc.depthTestEnable = false;
+	compositeDesc.depthWriteEnable = false;
+	compositeDesc.cullMode = icpCullMode::NONE;
+	m_compositePipeline = m_pDevice->CreateGraphicsPipeline(compositeDesc);
+
+	icpComputePipelineDesc gtaoDesc{};
+	gtaoDesc.kind = icpPipelineKind::GTAO;
+	gtaoDesc.computeShader = g_system_container.m_configSystem->m_shaderFolderPath / "GTAOCS.cso";
+	m_gtaoPipeline = m_pDevice->CreateComputePipeline(gtaoDesc);
+
+	icpGraphicsPipelineDesc translucentDesc{};
+	translucentDesc.kind = icpPipelineKind::FORWARD_TRANSLUCENT;
+	translucentDesc.vertexShader = g_system_container.m_configSystem->m_shaderFolderPath / "TranslucentVS.cso";
+	translucentDesc.pixelShader = g_system_container.m_configSystem->m_shaderFolderPath / "TranslucentPS.cso";
+	translucentDesc.vertexStride = sizeof(icpVertex);
+	translucentDesc.vertexAttributes = icpVertex::getAttributeDescription();
+	translucentDesc.renderTargetFormats = { icpFormat::R8G8B8A8_UNORM };
+	translucentDesc.depthFormat = icpFormat::D32_FLOAT;
+	translucentDesc.depthTestEnable = true;
+	translucentDesc.depthWriteEnable = false;
+	translucentDesc.cullMode = icpCullMode::BACK;
+	translucentDesc.blendMode = icpBlendMode::TRANSLUCENT;
+	m_translucentPipeline = m_pDevice->CreateGraphicsPipeline(translucentDesc);
+}
+
+void icpDeferredRenderer::InitializeImGui()
+{
+	if (m_imguiInitialized)
+	{
 		return;
 	}
 
-	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-	{
-		throw std::runtime_error("failed to present swap chain image!");
-	}
-
-	UpdateGlobalSceneCB(m_currentFrame);
-	UpdateCSMProjViewMat(m_currentFrame);
-	g_system_container.m_renderSystem->m_shadowManager->UpdateCascadeShadowMapCB(m_currentFrame);
-
-	BeginCommandBuffer(m_GBufferCommandBuffers[m_currentFrame]);
-
-	auto CSMPass = std::dynamic_pointer_cast<icpCSMPass>(m_renderPasses[eRenderPass::CSM_PASS]);
-
-	for (uint32_t i = 0; i < s_csmCascadeCount; i++)
-	{
-		CSMPass->BeginCSMRenderPass(m_currentFrame, i, m_GBufferCommandBuffers[m_currentFrame]);
-		CSMPass->RenderPushConstant(index, m_currentFrame, i, result);
-		CSMPass->EndCSMRenderPass(m_GBufferCommandBuffers[m_currentFrame]);
-	}
-
-	m_renderPasses[eRenderPass::GBUFFER_PASS]->Render(index, m_currentFrame, result);
-	EndRecordingCommandBuffer(m_GBufferCommandBuffers[m_currentFrame]);
-
-
-
-	SubmitCommandList();
-
-	BeginCommandBuffer(m_AOCommandBuffers[m_currentFrame]);
-	m_renderPasses[eRenderPass::GTAP_PASS]->Dispatch(index, m_currentFrame, result);
-	EndRecordingCommandBuffer(m_AOCommandBuffers[m_currentFrame]);
-
-	BeginCommandBuffer(m_LightingCommandBuffers[m_currentFrame]);
-	m_renderPasses[eRenderPass::DEFERRED_COMPOSITION_PASS]->Render(index, m_currentFrame, result);
-	m_renderPasses[eRenderPass::EDITOR_UI_PASS]->Render(index, m_currentFrame, result);
-	BeginCommandBuffer(m_LightingCommandBuffers[m_currentFrame]);
-
-	SubmitCommandList();
-
-	Present(index);
-
-	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	m_pDevice->InitializeImGui(g_system_container.m_windowSystem);
+	m_editorUI = std::make_shared<icpEditorUI>();
+	m_imguiInitialized = true;
 }
 
-void icpDeferredRenderer::AllocateGlobalSceneDescriptorSets()
+void icpDeferredRenderer::ShutdownImGui()
 {
-	m_sceneDSs = DescriptorSetBuilder(1)
-		.SetUniformBuffer(0, SceneUBOs)
-		.Build(m_pDevice->GetLogicalDevice(), m_pDevice->GetDescriptorPool(), m_sceneDSLayout);
+	if (!m_imguiInitialized)
+	{
+		return;
+	}
+
+	m_editorUI.reset();
+	m_pDevice->ShutdownImGui();
+	m_imguiInitialized = false;
 }
 
-
-void icpDeferredRenderer::RecreateSwapChain()
+void icpDeferredRenderer::Render()
 {
-	int width = 0, height = 0;
-	glfwGetFramebufferSize(m_pDevice->GetWindow(), &width, &height);
-	while (width == 0 || height == 0)
-	{
-		glfwGetFramebufferSize(m_pDevice->GetWindow(), &width, &height);
-		glfwWaitEvents();
-	}
-
-	vkDeviceWaitIdle(m_pDevice->GetLogicalDevice());
-
-	CleanupSwapChain();
-	m_pDevice->CleanUpSwapChain();
-
-	m_pDevice->CreateSwapChain();
-	m_pDevice->CreateSwapChainImageViews();
-	m_pDevice->CreateDepthResources();
-}
-
-void icpDeferredRenderer::CleanupSwapChain()
-{
-	
-}
-
-void icpDeferredRenderer::AllocateCommandBuffers()
-{
-	m_GBufferCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-	VkCommandBufferAllocateInfo gAllocInfo{};
-	gAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	gAllocInfo.commandPool = m_pDevice->GetGraphicsCommandPool();
-	gAllocInfo.commandBufferCount = (uint32_t)m_GBufferCommandBuffers.size();
-	gAllocInfo.level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-	if (vkAllocateCommandBuffers(m_pDevice->GetLogicalDevice(), &gAllocInfo, m_GBufferCommandBuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate graphics command buffer!");
-	}
-
-	m_AOCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	gAllocInfo.commandPool = m_pDevice->GetComputeCommandPool();
-
-	if (vkAllocateCommandBuffers(m_pDevice->GetLogicalDevice(), &gAllocInfo, m_AOCommandBuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate graphics command buffer!");
-	}
-
-	m_LightingCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	gAllocInfo.commandPool = m_pDevice->GetGraphicsCommandPool();
-
-	if (vkAllocateCommandBuffers(m_pDevice->GetLogicalDevice(), &gAllocInfo, m_LightingCommandBuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate graphics command buffer!");
-	}
-}
-
-void icpDeferredRenderer::BeginCommandBuffer(VkCommandBuffer cb)
-{
-	vkResetCommandBuffer(cb, 0);
-
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-	if (vkBeginCommandBuffer(cb, &beginInfo) != VK_SUCCESS) 
-	{
-		throw std::runtime_error("failed to begin recording command buffer!");
-	}
-}
-
-
-void icpDeferredRenderer::EndRecordingCommandBuffer(VkCommandBuffer cb)
-{
-	if (vkEndCommandBuffer(cb) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to record command buffer!");
-	}
-}
-
-void icpDeferredRenderer::SubmitCommandList(
-	VkCommandBuffer cmdBuffer, 
-	VkSemaphore waitSemaphore,
-	VkPipelineStageFlags waitStage, 
-	VkSemaphore signalSemaphore)
-{
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-	if (waitSemaphore != VK_NULL_HANDLE)
-	{
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = &waitSemaphore;
-	}
-	else
-	{
-		submitInfo.waitSemaphoreCount = 0;
-	}
-
-	VkPipelineStageFlags waitStage_ = waitStage;
-	submitInfo.pWaitDstStageMask = &waitStage_;
-
-	if (signalSemaphore != VK_NULL_HANDLE)
-	{
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = &signalSemaphore;
-	}
-	else
-	{
-		submitInfo.signalSemaphoreCount = 0;
-	}
-
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &cmdBuffer;
-
-	auto& fences = m_pDevice->GetInFlightFences();
-
-	vkQueueSubmit(m_pDevice->GetGraphicsQueue(), 1, &submitInfo, fences[m_currentFrame]);
-}
-
-void icpDeferredRenderer::Present(uint32_t imageIndex)
-{
-	VkPresentInfoKHR presentInfo{};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	presentInfo.waitSemaphoreCount = 1;
-
-	auto& RenderFinishedForPresentationSemaphores = m_pDevice->GetRenderFinishedForPresentationSemaphores();
-	presentInfo.pWaitSemaphores = &RenderFinishedForPresentationSemaphores[m_currentFrame];
-
-	VkSwapchainKHR swapChains[] = { m_pDevice->GetSwapChain() };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-
-	uint32_t _imageIndex = imageIndex;
-	presentInfo.pImageIndices = &_imageIndex;
-
-	VkResult result = vkQueuePresentKHR(m_pDevice->GetPresentQueue(), &presentInfo);
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_pDevice->m_framebufferResized)
+	if (m_pDevice->m_framebufferResized)
 	{
 		m_pDevice->m_framebufferResized = false;
-		RecreateSwapChain();
+		m_pDevice->ResizeSwapchain();
+		m_targetsValid = false;
 	}
-	else if (result != VK_SUCCESS)
+
+	if (!m_targetsValid ||
+		m_pDevice->GetBackBufferWidth() != m_gbufferA->m_width ||
+		m_pDevice->GetBackBufferHeight() != m_gbufferA->m_height)
 	{
-		throw std::runtime_error("failed to present swap chain image!");
+		CreateRenderTargets();
+	}
+
+	m_pDevice->BeginFrame();
+	m_currentFrame = m_pDevice->GetCurrentFrameIndex();
+
+	UpdateSceneCB(m_currentFrame);
+	UpdateMeshes(m_currentFrame);
+
+	auto commandList = m_pDevice->GetGraphicsCommandList();
+	m_pDevice->PrepareCommandList(commandList);
+
+	ShadowPass(commandList, m_currentFrame);
+	GBufferPass(commandList, m_currentFrame);
+	if (m_enableGTAO)
+	{
+		m_pDevice->SubmitGraphicsWorkBeforeAsyncCompute();
+		const uint64_t gtaoFence = GTAOPass(m_currentFrame);
+		m_pDevice->WaitForAsyncCompute(gtaoFence);
+
+		commandList = m_pDevice->GetGraphicsCommandList();
+		m_pDevice->PrepareCommandList(commandList);
+		m_pDevice->TransitionTexture(commandList, m_gbufferB, icpResourceState::SHADER_RESOURCE);
+		m_pDevice->TransitionTexture(commandList, m_depth, icpResourceState::SHADER_RESOURCE);
+		m_pDevice->TransitionTexture(commandList, m_gtao, icpResourceState::SHADER_RESOURCE);
+	}
+	CompositePass(commandList, m_currentFrame);
+	ForwardTranslucentPass(commandList, m_currentFrame);
+	RenderImGui(commandList);
+	m_pDevice->TransitionBackBuffer(commandList, icpResourceState::PRESENT);
+
+	m_pDevice->EndFrame();
+}
+
+void icpDeferredRenderer::UpdateSceneCB(uint32_t frameIndex)
+{
+	const float aspectRatio = static_cast<float>(m_pDevice->GetBackBufferWidth()) / static_cast<float>(m_pDevice->GetBackBufferHeight());
+	g_system_container.m_cameraSystem->UpdateCameraCB(m_frameCB, aspectRatio);
+	g_system_container.m_lightSystem->UpdateLightCB(m_frameCB);
+	UpdateCSMCB(frameIndex);
+
+	void* data = SceneUBOs[frameIndex].buffer->Map();
+	memcpy(data, &m_frameCB, sizeof(m_frameCB));
+	SceneUBOs[frameIndex].buffer->Unmap();
+}
+
+void icpDeferredRenderer::UpdateCSMCB(uint32_t frameIndex)
+{
+	const float nearPlane = g_system_container.m_configSystem->NearPlane;
+	const float farPlane = g_system_container.m_configSystem->FarPlane;
+	float cascadeSplits[DEFERRED_CSM_CASCADE_COUNT + 1]{};
+	cascadeSplits[0] = nearPlane;
+	cascadeSplits[DEFERRED_CSM_CASCADE_COUNT] = farPlane;
+	for (uint32_t i = 1; i < DEFERRED_CSM_CASCADE_COUNT; ++i)
+	{
+		const float si = static_cast<float>(i) / static_cast<float>(DEFERRED_CSM_CASCADE_COUNT);
+		const float logSplit = nearPlane * std::pow(farPlane / nearPlane, si);
+		const float linSplit = nearPlane + (farPlane - nearPlane) * si;
+		cascadeSplits[i] = linSplit + 0.5f * (logSplit - linSplit);
+	}
+	m_csmData.cascadeSplits = glm::vec4(cascadeSplits[1], cascadeSplits[2], cascadeSplits[3], cascadeSplits[4]);
+	m_csmData.renderOptions = glm::vec4(m_enableGTAO ? 1.f : 0.f, 0.f, 0.f, 0.f);
+
+	auto camera = g_system_container.m_cameraSystem->getCurrentCamera();
+	const float aspectRatio = static_cast<float>(m_pDevice->GetBackBufferWidth()) / static_cast<float>(m_pDevice->GetBackBufferHeight());
+	const glm::mat4 invView = glm::inverse(m_frameCB.view);
+	glm::vec3 lightDir = glm::normalize(glm::vec3(m_frameCB.dirLight.direction));
+	if (glm::length(lightDir) < 0.001f)
+	{
+		lightDir = glm::normalize(glm::vec3(-1.f, -1.f, -1.f));
+	}
+
+	for (uint32_t cascade = 0; cascade < DEFERRED_CSM_CASCADE_COUNT; ++cascade)
+	{
+		const float nearZ = cascadeSplits[cascade];
+		const float farZ = cascadeSplits[cascade + 1];
+		const float tanHalfFov = std::tan(camera->m_fov * 0.5f);
+		const float nearH = tanHalfFov * nearZ;
+		const float nearW = nearH * aspectRatio;
+		const float farH = tanHalfFov * farZ;
+		const float farW = farH * aspectRatio;
+
+		const glm::vec4 cornersVS[] = {
+			{ nearW, nearH, -nearZ, 1.f }, { -nearW, nearH, -nearZ, 1.f },
+			{ -nearW, -nearH, -nearZ, 1.f }, { nearW, -nearH, -nearZ, 1.f },
+			{ farW, farH, -farZ, 1.f }, { -farW, farH, -farZ, 1.f },
+			{ -farW, -farH, -farZ, 1.f }, { farW, -farH, -farZ, 1.f },
+		};
+
+		glm::vec3 cornersWS[8]{};
+		glm::vec3 center(0.f);
+		for (uint32_t i = 0; i < 8; ++i)
+		{
+			glm::vec4 corner = invView * cornersVS[i];
+			cornersWS[i] = glm::vec3(corner) / corner.w;
+			center += cornersWS[i];
+		}
+		center /= 8.f;
+
+		float radius = 0.f;
+		for (const auto& corner : cornersWS)
+		{
+			radius = (std::max)(radius, glm::length(corner - center));
+		}
+		radius = std::ceil(radius * 16.f) / 16.f;
+
+		const glm::vec3 eye = center - lightDir * radius;
+		glm::vec3 up(0.f, 1.f, 0.f);
+		if (std::abs(glm::dot(up, lightDir)) > 0.95f)
+		{
+			up = glm::vec3(0.f, 0.f, 1.f);
+		}
+
+		const glm::mat4 lightView = glm::lookAtLH(eye, center, up);
+		const glm::mat4 lightProj = MakeDeferredOrtho(-radius, radius, -radius, radius, 0.f, radius * 2.f);
+		m_csmData.lightViewProj[cascade] = lightProj * lightView;
+	}
+
+	void* data = m_csmUBOs[frameIndex].buffer->Map();
+	memcpy(data, &m_csmData, sizeof(m_csmData));
+	m_csmUBOs[frameIndex].buffer->Unmap();
+}
+
+void icpDeferredRenderer::UpdateMeshes(uint32_t frameIndex)
+{
+	auto view = g_system_container.m_sceneSystem->m_registry.view<icpMeshRendererComponent, icpXFormComponent>();
+	for (auto entity : view)
+	{
+		auto& mesh = view.get<icpMeshRendererComponent>(entity);
+		if (!mesh.m_pMaterial || !mesh.m_pMaterial->m_bRenderResourcesReady)
+		{
+			continue;
+		}
+		auto& xform = view.get<icpXFormComponent>(entity);
+		UBOMeshRenderResource ubo{};
+		ubo.model = xform.m_mtxTransform;
+		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat4(glm::mat3(ubo.model))));
+		mesh.UploadMeshCB(ubo);
+		mesh.UploadMaterialCB();
+	}
+
+	auto primitiveView = g_system_container.m_sceneSystem->m_registry.view<icpPrimitiveRendererComponent, icpXFormComponent>();
+	for (auto entity : primitiveView)
+	{
+		auto& primitive = primitiveView.get<icpPrimitiveRendererComponent>(entity);
+		if (!primitive.m_pMaterial || !primitive.m_pMaterial->m_bRenderResourcesReady)
+		{
+			continue;
+		}
+		auto& xform = primitiveView.get<icpXFormComponent>(entity);
+		UBOMeshRenderResource ubo{};
+		ubo.model = glm::translate(glm::mat4(1.f), xform.m_translation);
+		ubo.model = glm::scale(ubo.model, xform.m_scale);
+		ubo.normalMatrix = glm::transpose(glm::inverse(glm::mat4(glm::mat3(ubo.model))));
+		primitive.UploadMeshCB(ubo);
+		primitive.UploadMaterialCB();
 	}
 }
 
-void icpDeferredRenderer::ImageBarrier(
-	VkCommandBuffer cmdBuf,
-	VkAccessFlags srcAccess, VkAccessFlags dstAccess,
-	VkImageLayout oldLayout, VkImageLayout newLayout,
-	uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex,
-	VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
-	VkImage image, const VkImageSubresourceRange& subresourceRange)
+void icpDeferredRenderer::ShadowPass(std::shared_ptr<icpRHICommandList> commandList, uint32_t frameIndex)
 {
-	VkImageMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.srcAccessMask = srcAccess;
-	barrier.dstAccessMask = dstAccess;
-	barrier.oldLayout = oldLayout;
-	barrier.newLayout = newLayout;
-	barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
-	barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
-	barrier.image = image;
-	barrier.subresourceRange = subresourceRange;
+	m_pDevice->BindGraphicsPipeline(commandList, m_csmPipeline);
+	m_pDevice->BindGraphicsConstantBuffer(commandList, 1, m_csmUBOs[frameIndex].buffer);
+	m_pDevice->SetViewportAndScissor(commandList, DEFERRED_CSM_RESOLUTION, DEFERRED_CSM_RESOLUTION);
 
-	vkCmdPipelineBarrier(
-		cmdBuf,
-		srcStage,
-		dstStage,
-		0, 0, nullptr, 0, nullptr, 1, &barrier
-	);
+	for (uint32_t cascade = 0; cascade < DEFERRED_CSM_CASCADE_COUNT; ++cascade)
+	{
+		m_pDevice->TransitionTexture(commandList, m_shadowMaps[cascade], icpResourceState::DEPTH_WRITE);
+		m_pDevice->SetRenderTargets(commandList, {}, m_shadowMaps[cascade], icpRHIDepthAccess::WRITE, false, true);
+		m_pDevice->SetGraphicsConstant(commandList, 2, cascade);
+		DrawShadowScene(commandList, frameIndex, cascade);
+		m_pDevice->TransitionTexture(commandList, m_shadowMaps[cascade], icpResourceState::SHADER_RESOURCE);
+	}
 }
 
+void icpDeferredRenderer::GBufferPass(std::shared_ptr<icpRHICommandList> commandList, uint32_t frameIndex)
+{
+	m_pDevice->TransitionTexture(commandList, m_gbufferA, icpResourceState::RENDER_TARGET);
+	m_pDevice->TransitionTexture(commandList, m_gbufferB, icpResourceState::RENDER_TARGET);
+	m_pDevice->TransitionTexture(commandList, m_gbufferC, icpResourceState::RENDER_TARGET);
+	m_pDevice->TransitionTexture(commandList, m_depth, icpResourceState::DEPTH_WRITE);
+	m_pDevice->SetRenderTargets(commandList, { m_gbufferA, m_gbufferB, m_gbufferC }, m_depth, icpRHIDepthAccess::WRITE, true, true);
+	m_pDevice->SetViewportAndScissor(commandList, m_pDevice->GetBackBufferWidth(), m_pDevice->GetBackBufferHeight());
+	m_pDevice->BindGraphicsPipeline(commandList, m_gbufferPipeline);
+	m_pDevice->BindGraphicsConstantBuffer(commandList, 3, SceneUBOs[frameIndex].buffer);
+	DrawScene(commandList, frameIndex);
+
+	m_pDevice->TransitionTexture(commandList, m_gbufferA, icpResourceState::SHADER_RESOURCE);
+	m_pDevice->TransitionTexture(commandList, m_gbufferC, icpResourceState::SHADER_RESOURCE);
+	if (m_enableGTAO)
+	{
+		m_pDevice->TransitionTexture(commandList, m_gbufferB, icpResourceState::NON_PIXEL_SHADER_RESOURCE);
+		m_pDevice->TransitionTexture(commandList, m_depth, icpResourceState::NON_PIXEL_SHADER_RESOURCE);
+		m_pDevice->TransitionTexture(commandList, m_gtao, icpResourceState::UNORDERED_ACCESS);
+	}
+	else
+	{
+		m_pDevice->TransitionTexture(commandList, m_gbufferB, icpResourceState::SHADER_RESOURCE);
+		m_pDevice->TransitionTexture(commandList, m_depth, icpResourceState::SHADER_RESOURCE);
+	}
+}
+
+void icpDeferredRenderer::DrawScene(std::shared_ptr<icpRHICommandList> commandList, uint32_t frameIndex)
+{
+	std::vector<std::shared_ptr<icpGameEntity>> roots;
+	g_system_container.m_sceneSystem->getRootEntityList(roots);
+
+	auto drawMesh = [&](auto& mesh)
+	{
+		if (!mesh.m_pMaterial || !mesh.m_pMaterial->m_bRenderResourcesReady ||
+			mesh.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT ||
+			mesh.m_pMaterial->m_blendMode == eMaterialBlendMode::TRANSLUCENT)
+		{
+			return;
+		}
+
+		m_pDevice->BindGraphicsConstantBuffer(commandList, 0, mesh.MeshUBOs[frameIndex].buffer);
+		m_pDevice->BindGraphicsConstantBuffer(commandList, 1, mesh.m_pMaterial->MaterialUBOs[frameIndex].buffer);
+		m_pDevice->BindGraphicsBindingSet(commandList, 2, mesh.m_pMaterial->m_textureBindingSet);
+		m_pDevice->BindVertexAndIndexBuffers(
+			commandList,
+			mesh.MeshVB.buffer,
+			mesh.MeshVB.range,
+			mesh.MeshIB.buffer,
+			mesh.MeshIB.range,
+			sizeof(icpVertex));
+		m_pDevice->DrawIndexed(commandList, mesh.GetMeshIndexNum());
+	};
+
+	for (auto& entity : roots)
+	{
+		if (entity->hasComponent<icpMeshRendererComponent>())
+		{
+			drawMesh(entity->accessComponent<icpMeshRendererComponent>());
+		}
+		if (entity->hasComponent<icpPrimitiveRendererComponent>())
+		{
+			drawMesh(entity->accessComponent<icpPrimitiveRendererComponent>());
+		}
+	}
+}
+
+uint64_t icpDeferredRenderer::GTAOPass(uint32_t frameIndex)
+{
+	if (!m_gtaoPipeline || !m_gtao || !m_pDevice->SupportsAsyncCompute())
+	{
+		return 0;
+	}
+
+	auto computeList = m_pDevice->BeginAsyncCompute();
+	m_pDevice->PrepareCommandList(computeList);
+	m_pDevice->BindComputePipeline(computeList, m_gtaoPipeline);
+	m_pDevice->BindComputeBindingSet(computeList, 0, m_gtaoInputBindingSet);
+	m_pDevice->BindComputeBindingSet(computeList, 1, m_gtaoOutputBindingSet);
+	m_pDevice->BindComputeConstantBuffer(computeList, 2, SceneUBOs[frameIndex].buffer);
+	const uint32_t groupsX = (m_pDevice->GetBackBufferWidth() + 15u) / 16u;
+	const uint32_t groupsY = (m_pDevice->GetBackBufferHeight() + 15u) / 16u;
+	m_pDevice->Dispatch(computeList, groupsX, groupsY, 1);
+
+	return m_pDevice->EndAsyncCompute(computeList);
+}
+
+void icpDeferredRenderer::DrawShadowScene(std::shared_ptr<icpRHICommandList> commandList, uint32_t frameIndex, uint32_t cascadeIndex)
+{
+	(void)cascadeIndex;
+	std::vector<std::shared_ptr<icpGameEntity>> roots;
+	g_system_container.m_sceneSystem->getRootEntityList(roots);
+
+	auto drawMesh = [&](auto& mesh)
+	{
+		if (!mesh.m_pMaterial || !mesh.m_pMaterial->m_bRenderResourcesReady ||
+			mesh.m_pMaterial->m_blendMode == eMaterialBlendMode::TRANSLUCENT)
+		{
+			return;
+		}
+
+		m_pDevice->BindGraphicsConstantBuffer(commandList, 0, mesh.MeshUBOs[frameIndex].buffer);
+		m_pDevice->BindVertexAndIndexBuffers(
+			commandList,
+			mesh.MeshVB.buffer,
+			mesh.MeshVB.range,
+			mesh.MeshIB.buffer,
+			mesh.MeshIB.range,
+			sizeof(icpVertex));
+		m_pDevice->DrawIndexed(commandList, mesh.GetMeshIndexNum());
+	};
+
+	for (auto& entity : roots)
+	{
+		if (entity->hasComponent<icpMeshRendererComponent>())
+		{
+			drawMesh(entity->accessComponent<icpMeshRendererComponent>());
+		}
+		if (entity->hasComponent<icpPrimitiveRendererComponent>())
+		{
+			drawMesh(entity->accessComponent<icpPrimitiveRendererComponent>());
+		}
+	}
+}
+
+void icpDeferredRenderer::CompositePass(std::shared_ptr<icpRHICommandList> commandList, uint32_t frameIndex)
+{
+	m_pDevice->TransitionBackBuffer(commandList, icpResourceState::RENDER_TARGET);
+	m_pDevice->SetBackBufferRenderTarget(commandList, true);
+	m_pDevice->SetViewportAndScissor(commandList, m_pDevice->GetBackBufferWidth(), m_pDevice->GetBackBufferHeight());
+	m_pDevice->BindGraphicsPipeline(commandList, m_compositePipeline);
+	m_pDevice->BindGraphicsBindingSet(commandList, 0, m_compositeBindingSet);
+	m_pDevice->BindGraphicsConstantBuffer(commandList, 1, SceneUBOs[frameIndex].buffer);
+	m_pDevice->BindGraphicsConstantBuffer(commandList, 2, m_csmUBOs[frameIndex].buffer);
+	m_pDevice->Draw(commandList, 3);
+}
+
+void icpDeferredRenderer::ForwardTranslucentPass(std::shared_ptr<icpRHICommandList> commandList, uint32_t frameIndex)
+{
+	m_pDevice->TransitionTexture(commandList, m_depth, icpResourceState::DEPTH_READ);
+	m_pDevice->SetBackBufferRenderTarget(commandList, m_depth, icpRHIDepthAccess::READ, false);
+	m_pDevice->SetViewportAndScissor(commandList, m_pDevice->GetBackBufferWidth(), m_pDevice->GetBackBufferHeight());
+	m_pDevice->BindGraphicsPipeline(commandList, m_translucentPipeline);
+	m_pDevice->BindGraphicsConstantBuffer(commandList, 3, SceneUBOs[frameIndex].buffer);
+	DrawTranslucentScene(commandList, frameIndex);
+	m_pDevice->TransitionTexture(commandList, m_depth, icpResourceState::SHADER_RESOURCE);
+}
+
+void icpDeferredRenderer::DrawTranslucentScene(std::shared_ptr<icpRHICommandList> commandList, uint32_t frameIndex)
+{
+	std::vector<std::shared_ptr<icpGameEntity>> roots;
+	g_system_container.m_sceneSystem->getRootEntityList(roots);
+
+	auto drawMesh = [&](auto& mesh)
+	{
+		if (!mesh.m_pMaterial || !mesh.m_pMaterial->m_bRenderResourcesReady ||
+			mesh.m_pMaterial->m_shadingModel != eMaterialShadingModel::PBR_LIT ||
+			mesh.m_pMaterial->m_blendMode != eMaterialBlendMode::TRANSLUCENT)
+		{
+			return;
+		}
+
+		m_pDevice->BindGraphicsConstantBuffer(commandList, 0, mesh.MeshUBOs[frameIndex].buffer);
+		m_pDevice->BindGraphicsConstantBuffer(commandList, 1, mesh.m_pMaterial->MaterialUBOs[frameIndex].buffer);
+		m_pDevice->BindGraphicsBindingSet(commandList, 2, mesh.m_pMaterial->m_textureBindingSet);
+		m_pDevice->BindVertexAndIndexBuffers(
+			commandList,
+			mesh.MeshVB.buffer,
+			mesh.MeshVB.range,
+			mesh.MeshIB.buffer,
+			mesh.MeshIB.range,
+			sizeof(icpVertex));
+		m_pDevice->DrawIndexed(commandList, mesh.GetMeshIndexNum());
+	};
+
+	for (auto& entity : roots)
+	{
+		if (entity->hasComponent<icpMeshRendererComponent>())
+		{
+			drawMesh(entity->accessComponent<icpMeshRendererComponent>());
+		}
+		if (entity->hasComponent<icpPrimitiveRendererComponent>())
+		{
+			drawMesh(entity->accessComponent<icpPrimitiveRendererComponent>());
+		}
+	}
+}
+
+void icpDeferredRenderer::RenderImGui(std::shared_ptr<icpRHICommandList> commandList)
+{
+	if (!m_imguiInitialized || !m_editorUI)
+	{
+		return;
+	}
+
+	m_pDevice->BeginImGuiFrame();
+	m_editorUI->showEditorUI();
+	ImGui::Render();
+	m_pDevice->RenderImGuiDrawData(commandList);
+}
 
 INCEPTION_END_NAMESPACE

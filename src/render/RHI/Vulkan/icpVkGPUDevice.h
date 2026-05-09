@@ -2,6 +2,7 @@
 #include <optional>
 #include <vector>
 #include <chrono>
+#include <unordered_map>
 
 #include "../icpGPUDevice.h"
 #include <vulkan/vulkan.hpp>
@@ -15,6 +16,22 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 INCEPTION_BEGIN_NAMESPACE
+
+struct QueueFamilyIndices
+{
+	std::optional<uint32_t> m_graphicsFamily;
+	std::optional<uint32_t> m_presentFamily;
+	std::optional<uint32_t> m_transferFamily;
+	std::optional<uint32_t> m_computeFamily;
+
+	bool isComplete() const
+	{
+		return m_graphicsFamily.has_value() &&
+			m_presentFamily.has_value() &&
+			m_transferFamily.has_value() &&
+			m_computeFamily.has_value();
+	}
+};
 
 struct SwapChainSupportDetails
 {
@@ -30,56 +47,163 @@ public:
 	~icpVkGPUDevice() override;
 
 	bool Initialize(std::shared_ptr<icpWindowSystem> window_system) override;
+	void WaitIdle() override;
+	void BeginFrame() override;
+	void EndFrame() override;
+	void ResizeSwapchain() override;
+
+	std::shared_ptr<icpRHIBuffer> CreateBuffer(
+		const icpRHIBufferDesc& desc,
+		const void* initialData = nullptr) override;
+	std::shared_ptr<icpRHITexture> CreateTexture(
+		const icpRHITextureDesc& desc,
+		const void* initialData = nullptr,
+		size_t initialDataSize = 0) override;
+	std::shared_ptr<icpRHISampler> CreateSampler() override;
+	std::shared_ptr<icpRHIPipeline> CreateGraphicsPipeline(
+		const icpGraphicsPipelineDesc& desc) override;
+	std::shared_ptr<icpRHIPipeline> CreateComputePipeline(
+		const icpComputePipelineDesc& desc) override;
+	std::shared_ptr<icpRHIBindingSet> CreateBindingSet(
+		const icpRHIBindingSetDesc& desc) override;
+
+	bool SupportsAsyncCompute() const override;
+	std::shared_ptr<icpRHICommandList> GetGraphicsCommandList() override;
+	std::shared_ptr<icpRHICommandList> BeginAsyncCompute() override;
+	uint64_t EndAsyncCompute(std::shared_ptr<icpRHICommandList> commandList) override;
+	void SubmitGraphicsWorkBeforeAsyncCompute() override;
+	void WaitForAsyncCompute(uint64_t fenceValue) override;
+
+	void PrepareCommandList(std::shared_ptr<icpRHICommandList> commandList) override;
+	void TransitionTexture(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHITexture> texture,
+		icpResourceState newState) override;
+	void TransitionBackBuffer(
+		std::shared_ptr<icpRHICommandList> commandList,
+		icpResourceState newState) override;
+	void SetViewportAndScissor(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t width,
+		uint32_t height) override;
+	void SetRenderTargets(
+		std::shared_ptr<icpRHICommandList> commandList,
+		const std::vector<std::shared_ptr<icpRHITexture>>& colorTargets,
+		std::shared_ptr<icpRHITexture> depthTarget,
+		icpRHIDepthAccess depthAccess,
+		bool clearColor,
+		bool clearDepth) override;
+	void SetBackBufferRenderTarget(
+		std::shared_ptr<icpRHICommandList> commandList,
+		bool clearColor) override;
+	void SetBackBufferRenderTarget(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHITexture> depthTarget,
+		icpRHIDepthAccess depthAccess,
+		bool clearColor) override;
+	void BindGraphicsPipeline(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHIPipeline> pipeline) override;
+	void BindComputePipeline(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHIPipeline> pipeline) override;
+	void BindGraphicsConstantBuffer(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		std::shared_ptr<icpRHIBuffer> buffer) override;
+	void BindComputeConstantBuffer(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		std::shared_ptr<icpRHIBuffer> buffer) override;
+	void BindGraphicsBindingSet(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		std::shared_ptr<icpRHIBindingSet> bindingSet) override;
+	void BindComputeBindingSet(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		std::shared_ptr<icpRHIBindingSet> bindingSet) override;
+	void SetGraphicsConstant(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		uint32_t value) override;
+	void BindVertexAndIndexBuffers(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHIBuffer> vertexBuffer,
+		uint64_t vertexBufferSize,
+		std::shared_ptr<icpRHIBuffer> indexBuffer,
+		uint64_t indexBufferSize,
+		uint32_t vertexStride) override;
+	void DrawIndexed(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t indexCount) override;
+	void Draw(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t vertexCount) override;
+	void Dispatch(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t groupCountX,
+		uint32_t groupCountY,
+		uint32_t groupCountZ) override;
+	void InitializeImGui(std::shared_ptr<icpWindowSystem> windowSystem) override;
+	void ShutdownImGui() override;
+	void BeginImGuiFrame() override;
+	void RenderImGuiDrawData(std::shared_ptr<icpRHICommandList> commandList) override;
+	uint32_t GetCurrentFrameIndex() const override;
+	uint32_t GetBackBufferWidth() const override;
+	uint32_t GetBackBufferHeight() const override;
 
 	void cleanup();
-	void CleanUpSwapChain() override;
+	void CleanUpSwapChain();
 
-	void WaitForFence(uint32_t _currentFrame) override;
-	uint32_t AcquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result) override;
+	void WaitForFence(uint32_t _currentFrame);
+	uint32_t AcquireNextImageFromSwapchain(uint32_t _currentFrame, VkResult& _result);
 
-	void CreateSwapChain() override;
-	void CreateSwapChainImageViews() override;
+	void CreateSwapChain();
+	void CreateSwapChainImageViews();
 
 	void FindDepthFormat();
-	void CreateDepthResources() override;
+	void CreateDepthResources();
 	void createDescriptorPools();
 
 	void createVmaAllocator();
 
-	VkDevice& GetLogicalDevice() override;
-	VkPhysicalDevice& GetPhysicalDevice() override;
+	VkDevice& GetLogicalDevice();
+	VkPhysicalDevice& GetPhysicalDevice();
 
-	VmaAllocator& GetVmaAllocator() override;
-	QueueFamilyIndices& GetQueueFamilyIndices() override;
+	VmaAllocator& GetVmaAllocator();
+	QueueFamilyIndices& GetQueueFamilyIndices();
 
-	VkQueue& GetTransferQueue() override;
-	VkCommandPool& GetTransferCommandPool() override;
+	VkQueue& GetTransferQueue();
+	VkCommandPool& GetTransferCommandPool();
 
-	VkCommandPool& GetGraphicsCommandPool() override;
-	VkQueue& GetGraphicsQueue() override;
+	VkCommandPool& GetGraphicsCommandPool();
+	VkQueue& GetGraphicsQueue();
 
-	VkCommandPool& GetComputeCommandPool() override;
-	VkQueue& GetComputeQueue() override;
+	VkCommandPool& GetComputeCommandPool();
+	VkQueue& GetComputeQueue();
 
-	VkQueue& GetPresentQueue() override;
+	VkQueue& GetPresentQueue();
 
-	VkSwapchainKHR& GetSwapChain() override;
-	VkExtent2D& GetSwapChainExtent() override;
-	std::vector<VkImageView>& GetSwapChainImageViews() override;
-	std::vector<VkImage>& GetSwapChainImages() override;
-	VkFormat GetSwapChainImageFormat() override;
+	VkSwapchainKHR& GetSwapChain();
+	VkExtent2D& GetSwapChainExtent();
+	std::vector<VkImageView>& GetSwapChainImageViews();
+	std::vector<VkImage>& GetSwapChainImages();
+	VkFormat GetSwapChainImageFormat();
 
-	std::vector<VkFence>& GetInFlightFences() override;
+	std::vector<VkFence>& GetInFlightFences();
+	std::vector<VkSemaphore>& GetImageAvailableForRenderingSemaphores();
+	std::vector<VkSemaphore>& GetRenderFinishedForPresentationSemaphores();
 
-	VkDescriptorPool& GetDescriptorPool() override;
-	VkInstance& GetInstance() override;
+	VkDescriptorPool& GetDescriptorPool();
+	VkInstance& GetInstance();
 	
-	GLFWwindow* GetWindow() override;
+	GLFWwindow* GetWindow();
 
-	VkFormat GetDepthFormat() override;
-	VkImageView GetDepthImageView() override;
+	VkFormat GetDepthFormat();
+	VkImageView GetDepthImageView();
 
-	std::vector<uint32_t>& GetQueueFamilyIndicesVector() override;
+	std::vector<uint32_t>& GetQueueFamilyIndicesVector();
 	
 private:
 	void createInstance();
@@ -91,6 +215,22 @@ private:
 	void createCommandPools();
 
 	void createFence();
+	VkDescriptorSetLayout GetDescriptorSetLayout(const std::vector<VkDescriptorType>& descriptorTypes);
+	VkRenderPass GetOrCreateRenderPass(
+		const std::vector<VkFormat>& colorFormats,
+		VkFormat depthFormat,
+		icpRHIDepthAccess depthAccess);
+	VkFramebuffer GetOrCreateFramebuffer(
+		VkRenderPass renderPass,
+		const std::vector<VkImageView>& attachments,
+		uint32_t width,
+		uint32_t height);
+	void EndActiveRenderPass(VkCommandBuffer commandBuffer);
+	void CleanUpRenderCaches();
+	void CreateImGuiRenderPass();
+	void CreateImGuiFramebuffers();
+	void CleanUpImGuiFramebuffers();
+	void CleanUpImGui();
 
 	bool checkValidationLayerSupport();
 
@@ -149,12 +289,33 @@ public:
 	VkImageView m_depthImageView;
 
 	std::vector<VkFence> m_inFlightFences;
+	std::vector<VkSemaphore> m_imageAvailableForRenderingSemaphores;
+	std::vector<VkSemaphore> m_renderFinishedForPresentationSemaphores;
 
 	VkDescriptorPool m_descriptorPool{ VK_NULL_HANDLE };
+	std::vector<VkDescriptorPool> m_frameDescriptorPools;
 
 	VmaAllocator m_vmaAllocator{ VK_NULL_HANDLE };
 
 private:
+	GLFWwindow* m_window{ nullptr };
+	uint32_t m_currentFrame{ 0 };
+	uint32_t m_acquiredImageIndex{ 0 };
+	bool m_hasAcquiredImage{ false };
+	std::vector<VkCommandBuffer> m_graphicsCommandBuffers;
+	std::vector<VkImageLayout> m_swapChainImageLayouts;
+	std::unordered_map<std::string, VkRenderPass> m_renderPassCache;
+	std::unordered_map<std::string, VkFramebuffer> m_framebufferCache;
+	std::unordered_map<std::string, VkDescriptorSetLayout> m_descriptorSetLayoutCache;
+	VkRenderPass m_activeRenderPass{ VK_NULL_HANDLE };
+	VkFramebuffer m_activeFramebuffer{ VK_NULL_HANDLE };
+	bool m_renderPassActive{ false };
+	VkPipelineLayout m_activeGraphicsPipelineLayout{ VK_NULL_HANDLE };
+	VkPipelineLayout m_activeComputePipelineLayout{ VK_NULL_HANDLE };
+	VkRenderPass m_imguiRenderPass{ VK_NULL_HANDLE };
+	std::vector<VkFramebuffer> m_imguiFramebuffers;
+	bool m_imguiInitialized{ false };
+
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };
 	bool m_enableValidationLayers = true;
 	bool m_enableDebugUtilsLabel = true;
@@ -166,8 +327,6 @@ private:
 	const std::vector<const char*> m_validationLayers{ "VK_LAYER_KHRONOS_validation" };
 	std::vector<char const*> m_requiredDeviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-	VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
-	VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 #if defined(__MACH__)
 			"VK_KHR_portability_subset"
 #endif

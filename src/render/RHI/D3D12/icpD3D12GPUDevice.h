@@ -62,6 +62,12 @@ public:
 	icpPipelineKind m_kind = icpPipelineKind::GBUFFER;
 };
 
+class icpD3D12BindingSet : public icpRHIBindingSet
+{
+public:
+	D3D12_GPU_DESCRIPTOR_HANDLE m_gpuStart{};
+};
+
 class icpD3D12CommandList : public icpRHICommandList
 {
 public:
@@ -103,12 +109,92 @@ public:
 		const icpGraphicsPipelineDesc& desc) override;
 	std::shared_ptr<icpRHIPipeline> CreateComputePipeline(
 		const icpComputePipelineDesc& desc) override;
+	std::shared_ptr<icpRHIBindingSet> CreateBindingSet(
+		const icpRHIBindingSetDesc& desc) override;
 
 	bool SupportsAsyncCompute() const override;
+	std::shared_ptr<icpRHICommandList> GetGraphicsCommandList() override;
 	std::shared_ptr<icpRHICommandList> BeginAsyncCompute() override;
 	uint64_t EndAsyncCompute(std::shared_ptr<icpRHICommandList> commandList) override;
 	void SubmitGraphicsWorkBeforeAsyncCompute() override;
 	void WaitForAsyncCompute(uint64_t fenceValue) override;
+
+	void PrepareCommandList(std::shared_ptr<icpRHICommandList> commandList) override;
+	void TransitionTexture(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHITexture> texture,
+		icpResourceState newState) override;
+	void TransitionBackBuffer(
+		std::shared_ptr<icpRHICommandList> commandList,
+		icpResourceState newState) override;
+	void SetViewportAndScissor(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t width,
+		uint32_t height) override;
+	void SetRenderTargets(
+		std::shared_ptr<icpRHICommandList> commandList,
+		const std::vector<std::shared_ptr<icpRHITexture>>& colorTargets,
+		std::shared_ptr<icpRHITexture> depthTarget,
+		icpRHIDepthAccess depthAccess,
+		bool clearColor,
+		bool clearDepth) override;
+	void SetBackBufferRenderTarget(
+		std::shared_ptr<icpRHICommandList> commandList,
+		bool clearColor) override;
+	void SetBackBufferRenderTarget(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHITexture> depthTarget,
+		icpRHIDepthAccess depthAccess,
+		bool clearColor) override;
+	void BindGraphicsPipeline(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHIPipeline> pipeline) override;
+	void BindComputePipeline(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHIPipeline> pipeline) override;
+	void BindGraphicsConstantBuffer(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		std::shared_ptr<icpRHIBuffer> buffer) override;
+	void BindComputeConstantBuffer(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		std::shared_ptr<icpRHIBuffer> buffer) override;
+	void BindGraphicsBindingSet(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		std::shared_ptr<icpRHIBindingSet> bindingSet) override;
+	void BindComputeBindingSet(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		std::shared_ptr<icpRHIBindingSet> bindingSet) override;
+	void SetGraphicsConstant(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		uint32_t value) override;
+	void BindVertexAndIndexBuffers(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHIBuffer> vertexBuffer,
+		uint64_t vertexBufferSize,
+		std::shared_ptr<icpRHIBuffer> indexBuffer,
+		uint64_t indexBufferSize,
+		uint32_t vertexStride) override;
+	void DrawIndexed(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t indexCount) override;
+	void Draw(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t vertexCount) override;
+	void Dispatch(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t groupCountX,
+		uint32_t groupCountY,
+		uint32_t groupCountZ) override;
+
+	void InitializeImGui(std::shared_ptr<icpWindowSystem> windowSystem) override;
+	void ShutdownImGui() override;
+	void BeginImGuiFrame() override;
+	void RenderImGuiDrawData(std::shared_ptr<icpRHICommandList> commandList) override;
 
 	uint32_t GetCurrentFrameIndex() const override;
 	uint32_t GetBackBufferWidth() const override;

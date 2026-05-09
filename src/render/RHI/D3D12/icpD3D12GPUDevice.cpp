@@ -3,6 +3,9 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
+#include <backends/imgui_impl_dx12.h>
+#include <backends/imgui_impl_glfw.h>
+#include <imgui.h>
 #include <fstream>
 #include <stdexcept>
 #include <algorithm>
@@ -39,6 +42,31 @@ static std::vector<uint8_t> ReadBinaryFile(const std::filesystem::path& path)
 	file.seekg(0);
 	file.read(reinterpret_cast<char*>(data.data()), size);
 	return data;
+}
+
+static ID3D12GraphicsCommandList* NativeCommandList(const std::shared_ptr<icpRHICommandList>& commandList)
+{
+	return static_cast<icpD3D12CommandList*>(commandList.get())->GetNative();
+}
+
+static icpD3D12Texture* D3D12Texture(const std::shared_ptr<icpRHITexture>& texture)
+{
+	return static_cast<icpD3D12Texture*>(texture.get());
+}
+
+static icpD3D12Buffer* D3D12Buffer(const std::shared_ptr<icpRHIBuffer>& buffer)
+{
+	return static_cast<icpD3D12Buffer*>(buffer.get());
+}
+
+static icpD3D12Pipeline* D3D12Pipeline(const std::shared_ptr<icpRHIPipeline>& pipeline)
+{
+	return static_cast<icpD3D12Pipeline*>(pipeline.get());
+}
+
+static icpD3D12BindingSet* D3D12BindingSet(const std::shared_ptr<icpRHIBindingSet>& bindingSet)
+{
+	return static_cast<icpD3D12BindingSet*>(bindingSet.get());
 }
 }
 
@@ -779,6 +807,32 @@ std::shared_ptr<icpRHIPipeline> icpD3D12GPUDevice::CreateComputePipeline(const i
 	return pipeline;
 }
 
+std::shared_ptr<icpRHIBindingSet> icpD3D12GPUDevice::CreateBindingSet(const icpRHIBindingSetDesc& desc)
+{
+	auto bindingSet = std::make_shared<icpD3D12BindingSet>();
+	if (desc.resources.empty())
+	{
+		return bindingSet;
+	}
+
+	auto [cpuStart, gpuStart] = AllocateSRV();
+	bindingSet->m_gpuStart = gpuStart;
+	auto cpu = cpuStart;
+	for (size_t i = 0; i < desc.resources.size(); ++i)
+	{
+		if (i > 0)
+		{
+			AllocateSRV();
+			cpu.ptr += m_srvDescriptorSize;
+		}
+
+		auto* texture = D3D12Texture(desc.resources[i].texture);
+		const auto source = desc.resources[i].viewType == icpRHIResourceViewType::UAV ? texture->m_uavCpu : texture->m_srvCpu;
+		m_device->CopyDescriptorsSimple(1, cpu, source, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+	return bindingSet;
+}
+
 uint32_t icpD3D12GPUDevice::GetCurrentFrameIndex() const { return m_currentFrame; }
 uint32_t icpD3D12GPUDevice::GetBackBufferWidth() const { return m_backBufferWidth; }
 uint32_t icpD3D12GPUDevice::GetBackBufferHeight() const { return m_backBufferHeight; }
@@ -817,6 +871,11 @@ std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> icpD3D12GPUD
 bool icpD3D12GPUDevice::SupportsAsyncCompute() const
 {
 	return m_computeQueue.Get() != nullptr;
+}
+
+std::shared_ptr<icpRHICommandList> icpD3D12GPUDevice::GetGraphicsCommandList()
+{
+	return std::make_shared<icpD3D12CommandList>(icpQueueType::GRAPHICS, m_commandList.Get());
 }
 
 void icpD3D12GPUDevice::SubmitGraphicsWorkBeforeAsyncCompute()
@@ -860,6 +919,266 @@ void icpD3D12GPUDevice::WaitForAsyncCompute(uint64_t fenceValue)
 		return;
 	}
 	ThrowIfFailed(m_graphicsQueue->Wait(m_asyncFence.Get(), fenceValue), "failed to make graphics queue wait for async compute");
+}
+
+void icpD3D12GPUDevice::PrepareCommandList(std::shared_ptr<icpRHICommandList> commandList)
+{
+	ID3D12DescriptorHeap* heaps[] = { m_srvHeap.Get() };
+	NativeCommandList(commandList)->SetDescriptorHeaps(1, heaps);
+}
+
+void icpD3D12GPUDevice::TransitionTexture(
+	std::shared_ptr<icpRHICommandList> commandList,
+	std::shared_ptr<icpRHITexture> texture,
+	icpResourceState newState)
+{
+	auto* d3dTexture = D3D12Texture(texture);
+	TransitionResource(NativeCommandList(commandList), d3dTexture->m_resource.Get(), ToD3D12State(d3dTexture->m_state), ToD3D12State(newState));
+	d3dTexture->m_state = newState;
+}
+
+void icpD3D12GPUDevice::TransitionBackBuffer(
+	std::shared_ptr<icpRHICommandList> commandList,
+	icpResourceState newState)
+{
+	const auto before = newState == icpResourceState::RENDER_TARGET ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_RENDER_TARGET;
+	TransitionResource(NativeCommandList(commandList), GetCurrentBackBuffer(), before, ToD3D12State(newState));
+}
+
+void icpD3D12GPUDevice::SetViewportAndScissor(
+	std::shared_ptr<icpRHICommandList> commandList,
+	uint32_t width,
+	uint32_t height)
+{
+	D3D12_VIEWPORT viewport{ 0.f, 0.f, static_cast<float>(width), static_cast<float>(height), 0.f, 1.f };
+	D3D12_RECT scissor{ 0, 0, static_cast<LONG>(width), static_cast<LONG>(height) };
+	auto* cmd = NativeCommandList(commandList);
+	cmd->RSSetViewports(1, &viewport);
+	cmd->RSSetScissorRects(1, &scissor);
+}
+
+void icpD3D12GPUDevice::SetRenderTargets(
+	std::shared_ptr<icpRHICommandList> commandList,
+	const std::vector<std::shared_ptr<icpRHITexture>>& colorTargets,
+	std::shared_ptr<icpRHITexture> depthTarget,
+	icpRHIDepthAccess depthAccess,
+	bool clearColor,
+	bool clearDepth)
+{
+	auto* cmd = NativeCommandList(commandList);
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvs;
+	rtvs.reserve(colorTargets.size());
+	for (const auto& target : colorTargets)
+	{
+		rtvs.push_back(D3D12Texture(target)->m_rtv);
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE dsv{};
+	D3D12_CPU_DESCRIPTOR_HANDLE* dsvPtr = nullptr;
+	if (depthTarget)
+	{
+		auto* depth = D3D12Texture(depthTarget);
+		dsv = depthAccess == icpRHIDepthAccess::READ ? depth->m_readOnlyDsv : depth->m_dsv;
+		dsvPtr = &dsv;
+	}
+
+	cmd->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.empty() ? nullptr : rtvs.data(), FALSE, dsvPtr);
+
+	if (clearColor)
+	{
+		const float clear[4] = { 0.f, 0.f, 0.f, 1.f };
+		for (const auto& rtv : rtvs)
+		{
+			cmd->ClearRenderTargetView(rtv, clear, 0, nullptr);
+		}
+	}
+	if (clearDepth && dsvPtr)
+	{
+		cmd->ClearDepthStencilView(*dsvPtr, D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr);
+	}
+}
+
+void icpD3D12GPUDevice::SetBackBufferRenderTarget(
+	std::shared_ptr<icpRHICommandList> commandList,
+	bool clearColor)
+{
+	auto* cmd = NativeCommandList(commandList);
+	auto rtv = GetCurrentBackBufferRTV();
+	cmd->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+	if (clearColor)
+	{
+		const float clear[4] = { 0.f, 0.f, 0.f, 1.f };
+		cmd->ClearRenderTargetView(rtv, clear, 0, nullptr);
+	}
+}
+
+void icpD3D12GPUDevice::SetBackBufferRenderTarget(
+	std::shared_ptr<icpRHICommandList> commandList,
+	std::shared_ptr<icpRHITexture> depthTarget,
+	icpRHIDepthAccess depthAccess,
+	bool clearColor)
+{
+	auto* cmd = NativeCommandList(commandList);
+	auto rtv = GetCurrentBackBufferRTV();
+	D3D12_CPU_DESCRIPTOR_HANDLE dsv{};
+	D3D12_CPU_DESCRIPTOR_HANDLE* dsvPtr = nullptr;
+	if (depthTarget)
+	{
+		auto* depth = D3D12Texture(depthTarget);
+		dsv = depthAccess == icpRHIDepthAccess::READ ? depth->m_readOnlyDsv : depth->m_dsv;
+		dsvPtr = &dsv;
+	}
+	cmd->OMSetRenderTargets(1, &rtv, FALSE, dsvPtr);
+	if (clearColor)
+	{
+		const float clear[4] = { 0.f, 0.f, 0.f, 1.f };
+		cmd->ClearRenderTargetView(rtv, clear, 0, nullptr);
+	}
+}
+
+void icpD3D12GPUDevice::BindGraphicsPipeline(
+	std::shared_ptr<icpRHICommandList> commandList,
+	std::shared_ptr<icpRHIPipeline> pipeline)
+{
+	auto* cmd = NativeCommandList(commandList);
+	auto* d3dPipeline = D3D12Pipeline(pipeline);
+	cmd->SetPipelineState(d3dPipeline->m_pipelineState.Get());
+	cmd->SetGraphicsRootSignature(d3dPipeline->m_rootSignature.Get());
+}
+
+void icpD3D12GPUDevice::BindComputePipeline(
+	std::shared_ptr<icpRHICommandList> commandList,
+	std::shared_ptr<icpRHIPipeline> pipeline)
+{
+	auto* cmd = NativeCommandList(commandList);
+	auto* d3dPipeline = D3D12Pipeline(pipeline);
+	cmd->SetPipelineState(d3dPipeline->m_pipelineState.Get());
+	cmd->SetComputeRootSignature(d3dPipeline->m_rootSignature.Get());
+}
+
+void icpD3D12GPUDevice::BindGraphicsConstantBuffer(
+	std::shared_ptr<icpRHICommandList> commandList,
+	uint32_t bindingIndex,
+	std::shared_ptr<icpRHIBuffer> buffer)
+{
+	NativeCommandList(commandList)->SetGraphicsRootConstantBufferView(bindingIndex, D3D12Buffer(buffer)->GetGPUAddress());
+}
+
+void icpD3D12GPUDevice::BindComputeConstantBuffer(
+	std::shared_ptr<icpRHICommandList> commandList,
+	uint32_t bindingIndex,
+	std::shared_ptr<icpRHIBuffer> buffer)
+{
+	NativeCommandList(commandList)->SetComputeRootConstantBufferView(bindingIndex, D3D12Buffer(buffer)->GetGPUAddress());
+}
+
+void icpD3D12GPUDevice::BindGraphicsBindingSet(
+	std::shared_ptr<icpRHICommandList> commandList,
+	uint32_t bindingIndex,
+	std::shared_ptr<icpRHIBindingSet> bindingSet)
+{
+	NativeCommandList(commandList)->SetGraphicsRootDescriptorTable(bindingIndex, D3D12BindingSet(bindingSet)->m_gpuStart);
+}
+
+void icpD3D12GPUDevice::BindComputeBindingSet(
+	std::shared_ptr<icpRHICommandList> commandList,
+	uint32_t bindingIndex,
+	std::shared_ptr<icpRHIBindingSet> bindingSet)
+{
+	NativeCommandList(commandList)->SetComputeRootDescriptorTable(bindingIndex, D3D12BindingSet(bindingSet)->m_gpuStart);
+}
+
+void icpD3D12GPUDevice::SetGraphicsConstant(
+	std::shared_ptr<icpRHICommandList> commandList,
+	uint32_t bindingIndex,
+	uint32_t value)
+{
+	NativeCommandList(commandList)->SetGraphicsRoot32BitConstant(bindingIndex, value, 0);
+}
+
+void icpD3D12GPUDevice::BindVertexAndIndexBuffers(
+	std::shared_ptr<icpRHICommandList> commandList,
+	std::shared_ptr<icpRHIBuffer> vertexBuffer,
+	uint64_t vertexBufferSize,
+	std::shared_ptr<icpRHIBuffer> indexBuffer,
+	uint64_t indexBufferSize,
+	uint32_t vertexStride)
+{
+	auto* cmd = NativeCommandList(commandList);
+	D3D12_VERTEX_BUFFER_VIEW vbv{};
+	vbv.BufferLocation = D3D12Buffer(vertexBuffer)->GetGPUAddress();
+	vbv.SizeInBytes = static_cast<UINT>(vertexBufferSize);
+	vbv.StrideInBytes = vertexStride;
+	D3D12_INDEX_BUFFER_VIEW ibv{};
+	ibv.BufferLocation = D3D12Buffer(indexBuffer)->GetGPUAddress();
+	ibv.SizeInBytes = static_cast<UINT>(indexBufferSize);
+	ibv.Format = DXGI_FORMAT_R32_UINT;
+
+	cmd->IASetVertexBuffers(0, 1, &vbv);
+	cmd->IASetIndexBuffer(&ibv);
+	cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+void icpD3D12GPUDevice::DrawIndexed(
+	std::shared_ptr<icpRHICommandList> commandList,
+	uint32_t indexCount)
+{
+	NativeCommandList(commandList)->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
+}
+
+void icpD3D12GPUDevice::Draw(
+	std::shared_ptr<icpRHICommandList> commandList,
+	uint32_t vertexCount)
+{
+	auto* cmd = NativeCommandList(commandList);
+	cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	cmd->DrawInstanced(vertexCount, 1, 0, 0);
+}
+
+void icpD3D12GPUDevice::Dispatch(
+	std::shared_ptr<icpRHICommandList> commandList,
+	uint32_t groupCountX,
+	uint32_t groupCountY,
+	uint32_t groupCountZ)
+{
+	NativeCommandList(commandList)->Dispatch(groupCountX, groupCountY, groupCountZ);
+}
+
+void icpD3D12GPUDevice::InitializeImGui(std::shared_ptr<icpWindowSystem> windowSystem)
+{
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+	ImGui_ImplGlfw_InitForOther(windowSystem->getWindow(), true);
+	auto [fontCpu, fontGpu] = AllocateSRV();
+	ImGui_ImplDX12_Init(
+		m_device.Get(),
+		MAX_FRAMES_IN_FLIGHT,
+		DXGI_FORMAT_R8G8B8A8_UNORM,
+		m_srvHeap.Get(),
+		fontCpu,
+		fontGpu);
+}
+
+void icpD3D12GPUDevice::ShutdownImGui()
+{
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+}
+
+void icpD3D12GPUDevice::BeginImGuiFrame()
+{
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+}
+
+void icpD3D12GPUDevice::RenderImGuiDrawData(std::shared_ptr<icpRHICommandList> commandList)
+{
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), NativeCommandList(commandList));
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE icpD3D12GPUDevice::CreateTextureSRVTable(const std::vector<std::shared_ptr<icpRHITexture>>& textures)

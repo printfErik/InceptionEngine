@@ -111,6 +111,18 @@ enum class icpQueueType
 	COPY,
 };
 
+enum class icpRHIResourceViewType
+{
+	SRV = 0,
+	UAV,
+};
+
+enum class icpRHIDepthAccess
+{
+	WRITE = 0,
+	READ,
+};
+
 inline icpBufferUsage operator|(icpBufferUsage lhs, icpBufferUsage rhs)
 {
 	return static_cast<icpBufferUsage>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
@@ -178,6 +190,18 @@ struct icpComputePipelineDesc
 {
 	icpPipelineKind kind = icpPipelineKind::GTAO;
 	std::filesystem::path computeShader;
+};
+
+struct icpRHIBindingResource
+{
+	std::shared_ptr<class icpRHITexture> texture = nullptr;
+	icpRHIResourceViewType viewType = icpRHIResourceViewType::SRV;
+};
+
+struct icpRHIBindingSetDesc
+{
+	std::vector<icpRHIBindingResource> resources;
+	const char* debugName = nullptr;
 };
 
 class icpRHIBuffer
@@ -258,8 +282,15 @@ public:
 		(void)desc;
 		return nullptr;
 	}
+	virtual std::shared_ptr<icpRHIBindingSet> CreateBindingSet(
+		const icpRHIBindingSetDesc& desc)
+	{
+		(void)desc;
+		return nullptr;
+	}
 
 	virtual bool SupportsAsyncCompute() const { return false; }
+	virtual std::shared_ptr<icpRHICommandList> GetGraphicsCommandList() { return nullptr; }
 	virtual std::shared_ptr<icpRHICommandList> BeginAsyncCompute() { return nullptr; }
 	virtual uint64_t EndAsyncCompute(std::shared_ptr<icpRHICommandList> commandList)
 	{
@@ -268,6 +299,179 @@ public:
 	}
 	virtual void SubmitGraphicsWorkBeforeAsyncCompute() {}
 	virtual void WaitForAsyncCompute(uint64_t fenceValue) { (void)fenceValue; }
+
+	virtual void PrepareCommandList(std::shared_ptr<icpRHICommandList> commandList)
+	{
+		(void)commandList;
+	}
+	virtual void TransitionTexture(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHITexture> texture,
+		icpResourceState newState)
+	{
+		(void)commandList;
+		(void)texture;
+		(void)newState;
+	}
+	virtual void TransitionBackBuffer(
+		std::shared_ptr<icpRHICommandList> commandList,
+		icpResourceState newState)
+	{
+		(void)commandList;
+		(void)newState;
+	}
+	virtual void SetViewportAndScissor(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t width,
+		uint32_t height)
+	{
+		(void)commandList;
+		(void)width;
+		(void)height;
+	}
+	virtual void SetRenderTargets(
+		std::shared_ptr<icpRHICommandList> commandList,
+		const std::vector<std::shared_ptr<icpRHITexture>>& colorTargets,
+		std::shared_ptr<icpRHITexture> depthTarget,
+		icpRHIDepthAccess depthAccess,
+		bool clearColor,
+		bool clearDepth)
+	{
+		(void)commandList;
+		(void)colorTargets;
+		(void)depthTarget;
+		(void)depthAccess;
+		(void)clearColor;
+		(void)clearDepth;
+	}
+	virtual void SetBackBufferRenderTarget(
+		std::shared_ptr<icpRHICommandList> commandList,
+		bool clearColor)
+	{
+		(void)commandList;
+		(void)clearColor;
+	}
+	virtual void SetBackBufferRenderTarget(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHITexture> depthTarget,
+		icpRHIDepthAccess depthAccess,
+		bool clearColor)
+	{
+		(void)commandList;
+		(void)depthTarget;
+		(void)depthAccess;
+		(void)clearColor;
+	}
+	virtual void BindGraphicsPipeline(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHIPipeline> pipeline)
+	{
+		(void)commandList;
+		(void)pipeline;
+	}
+	virtual void BindComputePipeline(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHIPipeline> pipeline)
+	{
+		(void)commandList;
+		(void)pipeline;
+	}
+	virtual void BindGraphicsConstantBuffer(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		std::shared_ptr<icpRHIBuffer> buffer)
+	{
+		(void)commandList;
+		(void)bindingIndex;
+		(void)buffer;
+	}
+	virtual void BindComputeConstantBuffer(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		std::shared_ptr<icpRHIBuffer> buffer)
+	{
+		(void)commandList;
+		(void)bindingIndex;
+		(void)buffer;
+	}
+	virtual void BindGraphicsBindingSet(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		std::shared_ptr<icpRHIBindingSet> bindingSet)
+	{
+		(void)commandList;
+		(void)bindingIndex;
+		(void)bindingSet;
+	}
+	virtual void BindComputeBindingSet(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		std::shared_ptr<icpRHIBindingSet> bindingSet)
+	{
+		(void)commandList;
+		(void)bindingIndex;
+		(void)bindingSet;
+	}
+	virtual void SetGraphicsConstant(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t bindingIndex,
+		uint32_t value)
+	{
+		(void)commandList;
+		(void)bindingIndex;
+		(void)value;
+	}
+	virtual void BindVertexAndIndexBuffers(
+		std::shared_ptr<icpRHICommandList> commandList,
+		std::shared_ptr<icpRHIBuffer> vertexBuffer,
+		uint64_t vertexBufferSize,
+		std::shared_ptr<icpRHIBuffer> indexBuffer,
+		uint64_t indexBufferSize,
+		uint32_t vertexStride)
+	{
+		(void)commandList;
+		(void)vertexBuffer;
+		(void)vertexBufferSize;
+		(void)indexBuffer;
+		(void)indexBufferSize;
+		(void)vertexStride;
+	}
+	virtual void DrawIndexed(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t indexCount)
+	{
+		(void)commandList;
+		(void)indexCount;
+	}
+	virtual void Draw(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t vertexCount)
+	{
+		(void)commandList;
+		(void)vertexCount;
+	}
+	virtual void Dispatch(
+		std::shared_ptr<icpRHICommandList> commandList,
+		uint32_t groupCountX,
+		uint32_t groupCountY,
+		uint32_t groupCountZ)
+	{
+		(void)commandList;
+		(void)groupCountX;
+		(void)groupCountY;
+		(void)groupCountZ;
+	}
+
+	virtual void InitializeImGui(std::shared_ptr<icpWindowSystem> windowSystem)
+	{
+		(void)windowSystem;
+	}
+	virtual void ShutdownImGui() {}
+	virtual void BeginImGuiFrame() {}
+	virtual void RenderImGuiDrawData(std::shared_ptr<icpRHICommandList> commandList)
+	{
+		(void)commandList;
+	}
 
 	virtual uint32_t GetCurrentFrameIndex() const = 0;
 	virtual uint32_t GetBackBufferWidth() const = 0;

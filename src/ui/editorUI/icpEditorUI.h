@@ -26,6 +26,7 @@ public:
 private:
 	void showEntityRightClickMenu(const char* entityName);
 	void showEntityHierarchy();
+	void showFrameStatsOverlay();
 };
 
 INCEPTION_END_NAMESPACE

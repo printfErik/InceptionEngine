@@ -2,16 +2,63 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "CMake: Debug Selected Target",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${command:cmake.launchTargetPath}",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal"
+    },
+    {
       "name": "InceptionEngine D3D12 Debug",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/windows-d3d12-debug/src/InceptionEngine.exe",
+      "program": "${workspaceFolder}/build/windows-d3d12-clang-ninja-debug/src/InceptionEngine.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
       "console": "integratedTerminal",
       "preLaunchTask": "CMake: configure+build D3D12 Debug"
+    },
+    {
+      "name": "InceptionEngine D3D12 Release",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/windows-d3d12-clang-ninja-release/src/InceptionEngine.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "CMake: configure+build D3D12 Release"
+    },
+    {
+      "name": "InceptionEngine Vulkan Debug",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/windows-vulkan-clang-ninja-debug/src/InceptionEngine.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "CMake: configure+build Vulkan Debug"
+    },
+    {
+      "name": "InceptionEngine Vulkan Release",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/windows-vulkan-clang-ninja-release/src/InceptionEngine.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "CMake: configure+build Vulkan Release"
     }
   ]
 }

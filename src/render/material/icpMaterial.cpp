@@ -7,9 +7,6 @@
 #include "../../core/icpLogSystem.h"
 #include "../../mesh/icpMeshResource.h"
 #include "../../core/icpConfigSystem.h"
-#if defined(INCEPTION_RENDER_BACKEND_D3D12)
-#include "../RHI/D3D12/icpD3D12GPUDevice.h"
-#endif
 
 #include <cstring>
 
@@ -45,8 +42,7 @@ void icpMaterialInstance::CreateUniformBuffers()
 
 void icpMaterialInstance::AllocateMaterialDescriptorSets()
 {
-#if defined(INCEPTION_RENDER_BACKEND_D3D12)
-	auto pGPUDevice = std::dynamic_pointer_cast<icpD3D12GPUDevice>(g_system_container.m_renderSystem->GetGPUDevice());
+	auto pGPUDevice = g_system_container.m_renderSystem->GetGPUDevice();
 	std::vector<std::shared_ptr<icpRHITexture>> textures;
 	textures.push_back(GetTextureRenderResourceByID("baseColorTexture").m_texture);
 	textures.push_back(GetTextureRenderResourceByID("metallicRoughnessTexture").m_texture);
@@ -62,8 +58,13 @@ void icpMaterialInstance::AllocateMaterialDescriptorSets()
 			texture = GetTextureRenderResourceByID("empty2D001").m_texture;
 		}
 	}
-	m_srvTableGpuHandle = pGPUDevice->CreateTextureSRVTable(textures).ptr;
-#endif
+	icpRHIBindingSetDesc desc{};
+	desc.debugName = "MaterialTextureSet";
+	for (const auto& texture : textures)
+	{
+		desc.resources.push_back({ texture, icpRHIResourceViewType::SRV });
+	}
+	m_textureBindingSet = pGPUDevice->CreateBindingSet(desc);
 }
 
 

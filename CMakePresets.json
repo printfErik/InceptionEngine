@@ -7,98 +7,8 @@
   },
   "configurePresets": [
     {
-      "name": "windows-d3d12-debug",
-      "displayName": "Windows D3D12 Debug",
-      "description": "VS Code/CMake Tools friendly D3D12 debug build using Ninja. Select an x64 MSVC or clang-cl kit in VS Code.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "architecture": {
-        "value": "x64",
-        "strategy": "external"
-      },
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-        "INCEPTION_RENDER_BACKEND": "D3D12"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": [ "Windows" ],
-          "intelliSenseMode": "windows-msvc-x64"
-        }
-      }
-    },
-    {
-      "name": "windows-d3d12-vs2022-debug",
-      "displayName": "Windows D3D12 VS2022 Debug",
-      "description": "D3D12 debug build using the Visual Studio 2022 generator. This does not require selecting a CMake Tools kit.",
-      "generator": "Visual Studio 17 2022",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "architecture": {
-        "value": "x64",
-        "strategy": "set"
-      },
-      "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-        "INCEPTION_RENDER_BACKEND": "D3D12"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": [ "Windows" ],
-          "intelliSenseMode": "windows-msvc-x64"
-        }
-      }
-    },
-    {
-      "name": "windows-d3d12-vs2022-release",
-      "displayName": "Windows D3D12 VS2022 Release",
-      "description": "D3D12 release build using the Visual Studio 2022 generator. This does not require selecting a CMake Tools kit.",
-      "inherits": "windows-d3d12-vs2022-debug",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-        "INCEPTION_RENDER_BACKEND": "D3D12"
-      }
-    },
-    {
-      "name": "windows-d3d12-clang-debug",
-      "displayName": "Windows D3D12 Clang Debug",
-      "description": "D3D12 debug build using Visual Studio 2022 with the ClangCL toolset.",
-      "generator": "Visual Studio 17 2022",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "architecture": {
-        "value": "x64",
-        "strategy": "set"
-      },
-      "toolset": {
-        "value": "ClangCL",
-        "strategy": "set"
-      },
-      "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-        "INCEPTION_RENDER_BACKEND": "D3D12"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": [ "Windows" ],
-          "intelliSenseMode": "windows-clang-x64"
-        }
-      }
-    },
-    {
-      "name": "windows-d3d12-clang-release",
-      "displayName": "Windows D3D12 Clang Release",
-      "description": "D3D12 release build using Visual Studio 2022 with the ClangCL toolset.",
-      "inherits": "windows-d3d12-clang-debug",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-        "INCEPTION_RENDER_BACKEND": "D3D12"
-      }
-    },
-    {
       "name": "windows-d3d12-clang-ninja-debug",
-      "displayName": "Windows D3D12 Clang++ Ninja Debug",
+      "displayName": "Windows D3D12 Clang Ninja Debug",
       "description": "D3D12 debug build using Ninja, clang++, and the MSVC/Windows SDK environment.",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}",
@@ -131,7 +41,7 @@
     },
     {
       "name": "windows-d3d12-clang-ninja-release",
-      "displayName": "Windows D3D12 Clang++ Ninja Release",
+      "displayName": "Windows D3D12 Clang Ninja Release",
       "description": "D3D12 release build using Ninja, clang++, and the MSVC/Windows SDK environment.",
       "inherits": "windows-d3d12-clang-ninja-debug",
       "binaryDir": "${sourceDir}/build/${presetName}",
@@ -142,25 +52,25 @@
       }
     },
     {
-      "name": "windows-d3d12-release",
-      "displayName": "Windows D3D12 Release",
-      "description": "VS Code/CMake Tools friendly D3D12 release build using Ninja. Select an x64 MSVC or clang-cl kit in VS Code.",
-      "inherits": "windows-d3d12-debug",
-      "binaryDir": "${sourceDir}/build/${presetName}",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-        "INCEPTION_RENDER_BACKEND": "D3D12"
-      }
-    },
-    {
-      "name": "windows-vulkan-debug",
-      "displayName": "Windows Vulkan Debug",
-      "description": "Legacy Vulkan debug build. This backend is not maintained while D3D12 is being brought up.",
-      "inherits": "windows-d3d12-debug",
+      "name": "windows-vulkan-clang-ninja-debug",
+      "displayName": "Windows Vulkan Clang Ninja Debug",
+      "description": "Vulkan debug build using Ninja, clang++, and the MSVC/Windows SDK environment.",
+      "inherits": "windows-d3d12-clang-ninja-debug",
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+        "INCEPTION_RENDER_BACKEND": "Vulkan"
+      }
+    },
+    {
+      "name": "windows-vulkan-clang-ninja-release",
+      "displayName": "Windows Vulkan Clang Ninja Release",
+      "description": "Vulkan release build using Ninja, clang++, and the MSVC/Windows SDK environment.",
+      "inherits": "windows-d3d12-clang-ninja-debug",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
         "INCEPTION_RENDER_BACKEND": "Vulkan"
       }
@@ -168,53 +78,24 @@
   ],
   "buildPresets": [
     {
-      "name": "windows-d3d12-debug",
-      "displayName": "Build Windows D3D12 Debug",
-      "configurePreset": "windows-d3d12-debug"
-    },
-    {
-      "name": "windows-d3d12-vs2022-debug",
-      "displayName": "Build Windows D3D12 VS2022 Debug",
-      "configurePreset": "windows-d3d12-vs2022-debug",
-      "configuration": "Debug"
-    },
-    {
-      "name": "windows-d3d12-vs2022-release",
-      "displayName": "Build Windows D3D12 VS2022 Release",
-      "configurePreset": "windows-d3d12-vs2022-release",
-      "configuration": "Release"
-    },
-    {
-      "name": "windows-d3d12-clang-debug",
-      "displayName": "Build Windows D3D12 Clang Debug",
-      "configurePreset": "windows-d3d12-clang-debug",
-      "configuration": "Debug"
-    },
-    {
-      "name": "windows-d3d12-clang-release",
-      "displayName": "Build Windows D3D12 Clang Release",
-      "configurePreset": "windows-d3d12-clang-release",
-      "configuration": "Release"
-    },
-    {
       "name": "windows-d3d12-clang-ninja-debug",
-      "displayName": "Build Windows D3D12 Clang++ Ninja Debug",
+      "displayName": "Build Windows D3D12 Clang Ninja Debug",
       "configurePreset": "windows-d3d12-clang-ninja-debug"
     },
     {
       "name": "windows-d3d12-clang-ninja-release",
-      "displayName": "Build Windows D3D12 Clang++ Ninja Release",
+      "displayName": "Build Windows D3D12 Clang Ninja Release",
       "configurePreset": "windows-d3d12-clang-ninja-release"
     },
     {
-      "name": "windows-d3d12-release",
-      "displayName": "Build Windows D3D12 Release",
-      "configurePreset": "windows-d3d12-release"
+      "name": "windows-vulkan-clang-ninja-debug",
+      "displayName": "Build Windows Vulkan Clang Ninja Debug",
+      "configurePreset": "windows-vulkan-clang-ninja-debug"
     },
     {
-      "name": "windows-vulkan-debug",
-      "displayName": "Build Windows Vulkan Debug",
-      "configurePreset": "windows-vulkan-debug"
+      "name": "windows-vulkan-clang-ninja-release",
+      "displayName": "Build Windows Vulkan Clang Ninja Release",
+      "configurePreset": "windows-vulkan-clang-ninja-release"
     }
   ]
 }

@@ -225,6 +225,33 @@ void icpEditorUI::showEntityRightClickMenu(const char* entityName)
 	}
 }
 
+void icpEditorUI::showFrameStatsOverlay()
+{
+	const ImGuiIO& io = ImGui::GetIO();
+	const ImGuiViewport* viewport = ImGui::GetMainViewport();
+	const float padding = 10.0f;
+	const ImVec2 pos = ImVec2(viewport->WorkPos.x + viewport->WorkSize.x - padding, viewport->WorkPos.y + padding);
+	const ImVec2 pivot = ImVec2(1.0f, 0.0f);
+
+	ImGui::SetNextWindowPos(pos, ImGuiCond_Always, pivot);
+	ImGui::SetNextWindowBgAlpha(0.35f);
+	ImGuiWindowFlags flags =
+		ImGuiWindowFlags_NoDecoration |
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoFocusOnAppearing |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoMove;
+
+	if (ImGui::Begin("Frame Stats", nullptr, flags))
+	{
+		const float frameMs = io.Framerate > 0.0f ? 1000.0f / io.Framerate : 0.0f;
+		ImGui::Text("FPS %.1f", io.Framerate);
+		ImGui::Text("%.2f ms", frameMs);
+	}
+	ImGui::End();
+}
+
 void icpEditorUI::showEditorUI()
 {
 	if (ImGui::BeginMainMenuBar())
@@ -371,6 +398,7 @@ void icpEditorUI::showEditorUI()
 	}
 
 	showEntityHierarchy();
+	showFrameStatsOverlay();
 }
 
 

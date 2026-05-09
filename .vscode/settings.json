@@ -4,7 +4,12 @@
   "cmake.buildPreset": "windows-d3d12-clang-ninja-debug",
   "cmake.buildBeforeRun": true,
   "cmake.debugConfig": {
-    "cwd": "${workspaceFolder}"
+    "type": "cppvsdbg",
+    "request": "launch",
+    "cwd": "${workspaceFolder}",
+    "stopAtEntry": false,
+    "console": "integratedTerminal",
+    "environment": []
   },
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
   "C_Cpp.intelliSenseEngine": "disabled",
